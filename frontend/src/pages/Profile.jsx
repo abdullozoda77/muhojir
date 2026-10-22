@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Mail, PenSquare, Save } from "lucide-react";
+import { ArrowRight, LogOut, Mail, PenSquare, Save, UserRound } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { lang, setLang, t } from "../i18n.js";
@@ -48,18 +48,27 @@ export default function Profile() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <PageHeader title={t("Профил ва танзимот")} />
-      <form onSubmit={submit} className="card flex flex-col gap-4 p-4 md:p-8">
-        <div className="flex items-center gap-3 rounded-xl bg-surface-container-low p-4">
-          <Mail className="h-5 w-5 text-primary" aria-hidden />
-          <div className="flex-1">
-            <span className="block text-body-sm text-on-surface-variant">{t("Почтаи электронӣ (барои воридшавӣ)")}</span>
-            <span className="text-label-lg">{user.email}</span>
-          </div>
-          {user.role !== "migrant" && (
-            <span className="rounded-full bg-primary-fixed px-3 py-1 text-label-md text-on-primary-fixed">{ROLE_NAMES[user.role]?.() || user.role}</span>
-          )}
+      <PageHeader title={t("Профил ва танзимот")} icon={UserRound} />
+      {/* Who is signed in: dark blue card with the initial, name and email. */}
+      <div className="relative flex items-center gap-4 overflow-hidden rounded-[32px] bg-navy p-6 text-white md:p-7">
+        <div aria-hidden className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-gold/20 blur-3xl" />
+        <div className="flag-line absolute inset-x-0 bottom-0 h-[5px]" />
+        <span className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold font-display text-[28px] font-black text-navy">
+          {(user.full_name || user.email).charAt(0).toUpperCase()}
+        </span>
+        <div className="relative min-w-0 flex-1">
+          {user.full_name && <span className="block truncate font-display text-[22px] font-extrabold leading-tight">{user.full_name}</span>}
+          <span className="flex min-w-0 items-center gap-1.5 text-body-md text-white/75">
+            <Mail className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">{user.email}</span>
+          </span>
+          <span className="mt-0.5 block text-label-sm text-white/50">{t("Почтаи электронӣ (барои воридшавӣ)")}</span>
         </div>
+        {user.role !== "migrant" && (
+          <span className="relative shrink-0 rounded-full bg-white/15 px-3 py-1 text-label-md ring-1 ring-white/20">{ROLE_NAMES[user.role]?.() || user.role}</span>
+        )}
+      </div>
+      <form onSubmit={submit} className="card flex flex-col gap-4 p-6 md:p-8">
         <Field label={t("Ному насаб")} error={errors.full_name}>
           <input className="input" value={form.full_name} onChange={(e) => set("full_name", e.target.value)} autoComplete="name" />
         </Field>
@@ -77,7 +86,7 @@ export default function Profile() {
             <option value="ru">Русский</option>
           </select>
         </Field>
-        <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-xl bg-surface-container-low p-4">
+        <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-[20px] bg-surface-container-low p-4 ring-1 ring-inset ring-outline-variant/40">
           <input type="checkbox" className="h-5 w-5 rounded text-primary focus:ring-primary" checked={form.email_reminders} onChange={(e) => set("email_reminders", e.target.checked)} />
           <span>
             <span className="block text-label-lg">{t("Ёдраскунӣ ба почтаи электронӣ")}</span>
@@ -85,20 +94,21 @@ export default function Profile() {
           </span>
         </label>
         <ErrorBox error={error} />
-        {saved && <p role="status" className="rounded-xl bg-tertiary-fixed p-3 text-label-md text-on-tertiary-fixed">{t("Сабт шуд")}</p>}
+        {saved && <p role="status" className="rounded-[18px] bg-tertiary-fixed p-4 text-label-md text-on-tertiary-fixed">{t("Сабт шуд")}</p>}
         <Button type="submit" icon={Save} loading={busy}>{t("Сабт кардан")}</Button>
       </form>
       {(user.role === "editor" || user.role === "admin") && (
-        <a href="/admin/" className="card flex items-center gap-4 p-4 transition-shadow hover:shadow-md md:p-6">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+        <a href="/admin/" className="card group flex items-center gap-4 p-6 transition-transform hover:-translate-y-0.5 md:p-7">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-navy text-white dark:bg-primary dark:text-on-primary">
             <PenSquare className="h-6 w-6" aria-hidden />
           </span>
-          <span>
-            <span className="block text-label-lg">{t("Идораи мундариҷа")}</span>
+          <span className="flex-1">
+            <span className="block font-display text-[18px] font-bold">{t("Идораи мундариҷа")}</span>
             <span className="text-body-sm text-on-surface-variant">
               {user.role === "editor" ? t("Хабарҳо, роҳнамоҳо, саволҳои имтиҳон, сайтҳои ёрӣ, марказҳо ва нархҳои патент.") : t("Ҳамаи қисмҳои сайт, корбарон ва нақшҳо.")}
             </span>
           </span>
+          <ArrowRight className="h-5 w-5 shrink-0 text-primary transition-transform group-hover:translate-x-1" aria-hidden />
         </a>
       )}
       <PhoneApp />

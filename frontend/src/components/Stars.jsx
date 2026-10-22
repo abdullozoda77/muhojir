@@ -21,7 +21,7 @@ export function StarPicker({ value, onChange }) {
   return (
     <div className="flex gap-1" role="radiogroup" aria-label={t("Баҳо")}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={t("{0} ситора", n)} onClick={() => onChange(n)} className="flex h-12 w-12 items-center justify-center rounded-lg hover:bg-surface-container-low">
+        <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={t("{0} ситора", n)} onClick={() => onChange(n)} className="flex h-12 w-12 items-center justify-center rounded-full transition-transform hover:scale-110 hover:bg-surface-container-low">
           <Star className={`h-8 w-8 ${value >= n ? "fill-warning-container text-warning-container" : "text-outline-variant"}`} aria-hidden />
         </button>
       ))}
