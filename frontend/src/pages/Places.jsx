@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Banknote, Building2, Clock, ExternalLink, Flag, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin, Moon,
+  Banknote, Building2, Clock, ExternalLink, Flag, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin, MapPinned, Moon,
   Phone, Plus, Search, ShoppingBasket, Stamp, Store, Utensils,
 } from "lucide-react";
 import { api } from "../api.js";
@@ -46,12 +46,12 @@ const REGION_VIEW = {
 function PlaceCard({ place, onOpen }) {
   const k = kind(place.category);
   return (
-    <button type="button" onClick={() => onOpen(place.id)} className="flex w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:bg-surface-container-low">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ backgroundColor: k.color }}>
+    <button type="button" onClick={() => onOpen(place.id)} className="flex w-full items-start gap-4 rounded-[24px] p-4 text-left transition-colors hover:bg-surface-container-low">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm" style={{ backgroundColor: k.color }}>
         <k.icon className="h-5 w-5" aria-hidden />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-label-lg font-bold">{place.name}</span>
+        <span className="font-display text-[17px] font-bold leading-snug">{place.name}</span>
         <span className="text-body-sm text-on-surface-variant">{k.label()}{place.address && ` · ${place.address}`}</span>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
           {place.rating ? (
@@ -61,8 +61,8 @@ function PlaceCard({ place, onOpen }) {
           ) : (
             <span>{t("Ҳоло баҳо нест")}</span>
           )}
-          {place.distance_km != null && <span className="text-primary">{t("{0} км", place.distance_km)}</span>}
-          {!place.is_approved && <span className="rounded bg-warning-fixed px-1.5 py-0.5 text-on-warning-fixed">{t("Интизори санҷиш")}</span>}
+          {place.distance_km != null && <span className="rounded-full bg-primary-fixed px-2 py-0.5 text-on-primary-fixed">{t("{0} км", place.distance_km)}</span>}
+          {!place.is_approved && <span className="rounded-full bg-warning-fixed px-2 py-0.5 text-on-warning-fixed">{t("Интизори санҷиш")}</span>}
         </span>
       </span>
     </button>
@@ -105,14 +105,14 @@ function PlaceDetails({ placeId, onClose }) {
         <Skeleton className="h-60" />
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2 rounded-2xl bg-surface-container-low p-4">
+          <div className="flex flex-col gap-2.5 rounded-[24px] bg-surface-container-low p-5">
             {place.address && <span className="flex items-start gap-2 text-body-md"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{place.address}</span>}
             {place.opening_hours && <span className="flex items-start gap-2 text-body-md"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{place.opening_hours}</span>}
             {place.phone && <a href={`tel:${place.phone.split(";")[0]}`} className="flex items-center gap-2 text-body-md text-primary"><Phone className="h-4 w-4" aria-hidden />{place.phone}</a>}
             {place.website && <a href={place.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 break-all text-body-md text-primary"><Globe className="h-4 w-4 shrink-0" aria-hidden />{place.website.replace(/^https?:\/\//, "")}</a>}
             {place.description && <p className="text-body-sm text-on-surface-variant">{place.description}</p>}
             {directions && (
-              <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-xl bg-primary px-4 text-label-md text-on-primary">
+              <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-full bg-navy px-5 text-label-md text-white hover:brightness-125 dark:bg-primary dark:text-on-primary">
                 {t("Роҳ то ин ҷо")}
                 <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
@@ -121,12 +121,12 @@ function PlaceDetails({ placeId, onClose }) {
 
           <div className="flex items-center gap-2">
             <Stars value={place.rating || 0} size="h-5 w-5" />
-            <span className="text-label-lg">{place.rating ? `${place.rating} · ${t("{0} шарҳ", place.reviews_count)}` : t("Ҳоло баҳо нест")}</span>
+            <span className="font-display text-[16px] font-bold">{place.rating ? `${place.rating} · ${t("{0} шарҳ", place.reviews_count)}` : t("Ҳоло баҳо нест")}</span>
           </div>
 
           {user ? (
-            <div className="flex flex-col gap-3 rounded-2xl border border-surface-container p-4">
-              <span className="text-label-lg">{place.my_review ? t("Шарҳи шумо") : t("Баҳо диҳед")}</span>
+            <div className="flex flex-col gap-3 rounded-[24px] p-5 ring-1 ring-outline-variant">
+              <span className="text-[18px] font-display font-extrabold text-navy dark:text-on-surface">{place.my_review ? t("Шарҳи шумо") : t("Баҳо диҳед")}</span>
               <StarPicker value={rating} onChange={setRating} />
               <textarea className="input h-24 py-3" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={t("Чӣ хуб буд ё чӣ бад буд? (ихтиёрӣ)")} />
               <ErrorBox error={error} />
@@ -138,9 +138,9 @@ function PlaceDetails({ placeId, onClose }) {
 
           <div className="flex flex-col gap-3">
             {(reviews?.results || []).map((r) => (
-              <div key={r.id} className="flex flex-col gap-1 rounded-xl bg-surface-container-low p-3">
+              <div key={r.id} className="flex flex-col gap-1 rounded-[20px] bg-surface-container-low p-4">
                 <span className="flex items-center justify-between gap-2">
-                  <span className="text-label-md">{r.author_name}{r.is_mine && ` (${t("шумо")})`}</span>
+                  <span className="font-display text-[15px] font-bold">{r.author_name}{r.is_mine && ` (${t("шумо")})`}</span>
                   <span className="text-label-sm text-on-surface-variant">{ago(r.created_at)}</span>
                 </span>
                 <Stars value={r.rating} />
@@ -323,12 +323,12 @@ export default function Places() {
   const counts = summary?.categories || {};
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader eyebrow={t("Харитаи ҷойҳои муфид")} title={t("Ҷойҳо дар Русия")} text={t("Марказҳои муҳоҷират, нотариус, сафорат, масҷидҳо, ошхонаҳои тоҷикӣ ва дигар ҷойҳо — бо суроға ва баҳои одамон.")}>
+    <div className="flex flex-col gap-8">
+      <PageHeader eyebrow={t("Харитаи ҷойҳои муфид")} icon={MapPinned} title={t("Ҷойҳо дар Русия")} text={t("Марказҳои муҳоҷират, нотариус, сафорат, масҷидҳо, ошхонаҳои тоҷикӣ ва дигар ҷойҳо — бо суроға ва баҳои одамон.")}>
         {user && <Button variant="accent" icon={Plus} onClick={() => setSuggesting(true)}>{t("Ҷойи нав")}</Button>}
       </PageHeader>
 
-      <div className="card flex flex-col gap-4 p-4 md:p-6">
+      <div className="card flex flex-col gap-5 p-5 md:p-6">
         <div className="grid gap-3 md:grid-cols-12">
           <label className="md:col-span-6">
             <span className="label flex items-center gap-1 text-on-surface-variant"><Search className="h-4 w-4 text-primary" aria-hidden />{t("Ном ё кӯча")}</span>
@@ -348,11 +348,11 @@ export default function Places() {
           </div>
         </div>
         <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          <button type="button" onClick={() => update("category", "")} aria-pressed={!category} className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-lg px-4 text-label-md ${!category ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"}`}>
+          <button type="button" onClick={() => update("category", "")} aria-pressed={!category} className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 text-label-md transition-colors ${!category ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant/60 hover:bg-surface-container-low"}`}>
             {t("Ҳама")}
           </button>
           {PLACE_KINDS.map((k) => (
-            <button key={k.value} type="button" onClick={() => update("category", category === k.value ? "" : k.value)} aria-pressed={category === k.value} className={`flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 text-label-md ${category === k.value ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"}`}>
+            <button key={k.value} type="button" onClick={() => update("category", category === k.value ? "" : k.value)} aria-pressed={category === k.value} className={`flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-label-md transition-colors ${category === k.value ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant/60 hover:bg-surface-container-low"}`}>
               <k.icon className="h-4 w-4" aria-hidden style={category === k.value ? undefined : { color: k.color }} />
               {k.label()}
               {counts[k.value] > 0 && <span className="text-label-sm opacity-70">{counts[k.value]}</span>}
@@ -361,9 +361,9 @@ export default function Places() {
         </div>
       </div>
 
-      <div className="inline-flex self-start rounded-xl bg-surface-container-highest p-1 xl:hidden" role="group">
+      <div className="inline-flex self-start rounded-full bg-surface-container-lowest p-1 ring-1 ring-outline-variant/60 xl:hidden" role="group">
         {[["list", List, t("Рӯйхат")], ["map", MapIcon, t("Харита")]].map(([value, Icon, label]) => (
-          <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[44px] items-center gap-2 rounded-lg px-4 text-label-md ${view === value ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}>
+          <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 text-label-md transition-colors ${view === value ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "text-on-surface-variant"}`}>
             <Icon className="h-4 w-4" aria-hidden />
             {label}
           </button>
@@ -374,8 +374,8 @@ export default function Places() {
       <div className="grid items-start gap-6 xl:grid-cols-12">
         <div className={`flex flex-col gap-3 xl:col-span-5 ${view === "map" ? "hidden xl:flex" : ""}`}>
           <div className="flex items-center gap-2 px-1">
-            <h2 className="text-headline-sm">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
-            {!loading && <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-label-sm text-primary">{page.count}</span>}
+            <h2 className="text-[22px] font-display font-extrabold text-navy dark:text-on-surface">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
+            {!loading && <span className="rounded-full bg-navy px-2.5 py-0.5 text-label-sm text-white dark:bg-primary dark:text-on-primary">{page.count}</span>}
           </div>
           {loading ? (
             [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)
@@ -383,7 +383,7 @@ export default function Places() {
             <EmptyState icon={MapPin} title={t("Ҷой ёфт нашуд")} text={t("Намуд ё минтақаи дигарро интихоб кунед.")} />
           ) : (
             <>
-              <Stagger key={query + (near ? "near" : "")} className="flex flex-col divide-y divide-surface-container rounded-3xl bg-surface-container-lowest p-1 shadow-sm">
+              <Stagger key={query + (near ? "near" : "")} className="flex flex-col divide-y divide-outline-variant/50 rounded-[32px] bg-surface-container-lowest p-2 ring-1 ring-outline-variant/60">
                 {page.results.map((place) => (
                   <StaggerItem key={place.id}>
                     <PlaceCard place={place} onOpen={setOpenId} />

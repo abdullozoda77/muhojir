@@ -60,16 +60,18 @@ function Calendar({ calendar }) {
   if (!days.length) return null;
   const min = Math.min(...days.map(([, p]) => p));
   return (
-    <div className="card flex flex-col gap-3 p-4 md:p-6">
-      <h2 className="flex items-center gap-2 text-headline-sm">
-        <CalendarDays className="h-6 w-6 text-primary" aria-hidden />
+    <div className="card flex flex-col gap-4 p-6">
+      <h2 className="flex items-center gap-3 text-[20px] leading-tight font-display font-extrabold text-navy dark:text-on-surface">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-fixed text-on-primary-fixed">
+          <CalendarDays className="h-5 w-5" aria-hidden />
+        </span>
         {t("Нархҳо аз рӯи рӯз")}
       </h2>
       <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {days.map(([day, price]) => (
-          <div key={day} className={`flex min-w-[92px] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2.5 text-center ${price === min ? "bg-tertiary-fixed text-on-tertiary-fixed ring-2 ring-tertiary" : "bg-surface-container-low"}`}>
+          <div key={day} className={`flex min-w-[96px] shrink-0 flex-col items-center gap-1 rounded-[20px] px-3 py-3 text-center ${price === min ? "bg-tertiary-fixed text-on-tertiary-fixed ring-2 ring-tertiary" : "bg-surface-container-low ring-1 ring-inset ring-outline-variant/40"}`}>
             <span className="text-label-sm text-on-surface-variant">{dayLabel(day)}</span>
-            <span className="text-label-lg font-bold">{num(price)} ₽</span>
+            <span className="font-display text-[16px] font-extrabold">{num(price)} ₽</span>
             {price === min && <span className="text-label-sm">{t("Арзонтарин")}</span>}
           </div>
         ))}
@@ -80,13 +82,13 @@ function Calendar({ calendar }) {
 
 function TicketRow({ ticket }) {
   return (
-    <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-5">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-navy text-white dark:bg-primary dark:text-on-primary">
           <Plane className="h-6 w-6" aria-hidden />
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-label-lg font-bold">
+          <span className="font-display text-[17px] font-bold">
             {ticket.origin_airport} → {ticket.destination_airport} · {dayLabel(ticket.departure_at.slice(0, 10))}, {time(ticket.departure_at)}
           </span>
           <span className="text-body-sm text-on-surface-variant">
@@ -98,9 +100,9 @@ function TicketRow({ ticket }) {
         </div>
       </div>
       <div className="flex items-center justify-between gap-4 md:justify-end">
-        <span className="font-display text-[24px] font-bold text-primary">{rub(ticket.price)}</span>
+        <span className="font-display text-[24px] font-extrabold text-navy dark:text-on-surface">{rub(ticket.price)}</span>
         {ticket.link && (
-          <a href={ticket.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-secondary px-4 text-label-md text-on-secondary hover:bg-secondary-container">
+          <a href={ticket.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-secondary px-5 text-label-md text-on-secondary shadow-[0_8px_20px_-8px_rgb(var(--c-secondary)/0.8)] hover:bg-secondary-container">
             {t("Харидан")}
             <ExternalLink className="h-4 w-4" aria-hidden />
           </a>
@@ -124,13 +126,15 @@ function PriceAlert({ origin, destination, month, cheapest }) {
 
   if (!user) {
     return (
-      <div className="card flex flex-col gap-3 p-4 md:p-6">
-        <h2 className="flex items-center gap-2 text-headline-sm">
-          <BellPlus className="h-6 w-6 text-primary" aria-hidden />
+      <div className="card flex flex-col gap-4 p-6">
+        <h2 className="flex items-center gap-3 text-[20px] leading-tight font-display font-extrabold text-navy dark:text-on-surface">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary-fixed text-on-secondary-fixed">
+            <BellPlus className="h-5 w-5" aria-hidden />
+          </span>
           {t("Огоҳӣ дар бораи чиптаи арзон")}
         </h2>
         <p className="text-body-sm text-on-surface-variant">{t("Ворид шавед, то вақте нарх арзон мешавад, ба шумо хабар диҳем.")}</p>
-        <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center self-start rounded-xl bg-primary px-4 text-label-md text-on-primary">{t("Ворид шудан")}</Link>
+        <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center self-start rounded-full bg-navy px-5 text-label-md text-white hover:brightness-125 dark:bg-primary dark:text-on-primary">{t("Ворид шудан")}</Link>
       </div>
     );
   }
@@ -153,9 +157,11 @@ function PriceAlert({ origin, destination, month, cheapest }) {
   };
 
   return (
-    <div className="card flex flex-col gap-4 p-4 md:p-6">
-      <h2 className="flex items-center gap-2 text-headline-sm">
-        <BellPlus className="h-6 w-6 text-primary" aria-hidden />
+    <div className="card flex flex-col gap-4 p-6">
+      <h2 className="flex items-center gap-3 text-[20px] leading-tight font-display font-extrabold text-navy dark:text-on-surface">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary-fixed text-on-secondary-fixed">
+          <BellPlus className="h-5 w-5" aria-hidden />
+        </span>
         {t("Огоҳӣ дар бораи чиптаи арзон")}
       </h2>
       {origin && destination && month ? (
@@ -166,7 +172,7 @@ function PriceAlert({ origin, destination, month, cheapest }) {
           <div className="flex gap-2">
             <input className="input" type="number" min="1000" step="100" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("Нархи ҳадди аксар, ₽")} aria-label={t("Нархи ҳадди аксар, ₽")} />
             {state === "done" ? (
-              <span className="inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-xl bg-tertiary-fixed px-4 text-label-md text-on-tertiary-fixed">
+              <span className="inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-full bg-tertiary-fixed px-5 text-label-md text-on-tertiary-fixed">
                 <Check className="h-4 w-4" aria-hidden />
                 {t("Сабт шуд")}
               </span>
@@ -185,12 +191,12 @@ function PriceAlert({ origin, destination, month, cheapest }) {
         <div className="flex flex-col gap-2">
           <span className="text-label-md text-on-surface-variant">{t("Огоҳиҳои ман")}</span>
           {watches.map((w) => (
-            <div key={w.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface-container-low px-3 py-2">
+            <div key={w.id} className="flex items-center justify-between gap-2 rounded-[18px] bg-surface-container-low py-2 pl-4 pr-2">
               <span className="text-body-sm">
                 <strong>{w.origin} → {w.destination}</strong> · {monthTitle(w.month)} · {t("то {0}", rub(w.max_price))}
                 {!w.is_active && ` · ${t("тамом шуд")}`}
               </span>
-              <button type="button" onClick={() => remove(w.id)} aria-label={t("Нест кардан")} className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high">
+              <button type="button" onClick={() => remove(w.id)} aria-label={t("Нест кардан")} className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-error">
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
             </div>
@@ -203,9 +209,13 @@ function PriceAlert({ origin, destination, month, cheapest }) {
 
 function TravelTips() {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-banner p-4 text-white shadow-sm md:p-6">
-      <h2 className="flex items-center gap-2 text-headline-sm font-bold">
-        <Info className="h-6 w-6" aria-hidden />
+    <div className="relative flex flex-col gap-4 overflow-hidden rounded-[28px] bg-navy p-6 text-white shadow-[0_18px_36px_-18px_rgb(16_38_92/0.8)]">
+      <div aria-hidden className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-gold/20 blur-3xl" />
+      <div className="flag-line absolute inset-x-0 bottom-0 h-[5px]" />
+      <h2 className="relative flex items-center gap-3 font-display text-[20px] font-extrabold">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+          <Info className="h-5 w-5" aria-hidden />
+        </span>
         {t("Пеш аз сафар")}
       </h2>
       {[
@@ -214,12 +224,12 @@ function TravelTips() {
         t("Дар Русия дар давоми 15 рӯз бақайдгирӣ (регистрация) кунед, барои патент — 30 рӯз."),
         t("Нархҳо тахминӣ ҳастанд ва зуд иваз мешаванд — нархи дақиқ дар сайти фурӯш."),
       ].map((text, i) => (
-        <div key={text} className="flex items-start gap-3">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-label-sm">{i + 1}</span>
-          <p className="text-body-sm text-on-navy">{text}</p>
+        <div key={text} className="relative flex items-start gap-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold text-label-sm font-bold text-navy">{i + 1}</span>
+          <p className="text-body-sm text-white/80">{text}</p>
         </div>
       ))}
-      <Link to="/guides" className="inline-flex min-h-[44px] items-center gap-2 self-start rounded-xl bg-surface-container-lowest px-4 text-label-md text-primary">
+      <Link to="/guides" className="relative mb-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-full bg-white px-5 text-label-md text-navy hover:bg-white/90">
         <BookOpen className="h-4 w-4" aria-hidden />
         {t("Роҳнамои ҳуҷҷатҳо")}
       </Link>
@@ -284,16 +294,16 @@ export default function Tickets() {
   const cheapest = result?.results?.length ? Math.min(...result.results.map((r) => r.price)) : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader eyebrow={t("Тоҷикистон ⇄ Русия")} title={t("Чиптаҳои ҳавопаймо")} text={t("Арзонтарин чиптаҳо байни шаҳрҳои Тоҷикистон ва Русия — ба ҳар ду тараф.")} />
+    <div className="flex flex-col gap-8">
+      <PageHeader eyebrow={t("Тоҷикистон ⇄ Русия")} icon={Plane} title={t("Чиптаҳои ҳавопаймо")} text={t("Арзонтарин чиптаҳо байни шаҳрҳои Тоҷикистон ва Русия — ба ҳар ду тараф.")} />
 
-      <div className="card flex flex-col gap-4 p-4 md:p-6">
-        <div className="inline-flex self-start rounded-xl bg-surface-container-highest p-1" role="group" aria-label={t("Самт")}>
+      <div className="card flex flex-col gap-5 p-5 md:p-6">
+        <div className="inline-flex self-start rounded-full bg-surface-container-low p-1 ring-1 ring-outline-variant/60" role="group" aria-label={t("Самт")}>
           {[
             [true, PlaneTakeoff, t("Ба Русия")],
             [false, PlaneLanding, t("Ба Тоҷикистон")],
           ].map(([value, Icon, label]) => (
-            <button key={label} type="button" onClick={() => setDirection(value)} aria-pressed={toRussia === value} className={`flex min-h-[44px] items-center gap-2 rounded-lg px-4 text-label-md ${toRussia === value ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}>
+            <button key={label} type="button" onClick={() => setDirection(value)} aria-pressed={toRussia === value} className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 text-label-md transition-colors ${toRussia === value ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "text-on-surface-variant"}`}>
               <Icon className="h-4 w-4" aria-hidden />
               {label}
             </button>
@@ -307,7 +317,7 @@ export default function Tickets() {
               {fromOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
-          <button type="button" onClick={swap} aria-label={t("Ҷойҳоро иваз кардан")} className="flex h-[52px] w-[52px] items-center justify-center self-end rounded-xl bg-surface-container-low text-primary hover:bg-surface-container-high">
+          <button type="button" onClick={swap} aria-label={t("Ҷойҳоро иваз кардан")} className="flex h-[52px] w-[52px] items-center justify-center self-end rounded-full bg-navy text-white transition-transform hover:rotate-180 dark:bg-primary dark:text-on-primary">
             <ArrowLeftRight className="h-5 w-5" aria-hidden />
           </button>
           <label>
@@ -323,7 +333,7 @@ export default function Tickets() {
             </select>
           </label>
         </div>
-        <label className="flex min-h-[48px] cursor-pointer items-center gap-2.5 self-start rounded-lg bg-surface-container-low px-3">
+        <label className="flex min-h-[48px] cursor-pointer items-center gap-2.5 self-start rounded-full bg-surface-container-low px-4 ring-1 ring-inset ring-outline-variant/40">
           <input type="checkbox" className="h-5 w-5 rounded text-primary focus:ring-primary" checked={direct} onChange={(e) => set({ direct: e.target.checked ? "true" : "" })} />
           <span className="text-label-md">{t("Танҳо парвози бе пайвастшавӣ")}</span>
         </label>
@@ -336,14 +346,14 @@ export default function Tickets() {
             [0, 1].map((i) => <Skeleton key={i} className="h-40" />)
           ) : result && !result.enabled ? (
             <EmptyState icon={Plane} title={t("Нархҳоро дар Aviasales бинед")} text={t("Нархҳои зинда дар ин сайт ҳоло танзим нашудаанд. Тугмаро пахш кунед — ҷустуҷӯи ҳамин роҳ дар Aviasales кушода мешавад.")}>
-              <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-secondary px-5 text-label-lg text-on-secondary">
+              <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-secondary px-6 text-label-lg text-on-secondary">
                 {t("Ҷустуҷӯ дар Aviasales")}
                 <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
             </EmptyState>
           ) : result && result.results.length === 0 ? (
             <EmptyState icon={Plane} title={t("Барои ин моҳ нарх ёфт нашуд")} text={t("Моҳи дигар ё фурудгоҳи дигарро интихоб кунед, ё дар Aviasales бинед.")}>
-              <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-primary px-5 text-label-lg text-on-primary">
+              <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-navy px-6 text-label-lg text-white dark:bg-primary dark:text-on-primary">
                 {t("Ҷустуҷӯ дар Aviasales")}
                 <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
@@ -352,13 +362,13 @@ export default function Tickets() {
             <>
               <Calendar calendar={result.calendar} />
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-headline-sm">{t("Арзонтарин чиптаҳо")}</h2>
+                <h2 className="text-[22px] font-display font-extrabold text-navy dark:text-on-surface">{t("Арзонтарин чиптаҳо")}</h2>
                 <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-label-md text-primary">
                   {t("Ҳама дар Aviasales")}
                   <ExternalLink className="h-4 w-4" aria-hidden />
                 </a>
               </div>
-              <Stagger key={`${from}${to}${month}${direct}`} className="flex flex-col divide-y divide-surface-container rounded-3xl bg-surface-container-lowest shadow-sm">
+              <Stagger key={`${from}${to}${month}${direct}`} className="flex flex-col divide-y divide-outline-variant/50 rounded-[32px] bg-surface-container-lowest p-1 ring-1 ring-outline-variant/60">
                 {result.results.map((ticket, i) => (
                   <StaggerItem key={`${ticket.departure_at}-${ticket.price}-${i}`}>
                     <TicketRow ticket={ticket} />

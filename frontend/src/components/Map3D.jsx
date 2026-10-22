@@ -243,11 +243,11 @@ export default function Map3D({ points, colors, region, regionView, selectedId, 
     }
   };
 
-  const button = "flex h-10 items-center gap-1.5 rounded-xl px-3 text-label-md shadow-md backdrop-blur-md transition-colors";
+  const button = "flex h-10 items-center gap-1.5 rounded-full px-4 text-label-md shadow-md backdrop-blur-md transition-colors";
   const idle = "bg-surface-container-lowest/85 text-on-surface hover:bg-surface-container-lowest";
-  const on = "bg-primary text-on-primary";
+  const on = "bg-navy text-white dark:bg-primary dark:text-on-primary";
   return (
-    <div className="relative h-[520px] overflow-hidden rounded-3xl shadow-lg ring-1 ring-outline-variant/30 xl:h-[720px]">
+    <div className="relative h-[520px] overflow-hidden rounded-[32px] shadow-[0_24px_48px_-28px_rgb(16_38_92/0.6)] ring-1 ring-outline-variant/60 xl:h-[720px]">
       <div ref={box} className="h-full w-full" />
       <div className="absolute left-3 top-3 flex flex-wrap gap-2">
         <button type="button" onClick={toggle3d} aria-pressed={pitched} className={`${button} ${pitched ? on : idle}`}>
