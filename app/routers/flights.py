@@ -67,7 +67,7 @@ async def prices(
     month: str | None = None,
     direct: bool = False,
 ):
-    """The cheapest one-way tickets (up to 30, cheapest first) and a calendar {day: cheapest price}.
+    """The one-way tickets of the month (cheapest first) and a calendar {day: cheapest price}.
     enabled=false means no TRAVELPAYOUTS_TOKEN: then only search_url (aviasales.ru) is given."""
     origin, destination = origin.upper(), destination.upper()
     await check_route(db, origin, destination)

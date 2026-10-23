@@ -49,7 +49,8 @@ def _ticket(item):
 
 
 async def prices(origin, destination, month=None, direct=False):
-    """The cheapest one-way tickets of the month (or the nearest ones), and the cheapest price of every day."""
+    """The one-way tickets of the month (or the nearest ones), cheapest first (up to 200, so every day has its
+    flights), and the cheapest price of every day."""
     key = f"flights:{origin}:{destination}:{month or 'any'}:{int(direct)}"
     cached = await cache.get(key)
     if cached is not None:
@@ -77,7 +78,7 @@ async def prices(origin, destination, month=None, direct=False):
         day = ticket["departure_at"][:10]
         if day and (day not in calendar or ticket["price"] < calendar[day]):
             calendar[day] = ticket["price"]
-    result = {"results": tickets[:30], "calendar": dict(sorted(calendar.items()))}
+    result = {"results": tickets, "calendar": dict(sorted(calendar.items()))}
     await cache.put(key, result, CACHE_SECONDS)
     return result
 

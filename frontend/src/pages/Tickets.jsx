@@ -42,11 +42,31 @@ function time(iso) {
   return iso ? iso.slice(11, 16) : "";
 }
 
-// "2026-11-05" -> "5 нояб., чт" in Russian; "05.11" in Tajik (browsers have no Tajik month names).
-function dayLabel(day) {
+const WEEKDAYS = { tg: ["Якш", "Душ", "Сеш", "Чор", "Пан", "Ҷум", "Шан"], ru: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"] };
+
+// "2026-11-05" -> "05.11"; with the weekday -> "05.11, Чор" ("05.11, Ср" in Russian).
+function dayLabel(day, withWeekday = false) {
   const d = new Date(`${day}T00:00:00`);
-  if (lang === "ru") return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", weekday: "short" });
-  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const text = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return withWeekday ? `${text}, ${weekday(day)}` : text;
+}
+
+function weekday(day) {
+  return WEEKDAYS[lang === "ru" ? "ru" : "tg"][new Date(`${day}T00:00:00`).getDay()];
+}
+
+// Every day of the month as "2026-11-05", from today on in the current month.
+function monthDays(month) {
+  const [y, m] = month.split("-").map(Number);
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const last = new Date(y, m, 0).getDate();
+  return Array.from({ length: last }, (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`).filter((d) => d >= today);
+}
+
+// The search on aviasales.ru for one day: /search/DYU0511MOW1.
+function aviasalesDay(origin, destination, day) {
+  return `https://www.aviasales.ru/search/${origin}${day.slice(8, 10)}${day.slice(5, 7)}${destination}1`;
 }
 
 function duration(minutes) {
@@ -54,28 +74,48 @@ function duration(minutes) {
   return t("{0} соат {1} дақ.", Math.floor(minutes / 60), minutes % 60);
 }
 
-// Days of the month with the cheapest price of each; the cheapest day is marked.
-function Calendar({ calendar }) {
-  const days = Object.entries(calendar);
+// Every day of the month with its cheapest price; the cheapest day is marked. A day is picked to see its flights.
+function Calendar({ calendar, month, day, onPick }) {
+  const days = monthDays(month);
+  const prices = Object.values(calendar);
   if (!days.length) return null;
-  const min = Math.min(...days.map(([, p]) => p));
+  const min = prices.length ? Math.min(...prices) : null;
   return (
     <div className="card flex flex-col gap-4 p-6">
       <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <CalendarDays className="h-5 w-5" aria-hidden />
         </span>
-        {t("Нархҳо аз рӯи рӯз")}
+        <span className="flex-1">{t("Рӯзро интихоб кунед")}</span>
+        {day && (
+          <button type="button" onClick={() => onPick("")} className="inline-flex min-h-[36px] items-center rounded-lg px-3 text-label-md text-primary ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+            {t("Ҳамаи рӯзҳо")}
+          </button>
+        )}
       </h2>
-      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {days.map(([day, price]) => (
-          <div key={day} className={`flex min-w-[92px] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-3 text-center ring-1 ring-inset ${price === min ? "bg-tertiary-fixed text-on-tertiary-fixed ring-tertiary" : "ring-outline-variant"}`}>
-            <span className="text-label-sm text-on-surface-variant">{dayLabel(day)}</span>
-            <span className="text-[15px] font-semibold tabular-nums">{num(price)} ₽</span>
-            {price === min && <span className="text-label-sm">{t("Арзонтарин")}</span>}
-          </div>
-        ))}
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+        {days.map((d) => {
+          const price = calendar[d];
+          const picked = d === day;
+          const cheapest = price != null && price === min;
+          return (
+            <button
+              key={d}
+              type="button"
+              onClick={() => onPick(picked ? "" : d)}
+              aria-pressed={picked}
+              className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-center ring-1 ring-inset transition-colors ${
+                picked ? "bg-ink text-on-ink ring-ink" : cheapest ? "bg-tertiary-fixed text-on-tertiary-fixed ring-tertiary hover:brightness-105" : "ring-outline-variant hover:bg-surface-container-low"
+              }`}
+            >
+              <span className={`text-label-sm ${picked ? "text-on-ink/80" : "text-on-surface-variant"}`}>{weekday(d)}</span>
+              <span className="text-[15px] font-semibold tabular-nums">{Number(d.slice(8))}</span>
+              <span className={`text-label-sm tabular-nums ${price == null && !picked ? "text-outline" : ""}`}>{price == null ? "—" : num(price)}</span>
+            </button>
+          );
+        })}
       </div>
+      <p className="text-body-sm text-on-surface-variant">{t("Нарх — арзонтарин чипта дар ҳамон рӯз, ₽. «—» — нарх ҳоло маълум нест.")}</p>
     </div>
   );
 }
@@ -89,7 +129,7 @@ function TicketRow({ ticket }) {
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-[16px] font-semibold">
-            {ticket.origin_airport} → {ticket.destination_airport} · {dayLabel(ticket.departure_at.slice(0, 10))}, {time(ticket.departure_at)}
+            {ticket.origin_airport} → {ticket.destination_airport} · {dayLabel(ticket.departure_at.slice(0, 10), true)}, {time(ticket.departure_at)}
           </span>
           <span className="text-body-sm text-on-surface-variant">
             {[ticket.airline_name, ticket.flight_number && `${ticket.airline}-${ticket.flight_number}`, duration(ticket.duration)].filter(Boolean).join(" · ")}
@@ -284,6 +324,7 @@ export default function Tickets() {
   const to = params.get("to") || "MOW";
   const month = params.get("month") || months[0];
   const direct = params.get("direct") === "true";
+  const day = (params.get("day") || "").startsWith(month) ? params.get("day") : "";
   const toRussia = !airports || tjCodes.has(from);
 
   const set = (changes) => {
@@ -299,7 +340,7 @@ export default function Tickets() {
       { replace: true },
     );
   };
-  const swap = () => set({ from: to, to: from });
+  const swap = () => set({ from: to, to: from, day: "" });
   const setDirection = (wantToRussia) => {
     if (wantToRussia !== toRussia) swap();
   };
@@ -323,6 +364,13 @@ export default function Tickets() {
   const fromOptions = places(toRussia ? tj : ru);
   const toOptions = places(toRussia ? ru : tj);
   const cheapest = result?.results?.length ? Math.min(...result.results.map((r) => r.price)) : null;
+  // A picked day: all its flights by time. Otherwise the 30 cheapest of the month.
+  const shown = result?.results
+    ? day
+      ? result.results.filter((r) => r.departure_at.startsWith(day)).sort((a, b) => a.departure_at.localeCompare(b.departure_at))
+      : result.results.slice(0, 30)
+    : [];
+  const searchUrl = result && day ? aviasalesDay(from, to, day) : result?.search_url;
 
   return (
     <div className="flex flex-col gap-8">
@@ -344,7 +392,7 @@ export default function Tickets() {
         <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)]">
           <label>
             <span className="label">{t("Аз куҷо")}</span>
-            <select className="input" value={from} onChange={(e) => set({ from: e.target.value })}>
+            <select className="input" value={from} onChange={(e) => set({ from: e.target.value, day: "" })}>
               {fromOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
@@ -353,13 +401,13 @@ export default function Tickets() {
           </button>
           <label>
             <span className="label">{t("Ба куҷо")}</span>
-            <select className="input" value={to} onChange={(e) => set({ to: e.target.value })}>
+            <select className="input" value={to} onChange={(e) => set({ to: e.target.value, day: "" })}>
               {toOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
           <label>
             <span className="label">{t("Моҳ")}</span>
-            <select className="input" value={month} onChange={(e) => set({ month: e.target.value })}>
+            <select className="input" value={month} onChange={(e) => set({ month: e.target.value, day: "" })}>
               {months.map((m) => <option key={m} value={m}>{monthTitle(m)}</option>)}
             </select>
           </label>
@@ -391,27 +439,36 @@ export default function Tickets() {
             </EmptyState>
           ) : result ? (
             <>
-              <Calendar calendar={result.calendar} />
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-[19px] font-semibold">{t("Арзонтарин чиптаҳо")}</h2>
-                <a href={result.search_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-label-md text-primary">
+              <Calendar calendar={result.calendar} month={month} day={day} onPick={(d) => set({ day: d })} />
+              <div className="flex items-center justify-between gap-3 px-1">
+                <h2 className="text-[19px] font-semibold">{day ? t("Чиптаҳо барои {0}", dayLabel(day, true)) : t("Арзонтарин чиптаҳо")}</h2>
+                <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-label-md text-primary">
                   {t("Ҳама дар Aviasales")}
                   <ExternalLink className="h-4 w-4" aria-hidden />
                 </a>
               </div>
-              <Stagger key={`${from}${to}${month}${direct}`} className="card flex flex-col divide-y divide-outline-variant p-1">
-                {result.results.map((ticket, i) => (
-                  <StaggerItem key={`${ticket.departure_at}-${ticket.price}-${i}`}>
-                    <TicketRow ticket={ticket} />
-                  </StaggerItem>
-                ))}
-              </Stagger>
+              {shown.length ? (
+                <Stagger key={`${from}${to}${month}${direct}${day}`} className="card flex flex-col divide-y divide-outline-variant p-1">
+                  {shown.map((ticket, i) => (
+                    <StaggerItem key={`${ticket.departure_at}-${ticket.price}-${i}`}>
+                      <TicketRow ticket={ticket} />
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              ) : (
+                <EmptyState icon={Plane} title={t("Барои ин рӯз нарх ёфт нашуд")} text={t("Рӯзи дигарро интихоб кунед ё чиптаҳои ҳамин рӯзро дар Aviasales бинед.")}>
+                  <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-md text-on-ink transition-colors hover:bg-ink/90">
+                    {t("Ҷустуҷӯ дар Aviasales")}
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                  </a>
+                </EmptyState>
+              )}
               <p className="px-1 text-body-sm text-on-surface-variant">{t("Нархҳо аз Aviasales: арзонтарин чиптаҳое, ки дар рӯзҳои охир ёфт шудаанд. Нархи дақиқ ҳангоми харид маълум мешавад.")}</p>
             </>
           ) : null}
         </div>
         <aside className="grid gap-4 md:grid-cols-2 xl:col-span-4 xl:flex xl:flex-col">
-          <AirlineLinks searchUrl={result?.search_url} />
+          <AirlineLinks searchUrl={searchUrl} />
           <PriceAlert origin={from} destination={to} month={month} cheapest={cheapest} />
           <TravelTips />
         </aside>
