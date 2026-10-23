@@ -13,6 +13,7 @@ import { useOnline } from "../pwa.js";
 import { useLiveNotifications } from "../live.js";
 import Footer from "./Footer.jsx";
 import LiveToast from "./LiveToast.jsx";
+import { InstallBanner, InstallHeaderButton, InstallMenuButton } from "./InstallApp.jsx";
 import Assistant from "./Assistant.jsx";
 import { PageTransition } from "./motion.jsx";
 import { Skeleton } from "./ui.jsx";
@@ -99,8 +100,8 @@ export function LangSwitch() {
   return (
     <div className="inline-flex items-center rounded-lg bg-surface-container-low p-0.5 ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
       {[
-        ["tg", "ТҶ"],
-        ["ru", "РУ"],
+        ["tg", "TJ"],
+        ["ru", "RU"],
       ].map(([code, name]) => (
         <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`rounded-md px-2 py-1 text-label-md transition-colors ${lang === code ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
           {name}
@@ -204,6 +205,7 @@ function MenuSheet({ open, onClose, items, counts, user }) {
                 </NavLink>
               ))}
             </div>
+            <InstallMenuButton onDone={onClose} />
             <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-container-lowest p-3 ring-1 ring-outline-variant">
               <LangSwitch />
               <ThemeToggle />
@@ -268,6 +270,7 @@ export default function Layout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <InstallHeaderButton />
             <div className="hidden sm:block">
               <LangSwitch />
             </div>
@@ -347,6 +350,7 @@ export default function Layout() {
       <MenuSheet open={sheet} onClose={() => setSheet(false)} items={items} counts={counts} user={user} />
 
       <Assistant />
+      <InstallBanner />
       <LiveToast notification={toast} onClose={closeToast} />
     </div>
   );

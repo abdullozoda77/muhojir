@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth.jsx";
 import { MotionProvider } from "./components/motion.jsx";
+import { InstallProvider } from "./components/InstallApp.jsx";
 import { registerServiceWorker } from "./pwa.js";
 import "./index.css";
 
@@ -14,7 +15,9 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <MotionProvider>
-          <App />
+          <InstallProvider>
+            <App />
+          </InstallProvider>
         </MotionProvider>
       </AuthProvider>
     </BrowserRouter>
