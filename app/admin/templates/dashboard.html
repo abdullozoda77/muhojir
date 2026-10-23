@@ -1,0 +1,46 @@
+{% extends "sqladmin/layout.html" %}
+{% block content_header %}
+<div class="row align-items-center"><div class="col"><h2 class="page-title">Muhojir</h2></div></div>
+{% endblock %}
+{% block content %}
+<div class="w-100">
+{% if stats %}
+  {% if stats.import_late %}
+  <div class="alert alert-warning">Ҷойҳои корӣ зиёда аз 36 соат нав нашудаанд. Санҷед: <code>systemctl status muhojir-api-celerybeat</code></div>
+  {% endif %}
+  <div class="row row-cards mb-3">
+    {% for title, value, note, url, warn in stats.cards %}
+    <div class="col-sm-6 col-lg-4">
+      <a class="card card-link {% if warn and value %}border-warning{% endif %}" href="{{ url_for('admin:index') }}{{ url }}">
+        <div class="card-body">
+          <div class="subheader">{{ title }}</div>
+          <div class="h1 mb-1">{{ value }}</div>
+          <div class="text-secondary">{{ note }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="row row-cards">
+    <div class="col-lg-4">
+      <div class="card"><div class="card-header"><h3 class="card-title">Дар як нигоҳ</h3></div>
+        <table class="table card-table">{% for title, value in stats.small %}<tr><td>{{ title }}</td><td class="text-end"><strong>{{ value }}</strong></td></tr>{% endfor %}</table>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card"><div class="card-header"><h3 class="card-title">Ҷойҳои кор аз рӯи шаҳр</h3></div>
+        <table class="table card-table">{% for city, n in stats.jobs_by_city %}<tr><td>{{ city }}</td><td class="text-end">{{ n }}</td></tr>{% else %}<tr><td class="text-secondary">Ҳоло нест</td></tr>{% endfor %}</table>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card"><div class="card-header"><h3 class="card-title">Шикоятҳои охир аз маош</h3></div>
+        <table class="table card-table">{% for name, rating, text in stats.complaints %}<tr><td><strong>{{ name }}</strong> · {{ rating }}★<div class="text-secondary small">{{ text }}</div></td></tr>{% else %}<tr><td class="text-secondary">Шикоят нест</td></tr>{% endfor %}</table>
+      </div>
+    </div>
+  </div>
+  <p class="text-secondary mt-3">Воридоти охирини ҷойҳои кор: {{ stats.last_import.strftime("%d.%m.%Y %H:%M") if stats.last_import else "ҳоло нашудааст" }} (UTC)</p>
+{% else %}
+  <div class="card"><div class="card-body">Хуш омадед! Аз менюи чап бахшеро интихоб кунед: хабарҳо, роҳнамоҳо, саволҳои имтиҳон, сайтҳои ёрӣ ва нархи патент.</div></div>
+{% endif %}
+</div>
+{% endblock %}
