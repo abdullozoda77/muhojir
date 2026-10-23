@@ -113,6 +113,11 @@ html.dark {
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  /* Nothing may make the page move sideways on a phone (a wide table, an animation starting off-screen). */
+  html,
+  body {
+    overflow-x: clip;
+  }
   /* Page and section headings: the display font, extra bold and a little tighter. */
   h1,
   h2,
@@ -355,4 +360,14 @@ html.dark .maplibregl-ctrl-scale {
 }
 @media (prefers-reduced-motion: reduce) {
   .assistant-edge { animation: none; }
+}
+
+/* iPhone Safari zooms into any text field with letters smaller than 16px, and the zoomed page then slides sideways.
+   On phones and tablets every field is at least 16px. */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
 }

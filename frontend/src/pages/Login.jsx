@@ -199,7 +199,7 @@ export default function Login() {
 
   return (
     <div className="relative isolate grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      <div className="flag-line fixed inset-x-0 top-0 z-50 h-[3px]" aria-hidden />
+      <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
       <WinterScene />
 
       {/* The welcome side: what the site does, over the winter sky. */}
@@ -232,7 +232,7 @@ export default function Login() {
       </aside>
 
       {/* The form side: a frosted glass card with a little snow on top. */}
-      <div className="relative z-10 flex flex-col justify-center px-4 py-10 sm:px-10">
+      <div className="relative z-10 flex flex-col justify-center px-4 pb-10 pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-10">
         <div className="mx-auto w-full max-w-[440px]">
           <div className="mb-8 flex items-center justify-between gap-2">
             <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-label-md text-navy/80 hover:text-navy dark:text-[#c9d6f2] dark:hover:text-white">

@@ -115,7 +115,7 @@ export function InstallBanner() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -16 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="fixed inset-x-3 top-[70px] z-[55] flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-[#172f73] to-[#1d4ed8] p-3.5 text-white shadow-[0_18px_40px_-16px_rgba(23,47,115,0.8)] ring-1 ring-white/10 lg:hidden"
+          className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+70px)] z-[55] flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-[#172f73] to-[#1d4ed8] p-3.5 text-white shadow-[0_18px_40px_-16px_rgba(23,47,115,0.8)] ring-1 ring-white/10 lg:hidden"
           role="dialog"
           aria-label={t("Ҳамчун барнома насб кардан")}
         >
