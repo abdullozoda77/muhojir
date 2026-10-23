@@ -89,7 +89,7 @@ export function Hero({ eyebrow, title, text, children, tall = false, art = null 
     <section className={`${EDGE_TO_EDGE} relative overflow-hidden bg-banner px-6 pt-8 text-white md:px-10 md:pt-10 ${tall ? "pb-28 md:pb-32" : "pb-8 md:pb-10"}`}>
       <Glow />
       <Pattern opacity={art ? 0.55 : 1} />
-      <div className="relative grid items-center gap-6 xl:grid-cols-[1.15fr_1fr]">
+      <div className="relative grid grid-cols-1 items-center gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div className="flex max-w-3xl flex-col gap-2">
           {eyebrow && <span className="flex items-center gap-2 text-label-md uppercase tracking-[0.18em] text-navy-muted"><Emblem className="h-3.5 w-3.5" />{eyebrow}</span>}
           <h1 className="font-display text-[36px] font-semibold leading-[42px] md:text-[54px] md:leading-[60px]">{title}</h1>

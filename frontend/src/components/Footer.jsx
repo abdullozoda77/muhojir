@@ -36,7 +36,9 @@ const OFFICIAL = [
   ["https://tajembassy.ru/", () => t("Сафорати ҶТ дар Русия")],
 ];
 
-const linkStyle = "inline-flex min-h-[32px] items-center gap-1.5 self-start text-body-sm text-on-surface-variant transition-colors hover:text-on-surface";
+// As in the first Muhojir: on hover a link slides a little to the right and a line grows under it from the left.
+const linkStyle = "group/link inline-flex min-h-[32px] items-center gap-1.5 self-start text-body-sm text-on-surface-variant transition-[color,transform] duration-300 hover:text-primary motion-safe:hover:translate-x-1";
+const underline = "bg-gradient-to-r from-current to-current bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-300 group-hover/link:bg-[length:100%_1.5px] group-focus-visible/link:bg-[length:100%_1.5px]";
 
 export default function Footer() {
   return (
@@ -58,7 +60,7 @@ export default function Footer() {
               <h2 className="mb-2 font-sans text-label-md tracking-normal text-on-surface">{col.title()}</h2>
               {col.links.map(([to, label]) => (
                 <Link key={to} to={to} className={linkStyle}>
-                  {label()}
+                  <span className={underline}>{label()}</span>
                 </Link>
               ))}
             </StaggerItem>
@@ -68,8 +70,8 @@ export default function Footer() {
             <h2 className="mb-2 font-sans text-label-md tracking-normal text-on-surface">{t("Сайтҳои расмӣ")}</h2>
             {OFFICIAL.map(([href, label]) => (
               <a key={href} href={href} target="_blank" rel="noopener noreferrer" className={linkStyle}>
-                {typeof label === "function" ? label() : label}
-                <ExternalLink className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+                <span className={underline}>{typeof label === "function" ? label() : label}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-60 transition-transform duration-300 motion-safe:group-hover/link:-translate-y-0.5 motion-safe:group-hover/link:translate-x-0.5" aria-hidden />
               </a>
             ))}
           </StaggerItem>

@@ -308,7 +308,7 @@ export default function Tickets() {
           ))}
         </div>
 
-        <div className="grid items-end gap-3 md:grid-cols-[1fr_auto_1fr_1fr]">
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)]">
           <label>
             <span className="label">{t("Аз куҷо")}</span>
             <select className="input" value={from} onChange={(e) => set({ from: e.target.value })}>

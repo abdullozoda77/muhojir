@@ -20,7 +20,7 @@ import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, start
 // The hero: plain, on the page. The text on the left, a quiet panel on the right (wide screens).
 function HeroStage({ children, aside }) {
   return (
-    <section className="grid items-center gap-10 pt-6 md:pt-14 xl:grid-cols-[1.25fr_1fr] xl:gap-16">
+    <section className="grid grid-cols-1 items-center gap-10 pt-6 md:pt-14 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] xl:gap-16">
       {children}
       <m.div initial={startShown() ? false : { opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, ease: EASE, delay: 0.35 }}>
         {aside}
@@ -144,7 +144,7 @@ function HowItWorks() {
     [ShieldCheck, t("Ором кор кунед"), t("Ҷарима ва бекор шудани патент — на барои шумо.")],
   ];
   return (
-    <Reveal as="section" className="grid gap-10 border-y border-outline-variant py-12 md:grid-cols-[1fr_2fr] md:py-16">
+    <Reveal as="section" className="grid grid-cols-1 gap-10 border-y border-outline-variant py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:py-16">
       <div className="flex flex-col gap-4">
         <span className="text-label-md text-on-surface-variant">{t("Чӣ тавр кор мекунад")}</span>
         <h2 className="text-[26px] font-semibold leading-tight text-on-surface md:text-[32px]">{t("Се қадам то оромӣ")}</h2>
@@ -175,7 +175,7 @@ function JobsPanel({ city }) {
   const anyJobs = useApi(!city || (cityJobs.data && cityJobs.data.count === 0) ? "/jobs/jobs/?page_size=4" : null);
   const jobs = cityJobs.data?.count ? cityJobs.data : anyJobs.data;
   return (
-    <Reveal as="section" className="flex flex-col gap-5">
+    <Reveal as="section" className="flex min-w-0 flex-col gap-5">
       <SectionTitle kicker={t("Кор")} title={cityJobs.data?.count ? t("Кори нав дар {0}", city) : t("Ҷойҳои кории нав")} to="/jobs" linkText={t("Ҳама")} />
       <div className="card p-2">
         {cityJobs.loading || anyJobs.loading ? (
@@ -199,7 +199,7 @@ function JobsPanel({ city }) {
 function NewsPanel() {
   const news = useApi("/documents/news/?page_size=3");
   return (
-    <Reveal as="section" delay={0.1} className="flex flex-col gap-5">
+    <Reveal as="section" delay={0.1} className="flex min-w-0 flex-col gap-5">
       <SectionTitle kicker={t("Қонун")} title={t("Хабарҳо")} to="/guides#news" linkText={t("Ҳама")} />
       <div className="card px-5">
         {news.loading && <Skeleton className="my-4 h-52" />}
@@ -209,7 +209,7 @@ function NewsPanel() {
               <StaggerItem key={n.id}>
                 <Link to={`/news/${n.id}`} className="group flex flex-col gap-1.5 py-4">
                   <span className="text-label-sm font-medium tracking-normal text-on-surface-variant">{date(n.published_at || n.created_at)}</span>
-                  <span className="text-[15px] font-medium leading-snug transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary">{n.title}</span>
+                  <span className="text-[15px] font-medium leading-snug [overflow-wrap:anywhere] transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary">{n.title}</span>
                 </Link>
               </StaggerItem>
             ))}
@@ -303,7 +303,7 @@ function GuestHome() {
 
       <ServicesGrid />
       <HowItWorks />
-      <div className="grid items-start gap-10 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <JobsPanel />
         <NewsPanel />
       </div>
@@ -397,7 +397,7 @@ function MigrantHome({ user }) {
       )}
 
       <ServicesGrid />
-      <div className="grid items-start gap-10 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <JobsPanel city={user.city} />
         <NewsPanel />
       </div>
