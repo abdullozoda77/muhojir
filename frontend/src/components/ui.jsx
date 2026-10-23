@@ -124,7 +124,7 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
   return (
     <AnimatePresence>
       {open && (
-        <m.div key="drawer" className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-label={title} exit={{ opacity: 1 }}>
+        <m.div key="drawer" className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={title} exit={{ opacity: 1 }}>
           <m.div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
           <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-background shadow-2xl ring-1 ring-outline-variant md:my-3 md:mr-3 md:h-[calc(100%-24px)] md:rounded-2xl" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 p-5 backdrop-blur md:px-6">

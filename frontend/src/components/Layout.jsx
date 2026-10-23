@@ -86,12 +86,15 @@ function Count({ n, tone = "bg-secondary text-on-secondary" }) {
 }
 
 export function LangSwitch() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const choose = async (next) => {
     if (next === lang) return;
-    // Remember it in the profile too, so emails come in the same language.
-    if (user) await api("/auth/profile/", { method: "PATCH", body: { language: next } }).catch(() => {});
     setLang(next);
+    // Remember it in the profile too, so emails come in the same language (and the profile form shows it).
+    if (user) {
+      const data = await api("/auth/profile/", { method: "PATCH", body: { language: next } }).catch(() => null);
+      if (data) setUser(data);
+    }
   };
   return (
     <div className="inline-flex items-center rounded-lg bg-surface-container-low p-0.5 ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
@@ -183,7 +186,7 @@ function MenuSheet({ open, onClose, items, counts, user }) {
   return (
     <AnimatePresence>
       {open && (
-        <m.div className="fixed inset-0 z-[60] lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <m.div className="fixed inset-0 z-[70] lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
           <m.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl bg-background p-5 ring-1 ring-outline-variant pb-[calc(env(safe-area-inset-bottom)+20px)]">
             <div className="mb-4 flex items-center justify-between">

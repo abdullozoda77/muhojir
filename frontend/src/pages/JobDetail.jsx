@@ -95,7 +95,7 @@ export default function JobDetail() {
             </div>
           </Link>
           {!closed && (
-            <div className="fixed bottom-[96px] left-4 right-4 z-40 flex gap-2 lg:static">
+            <div className="fixed bottom-[96px] left-4 right-20 z-40 flex gap-2 lg:static">
               <OfficialLink job={job} className="min-h-[48px] flex-1 text-label-lg shadow-lg lg:shadow-none" />
               <SaveButton job={job} className="min-h-[48px] bg-surface-container-lowest shadow-lg lg:shadow-none" />
             </div>
