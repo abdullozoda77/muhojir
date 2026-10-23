@@ -1,0 +1,500 @@
+[
+ {
+  "id": 1,
+  "name": "Москва",
+  "patent_monthly_price": "10000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 2,
+  "name": "Московская область",
+  "patent_monthly_price": "10000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 3,
+  "name": "Санкт-Петербург",
+  "patent_monthly_price": "8000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 4,
+  "name": "Свердловская область",
+  "patent_monthly_price": "9500.00",
+  "price_year": 2026
+ },
+ {
+  "id": 5,
+  "name": "Ленинградская область",
+  "patent_monthly_price": "8000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 6,
+  "name": "Республика Адыгея",
+  "patent_monthly_price": "8185.00",
+  "price_year": 2026
+ },
+ {
+  "id": 7,
+  "name": "Республика Алтай",
+  "patent_monthly_price": "7673.00",
+  "price_year": 2026
+ },
+ {
+  "id": 8,
+  "name": "Республика Башкортостан",
+  "patent_monthly_price": "8500.00",
+  "price_year": 2026
+ },
+ {
+  "id": 9,
+  "name": "Республика Бурятия",
+  "patent_monthly_price": "12557.00",
+  "price_year": 2026
+ },
+ {
+  "id": 10,
+  "name": "Республика Дагестан",
+  "patent_monthly_price": "7844.00",
+  "price_year": 2026
+ },
+ {
+  "id": 11,
+  "name": "Республика Ингушетия",
+  "patent_monthly_price": "6684.00",
+  "price_year": 2026
+ },
+ {
+  "id": 12,
+  "name": "Кабардино-Балкарская Республика",
+  "patent_monthly_price": "11254.00",
+  "price_year": 2026
+ },
+ {
+  "id": 13,
+  "name": "Республика Калмыкия",
+  "patent_monthly_price": "5116.00",
+  "price_year": 2026
+ },
+ {
+  "id": 14,
+  "name": "Карачаево-Черкесская Республика",
+  "patent_monthly_price": "7844.00",
+  "price_year": 2026
+ },
+ {
+  "id": 15,
+  "name": "Республика Карелия",
+  "patent_monthly_price": "11595.00",
+  "price_year": 2026
+ },
+ {
+  "id": 16,
+  "name": "Республика Коми",
+  "patent_monthly_price": "9038.00",
+  "price_year": 2026
+ },
+ {
+  "id": 17,
+  "name": "Республика Крым",
+  "patent_monthly_price": "11936.00",
+  "price_year": 2026
+ },
+ {
+  "id": 18,
+  "name": "Республика Марий Эл",
+  "patent_monthly_price": "10163.00",
+  "price_year": 2026
+ },
+ {
+  "id": 19,
+  "name": "Республика Мордовия",
+  "patent_monthly_price": "7162.00",
+  "price_year": 2026
+ },
+ {
+  "id": 20,
+  "name": "Республика Саха (Якутия)",
+  "patent_monthly_price": "15343.00",
+  "price_year": 2026
+ },
+ {
+  "id": 21,
+  "name": "Республика Татарстан",
+  "patent_monthly_price": "8697.00",
+  "price_year": 2026
+ },
+ {
+  "id": 22,
+  "name": "Республика Тыва",
+  "patent_monthly_price": "6524.00",
+  "price_year": 2026
+ },
+ {
+  "id": 23,
+  "name": "Удмуртская Республика",
+  "patent_monthly_price": "8287.00",
+  "price_year": 2026
+ },
+ {
+  "id": 24,
+  "name": "Республика Хакасия",
+  "patent_monthly_price": "10231.00",
+  "price_year": 2026
+ },
+ {
+  "id": 25,
+  "name": "Чеченская Республика",
+  "patent_monthly_price": "3410.00",
+  "price_year": 2026
+ },
+ {
+  "id": 26,
+  "name": "Чувашская Республика",
+  "patent_monthly_price": "9634.00",
+  "price_year": 2026
+ },
+ {
+  "id": 27,
+  "name": "Алтайский край",
+  "patent_monthly_price": "8526.00",
+  "price_year": 2026
+ },
+ {
+  "id": 28,
+  "name": "Забайкальский край",
+  "patent_monthly_price": "16234.00",
+  "price_year": 2026
+ },
+ {
+  "id": 29,
+  "name": "Камчатский край",
+  "patent_monthly_price": "13983.00",
+  "price_year": 2026
+ },
+ {
+  "id": 30,
+  "name": "Краснодарский край",
+  "patent_monthly_price": "27283.00",
+  "price_year": 2026
+ },
+ {
+  "id": 31,
+  "name": "Красноярский край",
+  "patent_monthly_price": "11024.00",
+  "price_year": 2026
+ },
+ {
+  "id": 32,
+  "name": "Пермский край",
+  "patent_monthly_price": "8200.00",
+  "price_year": 2026
+ },
+ {
+  "id": 33,
+  "name": "Приморский край",
+  "patent_monthly_price": "13846.00",
+  "price_year": 2026
+ },
+ {
+  "id": 34,
+  "name": "Ставропольский край",
+  "patent_monthly_price": "8526.00",
+  "price_year": 2026
+ },
+ {
+  "id": 35,
+  "name": "Хабаровский край",
+  "patent_monthly_price": "10572.00",
+  "price_year": 2026
+ },
+ {
+  "id": 36,
+  "name": "Амурская область",
+  "patent_monthly_price": "12874.00",
+  "price_year": 2026
+ },
+ {
+  "id": 37,
+  "name": "Архангельская область",
+  "patent_monthly_price": "10231.00",
+  "price_year": 2026
+ },
+ {
+  "id": 38,
+  "name": "Астраханская область",
+  "patent_monthly_price": "7012.00",
+  "price_year": 2026
+ },
+ {
+  "id": 39,
+  "name": "Белгородская область",
+  "patent_monthly_price": "8294.00",
+  "price_year": 2026
+ },
+ {
+  "id": 40,
+  "name": "Брянская область",
+  "patent_monthly_price": "9741.00",
+  "price_year": 2026
+ },
+ {
+  "id": 41,
+  "name": "Владимирская область",
+  "patent_monthly_price": "10947.00",
+  "price_year": 2026
+ },
+ {
+  "id": 42,
+  "name": "Волгоградская область",
+  "patent_monthly_price": "9890.00",
+  "price_year": 2026
+ },
+ {
+  "id": 43,
+  "name": "Вологодская область",
+  "patent_monthly_price": "20000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 44,
+  "name": "Воронежская область",
+  "patent_monthly_price": "11425.00",
+  "price_year": 2026
+ },
+ {
+  "id": 45,
+  "name": "Ивановская область",
+  "patent_monthly_price": "20000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 46,
+  "name": "Иркутская область",
+  "patent_monthly_price": "12233.00",
+  "price_year": 2026
+ },
+ {
+  "id": 47,
+  "name": "Калининградская область",
+  "patent_monthly_price": "10913.00",
+  "price_year": 2026
+ },
+ {
+  "id": 48,
+  "name": "Калужская область",
+  "patent_monthly_price": "11000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 49,
+  "name": "Кемеровская область — Кузбасс",
+  "patent_monthly_price": "8427.00",
+  "price_year": 2026
+ },
+ {
+  "id": 50,
+  "name": "Кировская область",
+  "patent_monthly_price": "7912.00",
+  "price_year": 2026
+ },
+ {
+  "id": 51,
+  "name": "Костромская область",
+  "patent_monthly_price": "8632.00",
+  "price_year": 2026
+ },
+ {
+  "id": 52,
+  "name": "Курганская область",
+  "patent_monthly_price": "15347.00",
+  "price_year": 2026
+ },
+ {
+  "id": 53,
+  "name": "Курская область",
+  "patent_monthly_price": "10470.00",
+  "price_year": 2026
+ },
+ {
+  "id": 54,
+  "name": "Липецкая область",
+  "patent_monthly_price": "21915.00",
+  "price_year": 2026
+ },
+ {
+  "id": 55,
+  "name": "Магаданская область",
+  "patent_monthly_price": "12618.00",
+  "price_year": 2026
+ },
+ {
+  "id": 56,
+  "name": "Мурманская область",
+  "patent_monthly_price": "15347.00",
+  "price_year": 2026
+ },
+ {
+  "id": 57,
+  "name": "Нижегородская область",
+  "patent_monthly_price": "11800.00",
+  "price_year": 2026
+ },
+ {
+  "id": 58,
+  "name": "Новгородская область",
+  "patent_monthly_price": "10231.00",
+  "price_year": 2026
+ },
+ {
+  "id": 59,
+  "name": "Новосибирская область",
+  "patent_monthly_price": "11289.00",
+  "price_year": 2026
+ },
+ {
+  "id": 60,
+  "name": "Омская область",
+  "patent_monthly_price": "9157.00",
+  "price_year": 2026
+ },
+ {
+  "id": 61,
+  "name": "Оренбургская область",
+  "patent_monthly_price": "7639.00",
+  "price_year": 2026
+ },
+ {
+  "id": 62,
+  "name": "Орловская область",
+  "patent_monthly_price": "9174.00",
+  "price_year": 2026
+ },
+ {
+  "id": 63,
+  "name": "Пензенская область",
+  "patent_monthly_price": "9208.00",
+  "price_year": 2026
+ },
+ {
+  "id": 64,
+  "name": "Псковская область",
+  "patent_monthly_price": "10903.00",
+  "price_year": 2026
+ },
+ {
+  "id": 65,
+  "name": "Ростовская область",
+  "patent_monthly_price": "10231.00",
+  "price_year": 2026
+ },
+ {
+  "id": 66,
+  "name": "Рязанская область",
+  "patent_monthly_price": "9788.00",
+  "price_year": 2026
+ },
+ {
+  "id": 67,
+  "name": "Самарская область",
+  "patent_monthly_price": "11936.00",
+  "price_year": 2026
+ },
+ {
+  "id": 68,
+  "name": "Саратовская область",
+  "patent_monthly_price": "9423.00",
+  "price_year": 2026
+ },
+ {
+  "id": 69,
+  "name": "Сахалинская область",
+  "patent_monthly_price": "11800.00",
+  "price_year": 2026
+ },
+ {
+  "id": 70,
+  "name": "Смоленская область",
+  "patent_monthly_price": "9213.00",
+  "price_year": 2026
+ },
+ {
+  "id": 71,
+  "name": "Тамбовская область",
+  "patent_monthly_price": "8200.00",
+  "price_year": 2026
+ },
+ {
+  "id": 72,
+  "name": "Тверская область",
+  "patent_monthly_price": "20169.00",
+  "price_year": 2026
+ },
+ {
+  "id": 73,
+  "name": "Томская область",
+  "patent_monthly_price": "10506.00",
+  "price_year": 2026
+ },
+ {
+  "id": 74,
+  "name": "Тульская область",
+  "patent_monthly_price": "25000.00",
+  "price_year": 2026
+ },
+ {
+  "id": 75,
+  "name": "Тюменская область",
+  "patent_monthly_price": "11681.00",
+  "price_year": 2026
+ },
+ {
+  "id": 76,
+  "name": "Ульяновская область",
+  "patent_monthly_price": "7162.00",
+  "price_year": 2026
+ },
+ {
+  "id": 77,
+  "name": "Челябинская область",
+  "patent_monthly_price": "16860.00",
+  "price_year": 2026
+ },
+ {
+  "id": 78,
+  "name": "Ярославская область",
+  "patent_monthly_price": "10981.00",
+  "price_year": 2026
+ },
+ {
+  "id": 79,
+  "name": "Севастополь",
+  "patent_monthly_price": "13521.00",
+  "price_year": 2026
+ },
+ {
+  "id": 80,
+  "name": "Еврейская автономная область",
+  "patent_monthly_price": "9992.00",
+  "price_year": 2026
+ },
+ {
+  "id": 81,
+  "name": "Ненецкий автономный округ",
+  "patent_monthly_price": "8328.00",
+  "price_year": 2026
+ },
+ {
+  "id": 82,
+  "name": "Чукотский автономный округ",
+  "patent_monthly_price": "10572.00",
+  "price_year": 2026
+ },
+ {
+  "id": 83,
+  "name": "Ямало-Ненецкий автономный округ",
+  "patent_monthly_price": "18505.00",
+  "price_year": 2026
+ }
+]
