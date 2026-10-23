@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Ban, Building2, ExternalLink, MessageSquarePlus, Pencil, ShieldAlert, Trash2 } from "lucide-react";
+import { Ban, Building2, ExternalLink, MessageSquarePlus, Pencil, ShieldAlert, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -8,7 +8,8 @@ import { t } from "../i18n.js";
 import { date } from "../format.js";
 import { JobRow, SourceBadge, VerifiedBadge } from "../components/JobCard.jsx";
 import { StarPicker, Stars, average } from "../components/Stars.jsx";
-import { Button, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
+import { BackLink, Button, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
+import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 
 function ReviewForm({ employerId, review, onDone, onCancel }) {
   const [rating, setRating] = useState(review?.rating || 0);
@@ -34,13 +35,13 @@ function ReviewForm({ employerId, review, onDone, onCancel }) {
 
   return (
     <form onSubmit={submit} className="card flex flex-col gap-4 p-6 md:p-7">
-      <h3 className="text-[20px] font-display font-extrabold text-navy dark:text-on-surface">{review ? t("Таҳрири шарҳ") : t("Шарҳ навиштан")}</h3>
+      <h3 className="text-[18px] font-semibold">{review ? t("Таҳрири шарҳ") : t("Шарҳ навиштан")}</h3>
       <StarPicker value={rating} onChange={setRating} />
       <label className="block">
         <span className="label">{t("Шарҳи шумо")}</span>
         <textarea className="input h-auto py-3" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Шароити кор, маош сари вақт буд ё не...")} />
       </label>
-      <label className={`flex min-h-[56px] cursor-pointer items-center gap-3 rounded-[20px] p-4 ${unpaid ? "bg-error-container text-on-error-container" : "bg-surface-container-low"}`}>
+      <label className={`flex min-h-[56px] cursor-pointer items-center gap-3 rounded-xl p-4 ${unpaid ? "bg-error-container text-on-error-container" : "bg-surface-container-low"}`}>
         <input type="checkbox" className="h-5 w-5 rounded text-error focus:ring-error" checked={unpaid} onChange={(e) => setUnpaid(e.target.checked)} />
         <Ban className="h-5 w-5 text-error" aria-hidden />
         <span>
@@ -90,58 +91,54 @@ export default function EmployerPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to="/jobs" className="inline-flex min-h-[44px] items-center gap-2 self-start rounded-full px-4 text-label-md text-on-surface-variant ring-1 ring-outline-variant hover:bg-surface-container-lowest hover:text-primary">
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        {t("Ҷойи кор")}
-      </Link>
+      <BackLink to="/jobs">{t("Ҷойи кор")}</BackLink>
 
       {e.is_blacklisted && (
-        <div role="alert" className="flex items-start gap-4 rounded-[28px] bg-error-container p-5 text-on-error-container ring-1 ring-error/30 md:p-7">
-          <ShieldAlert className="h-8 w-8 shrink-0 text-error" aria-hidden />
+        <div role="alert" className="flex items-start gap-3 rounded-xl bg-error-container p-5 text-on-error-container">
+          <ShieldAlert className="h-6 w-6 shrink-0 text-error" aria-hidden />
           <div>
-            <p className="font-display text-[20px] font-extrabold text-error">{t("Ин ширкат дар рӯйхати сиёҳ аст")}</p>
+            <p className="text-[17px] font-semibold text-error">{t("Ин ширкат дар рӯйхати сиёҳ аст")}</p>
             {e.blacklist_reason && <p className="mt-1 text-body-md"><strong>{t("Сабаб")}:</strong> {e.blacklist_reason}</p>}
             <p className="mt-1 text-body-sm">{t("Ба ин ширкат кор накунед.")}</p>
           </div>
         </div>
       )}
 
-      {/* The company's header: dark blue like a job's, the rating big in gold. */}
-      <section className="relative flex flex-col gap-5 overflow-hidden rounded-[36px] bg-navy p-6 text-white md:flex-row md:items-center md:p-9">
-        <div aria-hidden className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-primary-container/50 blur-3xl" />
-        <div className="flag-line absolute inset-x-0 bottom-0 h-[5px]" />
-        <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-white/10 ring-1 ring-white/20">
-          <Building2 className="h-8 w-8" aria-hidden />
-        </div>
-        <div className="relative flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+      {/* The company's header, plain on the page: icon, name, city and the rating. */}
+      <Intro as="section" className="flex flex-col gap-5 md:flex-row md:items-center">
+        <IntroItem className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-container-low ring-1 ring-outline-variant">
+          <Building2 className="h-7 w-7" aria-hidden />
+        </IntroItem>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <IntroItem className="flex flex-wrap items-center gap-2">
             {e.is_verified && <VerifiedBadge />}
             {e.source === "trudvsem" && <SourceBadge />}
-          </div>
-          <h1 className="mt-2 font-display text-[30px] font-black leading-[1.1] md:text-[42px]">{e.name}</h1>
-          <p className="mt-1 text-body-md text-white/70">{[e.city, e.inn && `ИНН: ${e.inn}`].filter(Boolean).join(" • ")}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="font-display text-[28px] font-extrabold leading-none text-gold">{rating ? rating.toFixed(1) : "—"}</span>
-            <Stars value={rating ?? 0} size="h-5 w-5" />
-            <span className="text-body-sm text-white/70">({t("{0} шарҳ", list.length)})</span>
-            {complaints > 0 && <span className="rounded-full bg-error-container px-3 py-1 text-label-sm text-on-error-container">{t("{0} шикоят аз маош", complaints)}</span>}
-          </div>
+          </IntroItem>
+          <IntroItem as="h1" className="text-[30px] font-semibold leading-[1.1] tracking-[-0.03em] md:text-[40px]">{e.name}</IntroItem>
+          <IntroItem as="p" className="text-body-md text-on-surface-variant">{[e.city, e.inn && `ИНН: ${e.inn}`].filter(Boolean).join(" · ")}</IntroItem>
+          <IntroItem className="flex flex-wrap items-center gap-2">
+            <span className="text-[22px] font-semibold leading-none tabular-nums">{rating ? rating.toFixed(1) : "—"}</span>
+            <Stars value={rating ?? 0} size="h-4 w-4" />
+            <span className="text-body-sm text-on-surface-variant">({t("{0} шарҳ", list.length)})</span>
+            {complaints > 0 && <span className="rounded-md bg-error-container px-2 py-1 text-label-sm text-on-error-container">{t("{0} шикоят аз маош", complaints)}</span>}
+          </IntroItem>
         </div>
         {e.website && (
-          <a href={e.website} target="_blank" rel="noopener noreferrer" className="relative inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-6 text-label-lg text-navy hover:bg-white/90">
-            <ExternalLink className="h-5 w-5" aria-hidden />
+          <a href={e.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center justify-center gap-2 self-start rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low md:self-auto">
+            <ExternalLink className="h-4 w-4" aria-hidden />
             {t("Сайт")}
           </a>
         )}
-      </section>
-      {e.description && <p className="card whitespace-pre-line p-6 text-body-lg md:p-8">{e.description}</p>}
+      </Intro>
+      <div className="h-px bg-outline-variant" />
+      {e.description && <p className="max-w-3xl whitespace-pre-line text-[16px] leading-7 text-on-surface-variant">{e.description}</p>}
 
-      <div className="grid items-start gap-6 lg:grid-cols-12">
-        <section className="flex flex-col gap-4 lg:col-span-7">
+      <div className="grid items-start gap-8 lg:grid-cols-12">
+        <Reveal as="section" className="flex min-w-0 flex-col gap-4 lg:col-span-7">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[24px] font-display font-extrabold text-navy dark:text-on-surface">{t("Шарҳҳои коргарон")}</h2>
+            <h2 className="text-[20px] font-semibold">{t("Шарҳҳои коргарон")}</h2>
             {canReview && !writing && !list.some((r) => r.is_mine) && (
-              <Button variant="soft" icon={MessageSquarePlus} onClick={() => setWriting(true)}>{t("Шарҳ навиштан")}</Button>
+              <Button variant="plain" icon={MessageSquarePlus} onClick={() => setWriting(true)}>{t("Шарҳ навиштан")}</Button>
             )}
           </div>
           {!user && <p className="text-body-sm text-on-surface-variant"><Link to="/login" className="text-primary underline">{t("Ворид шавед")}</Link>, {t("то шарҳ нависед.")}</p>}
@@ -157,14 +154,14 @@ export default function EmployerPage() {
                 <article key={r.id} className={`card flex flex-col gap-3 p-5 md:p-6 ${r.salary_not_paid ? "!ring-2 !ring-error/40" : ""}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-display text-[16px] font-extrabold text-on-primary-fixed" aria-hidden>{(r.author_name || "?").charAt(0)}</span>
-                      <span className="font-display text-[16px] font-bold">{r.author_name}</span>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-[14px] font-semibold ring-1 ring-outline-variant" aria-hidden>{(r.author_name || "?").charAt(0)}</span>
+                      <span className="text-[15px] font-semibold">{r.author_name}</span>
                       <Stars value={r.rating} />
                     </div>
                     <span className="text-body-sm text-on-surface-variant">{date(r.created_at)}</span>
                   </div>
                   {r.salary_not_paid && (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-error-container px-2.5 py-1 text-label-sm text-on-error-container">
+                    <span className="inline-flex w-fit items-center gap-1 rounded-md bg-error-container px-2 py-1 text-label-sm text-on-error-container">
                       <Ban className="h-3.5 w-3.5" aria-hidden />
                       {t("Маош надоданд")}
                     </span>
@@ -180,11 +177,11 @@ export default function EmployerPage() {
               ),
             )
           )}
-        </section>
-        <section className="flex flex-col gap-4 lg:col-span-5">
-          <h2 className="text-[24px] font-display font-extrabold text-navy dark:text-on-surface">{t("Эълонҳои ин ширкат")}</h2>
+        </Reveal>
+        <Reveal as="section" delay={0.1} className="flex min-w-0 flex-col gap-4 lg:col-span-5">
+          <h2 className="text-[20px] font-semibold">{t("Эълонҳои ин ширкат")}</h2>
           {jobs.data?.results?.length ? (
-            <div className="flex flex-col divide-y divide-outline-variant/50 rounded-[32px] bg-surface-container-lowest p-2 ring-1 ring-outline-variant/60 md:p-3">
+            <div className="card flex flex-col divide-y divide-outline-variant p-2">
               {jobs.data.results.map((j) => (
                 <JobRow key={j.id} job={j} compact />
               ))}
@@ -192,7 +189,7 @@ export default function EmployerPage() {
           ) : (
             <p className="card p-7 text-body-md text-on-surface-variant">{t("Ҳоло эълони фаъол нест.")}</p>
           )}
-        </section>
+        </Reveal>
       </div>
     </div>
   );
