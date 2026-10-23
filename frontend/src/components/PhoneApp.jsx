@@ -4,8 +4,10 @@ import { isIOS, useInstall } from "../pwa.js";
 import { Button } from "./ui.jsx";
 
 // "The site on your phone": install it on the home screen, like an app.
+// Shown only where it can really be installed: one tap on Android/desktop Chrome, the Share steps on iPhone.
 export default function PhoneApp() {
   const { installed, canInstall, install } = useInstall();
+  if (!installed && !canInstall && !isIOS()) return null;
 
   return (
     <section className="card flex flex-col gap-4 p-5 md:p-6">
@@ -23,14 +25,12 @@ export default function PhoneApp() {
           <p className="text-body-md text-on-surface-variant">{t("Сайтро мисли барнома насб кунед: аз экрани асосӣ кушода мешавад ва ҳуҷҷатҳоятон бе интернет ҳам намоёнанд.")}</p>
           <Button icon={Download} onClick={install} className="self-start">{t("Ба телефон насб кардан")}</Button>
         </div>
-      ) : isIOS() ? (
+      ) : (
         <ol className="flex flex-col gap-2 text-body-md">
           <li className="flex items-center gap-2">1. {t("Дар Safari тугмаи «Мубодила»-ро пахш кунед")} <Share className="h-4 w-4 text-primary" aria-hidden /></li>
           <li>2. {t("«На экран „Домой“»-ро интихоб кунед.")}</li>
           <li>3. {t("«Добавить»-ро пахш кунед — Muhojir дар экрани асосӣ пайдо мешавад.")}</li>
         </ol>
-      ) : (
-        <p className="text-body-md text-on-surface-variant">{t("Дар менюи браузер «Насб кардан» ё «Ба экрани асосӣ илова кардан»-ро интихоб кунед.")}</p>
       )}
     </section>
   );

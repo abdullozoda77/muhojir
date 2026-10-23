@@ -3,6 +3,7 @@
   "short_name": "Muhojir",
   "description": "Мӯҳлати ҳуҷҷатҳо, нархи патент, роҳнамо ва ҷойи кор барои муҳоҷирони тоҷик дар Русия.",
   "lang": "tg",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
