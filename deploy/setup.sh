@@ -4,8 +4,8 @@
 #   bash /home/romin/muhojir-api/deploy/setup.sh
 #
 # What runs where:
-#   nginx https://king.tj and http://IP:8050  →  React site (frontend/dist), /media
-#                →  /api /admin /swagger /redoc and the WebSocket /ws/  →  uvicorn 127.0.0.1:8051 (3 workers)
+#   nginx https://king.tj and http://IP:8070  →  React site (frontend/dist), /media
+#                →  /api /admin /swagger /redoc and the WebSocket /ws/  →  uvicorn 127.0.0.1:8071 (3 workers)
 #   The workers share live notifications and the request limits through Redis (database 15).
 #   Celery worker sends the emails in the background and runs the daily jobs; Celery Beat starts them every day
 #   (06:00 new vacancies, 06:30 document reminders). Their queue is Redis database 15 too.
@@ -15,8 +15,8 @@ set -euo pipefail
 
 APP_USER=romin
 APP=/home/$APP_USER/muhojir-api
-PUBLIC_PORT=8050   # the address people open: http://<server>:8050
-APP_PORT=8051      # uvicorn, reachable only from nginx
+PUBLIC_PORT=8070   # the address people open: http://<server>:8070
+APP_PORT=8071      # uvicorn, reachable only from nginx
 REDIS_DB=15
 DOMAIN=king.tj     # must point to this server in DNS (@ and www); empty = by port only
 OLD_SITE=/etc/nginx/sites-available/muhojir   # the old Django Muhojir, which had king.tj before

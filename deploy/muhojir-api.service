@@ -6,7 +6,7 @@ After=network.target redis-server.service
 User=romin
 Group=romin
 WorkingDirectory=/home/romin/muhojir-api
-ExecStart=/home/romin/muhojir-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8051 --workers 3 --proxy-headers --forwarded-allow-ips 127.0.0.1
+ExecStart=/home/romin/muhojir-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8071 --workers 3 --proxy-headers --forwarded-allow-ips 127.0.0.1
 Restart=always
 RestartSec=3
 
