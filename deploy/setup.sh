@@ -5,7 +5,7 @@
 #
 # What runs where:
 #   nginx https://king.tj and http://IP:8070  →  React site (frontend/dist), /media
-#                →  /api /admin /swagger /redoc and the WebSocket /ws/  →  uvicorn 127.0.0.1:8071 (3 workers)
+#                →  /api /admin /swagger /redoc and the WebSocket /ws/  →  uvicorn 127.0.0.1:8071 (2 workers)
 #   The workers share live notifications and the request limits through Redis (database 15).
 #   Celery worker sends the emails in the background and runs the daily jobs; Celery Beat starts them every day
 #   (06:00 new vacancies, 06:30 document reminders). Their queue is Redis database 15 too.
@@ -108,13 +108,21 @@ as_user ".venv/bin/alembic upgrade head"
 as_user "mkdir -p media private_media"
 
 step "Node.js 22 for $APP_USER (shared with Rohat and Muhojir)"
-if [ ! -x "$NODE_DIR/bin/node" ]; then
+if [ "${SKIP_BUILD:-}" != 1 ] && [ ! -x "$NODE_DIR/bin/node" ]; then
   echo "Node.js 22 is missing at $NODE_DIR. Run the Muhojir (Django) or Rohat setup first, or install Node 22 there."
   exit 1
 fi
 
-step "Frontend build"
-as_user "cd frontend && export PATH='$NODE_DIR/bin':\$PATH && npm ci --no-audit --no-fund --loglevel=error && npm run build"
+# The server has little free memory and the build needs about 1 GB, so the site can be built on a laptop
+# and uploaded to frontend/dist instead; then run:  SKIP_BUILD=1 bash deploy/setup.sh
+if [ "${SKIP_BUILD:-}" = 1 ]; then
+  step "Frontend: using the uploaded frontend/dist (no build on the server)"
+  [ -f "$APP/frontend/dist/index.html" ] || { echo "frontend/dist/index.html is missing: upload the built site first."; exit 1; }
+  chown -R "$APP_USER:$APP_USER" "$APP/frontend/dist"
+else
+  step "Frontend build"
+  as_user "cd frontend && export PATH='$NODE_DIR/bin':\$PATH && npm ci --no-audit --no-fund --loglevel=error && npm run build"
+fi
 
 step "Access for nginx (it reads the site and public files; .env, the database and private files stay closed)"
 chmod o+x "/home/$APP_USER" "$APP" "$APP/frontend"
