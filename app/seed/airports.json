@@ -1,0 +1,263 @@
+[
+ {
+  "code": "DYU",
+  "city_code": "DYU",
+  "city": "Душанбе",
+  "city_tg": "Душанбе",
+  "name": "Международный аэропорт Душанбе",
+  "country": "TJ",
+  "order": 0
+ },
+ {
+  "code": "LBD",
+  "city_code": "LBD",
+  "city": "Худжанд",
+  "city_tg": "Хуҷанд",
+  "name": "Международный аэропорт Худжанд",
+  "country": "TJ",
+  "order": 1
+ },
+ {
+  "code": "KQT",
+  "city_code": "KQT",
+  "city": "Бохтар",
+  "city_tg": "Бохтар",
+  "name": "Аэропорт Бохтар",
+  "country": "TJ",
+  "order": 2
+ },
+ {
+  "code": "TJU",
+  "city_code": "TJU",
+  "city": "Куляб",
+  "city_tg": "Кӯлоб",
+  "name": "Аэропорт Куляб",
+  "country": "TJ",
+  "order": 3
+ },
+ {
+  "code": "SVO",
+  "city_code": "MOW",
+  "city": "Москва",
+  "city_tg": "Маскав",
+  "name": "Шереметьево",
+  "country": "RU",
+  "order": 0
+ },
+ {
+  "code": "DME",
+  "city_code": "MOW",
+  "city": "Москва",
+  "city_tg": "Маскав",
+  "name": "Домодедово",
+  "country": "RU",
+  "order": 1
+ },
+ {
+  "code": "VKO",
+  "city_code": "MOW",
+  "city": "Москва",
+  "city_tg": "Маскав",
+  "name": "Внуково",
+  "country": "RU",
+  "order": 2
+ },
+ {
+  "code": "ZIA",
+  "city_code": "MOW",
+  "city": "Москва",
+  "city_tg": "Маскав",
+  "name": "Жуковский",
+  "country": "RU",
+  "order": 3
+ },
+ {
+  "code": "LED",
+  "city_code": "LED",
+  "city": "Санкт-Петербург",
+  "city_tg": "Санкт-Петербург",
+  "name": "Пулково",
+  "country": "RU",
+  "order": 4
+ },
+ {
+  "code": "SVX",
+  "city_code": "SVX",
+  "city": "Екатеринбург",
+  "city_tg": "Екатеринбург",
+  "name": "Кольцово",
+  "country": "RU",
+  "order": 5
+ },
+ {
+  "code": "OVB",
+  "city_code": "OVB",
+  "city": "Новосибирск",
+  "city_tg": "Новосибирск",
+  "name": "Толмачёво",
+  "country": "RU",
+  "order": 6
+ },
+ {
+  "code": "KZN",
+  "city_code": "KZN",
+  "city": "Казань",
+  "city_tg": "Қазон",
+  "name": "Казань",
+  "country": "RU",
+  "order": 7
+ },
+ {
+  "code": "KUF",
+  "city_code": "KUF",
+  "city": "Самара",
+  "city_tg": "Самара",
+  "name": "Курумоч",
+  "country": "RU",
+  "order": 8
+ },
+ {
+  "code": "KRR",
+  "city_code": "KRR",
+  "city": "Краснодар",
+  "city_tg": "Краснодар",
+  "name": "Пашковский",
+  "country": "RU",
+  "order": 9
+ },
+ {
+  "code": "AER",
+  "city_code": "AER",
+  "city": "Сочи",
+  "city_tg": "Сочи",
+  "name": "Сочи",
+  "country": "RU",
+  "order": 10
+ },
+ {
+  "code": "UFA",
+  "city_code": "UFA",
+  "city": "Уфа",
+  "city_tg": "Уфа",
+  "name": "Уфа",
+  "country": "RU",
+  "order": 11
+ },
+ {
+  "code": "PEE",
+  "city_code": "PEE",
+  "city": "Пермь",
+  "city_tg": "Перм",
+  "name": "Большое Савино",
+  "country": "RU",
+  "order": 12
+ },
+ {
+  "code": "CEK",
+  "city_code": "CEK",
+  "city": "Челябинск",
+  "city_tg": "Челябинск",
+  "name": "Баландино",
+  "country": "RU",
+  "order": 13
+ },
+ {
+  "code": "OMS",
+  "city_code": "OMS",
+  "city": "Омск",
+  "city_tg": "Омск",
+  "name": "Омск-Центральный",
+  "country": "RU",
+  "order": 14
+ },
+ {
+  "code": "KJA",
+  "city_code": "KJA",
+  "city": "Красноярск",
+  "city_tg": "Красноярск",
+  "name": "Емельяново",
+  "country": "RU",
+  "order": 15
+ },
+ {
+  "code": "SGC",
+  "city_code": "SGC",
+  "city": "Сургут",
+  "city_tg": "Сургут",
+  "name": "Сургут",
+  "country": "RU",
+  "order": 16
+ },
+ {
+  "code": "TJM",
+  "city_code": "TJM",
+  "city": "Тюмень",
+  "city_tg": "Тюмен",
+  "name": "Рощино",
+  "country": "RU",
+  "order": 17
+ },
+ {
+  "code": "ROV",
+  "city_code": "ROV",
+  "city": "Ростов-на-Дону",
+  "city_tg": "Ростов-на-Дону",
+  "name": "Платов",
+  "country": "RU",
+  "order": 18
+ },
+ {
+  "code": "VOG",
+  "city_code": "VOG",
+  "city": "Волгоград",
+  "city_tg": "Волгоград",
+  "name": "Гумрак",
+  "country": "RU",
+  "order": 19
+ },
+ {
+  "code": "IKT",
+  "city_code": "IKT",
+  "city": "Иркутск",
+  "city_tg": "Иркутск",
+  "name": "Иркутск",
+  "country": "RU",
+  "order": 20
+ },
+ {
+  "code": "REN",
+  "city_code": "REN",
+  "city": "Оренбург",
+  "city_tg": "Оренбург",
+  "name": "Оренбург",
+  "country": "RU",
+  "order": 21
+ },
+ {
+  "code": "GOJ",
+  "city_code": "GOJ",
+  "city": "Нижний Новгород",
+  "city_tg": "Нижний Новгород",
+  "name": "Стригино",
+  "country": "RU",
+  "order": 22
+ },
+ {
+  "code": "VOZ",
+  "city_code": "VOZ",
+  "city": "Воронеж",
+  "city_tg": "Воронеж",
+  "name": "Чертовицкое",
+  "country": "RU",
+  "order": 23
+ },
+ {
+  "code": "NJC",
+  "city_code": "NJC",
+  "city": "Нижневартовск",
+  "city_tg": "Нижневартовск",
+  "name": "Нижневартовск",
+  "country": "RU",
+  "order": 24
+ }
+]
