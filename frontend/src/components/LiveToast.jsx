@@ -24,17 +24,17 @@ export default function LiveToast({ notification, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl bg-surface-container-lowest p-4 shadow-2xl ring-1 ring-outline-variant/40"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl bg-surface-container-lowest p-4 shadow-2xl ring-1 ring-outline-variant"
             role="status"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary-fixed text-secondary">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
               <BellRing className="h-5 w-5" aria-hidden />
             </span>
             <Link to="/notifications" onClick={onClose} className="min-w-0 flex-1">
               <span className="block text-label-lg">{notification.title}</span>
               <span className="line-clamp-2 text-body-sm text-on-surface-variant">{notification.message}</span>
             </Link>
-            <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="-m-1 rounded-full p-1 text-on-surface-variant hover:bg-surface-container-high">
+            <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="-m-1 rounded-lg p-1 text-on-surface-variant hover:bg-surface-container-high">
               <X className="h-4 w-4" aria-hidden />
             </button>
           </m.div>

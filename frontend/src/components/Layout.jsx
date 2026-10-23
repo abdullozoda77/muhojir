@@ -17,7 +17,7 @@ import Assistant from "./Assistant.jsx";
 import { PageTransition } from "./motion.jsx";
 import { Skeleton } from "./ui.jsx";
 
-// The site's shell: the flag line on top, a light bar with the main sections and "More", the page, the footer.
+// The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer.
 // Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section.
 
 // Every section. main: shown as a tab in the top bar; dock: on the phone dock (in this order).
@@ -72,17 +72,17 @@ function useCounters(user, onNew) {
 function Logo() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Muhojir">
-      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white p-0.5 shadow-[0_4px_14px_-4px_rgb(16_38_92/0.35)] ring-1 ring-outline-variant/60">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 ring-1 ring-outline-variant">
         <img src="/logo.png" alt="" className="h-full w-full" />
       </span>
-      <span className="font-display text-[21px] font-extrabold tracking-tight text-navy dark:text-on-surface">Muhojir</span>
+      <span className="text-[18px] font-semibold tracking-tight text-on-surface">Muhojir</span>
     </Link>
   );
 }
 
 function Count({ n, tone = "bg-secondary text-on-secondary" }) {
   if (!n) return null;
-  return <span className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none ${tone}`}>{n}</span>;
+  return <span className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${tone}`}>{n}</span>;
 }
 
 function LangSwitch() {
@@ -94,12 +94,12 @@ function LangSwitch() {
     setLang(next);
   };
   return (
-    <div className="inline-flex items-center rounded-full bg-surface-container-low p-1 ring-1 ring-outline-variant/60" role="group" aria-label={t("Забон")}>
+    <div className="inline-flex items-center rounded-lg bg-surface-container-low p-0.5 ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
       {[
         ["tg", "ТҶ"],
         ["ru", "РУ"],
       ].map(([code, name]) => (
-        <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`rounded-full px-2.5 py-1 text-label-md transition-all ${lang === code ? "bg-navy text-white shadow-sm dark:bg-primary dark:text-on-primary" : "text-on-surface-variant hover:text-on-surface"}`}>
+        <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`rounded-md px-2 py-1 text-label-md transition-colors ${lang === code ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
           {name}
         </button>
       ))}
@@ -110,7 +110,7 @@ function LangSwitch() {
 function IconButton({ children, label, ...props }) {
   const Tag = props.to ? Link : "button";
   return (
-    <Tag aria-label={label} title={label} className="relative flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface" {...(Tag === "button" ? { type: "button" } : {})} {...props}>
+    <Tag aria-label={label} title={label} className="relative flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface" {...(Tag === "button" ? { type: "button" } : {})} {...props}>
       {children}
     </Tag>
   );
@@ -149,24 +149,24 @@ function MoreMenu({ items, counts, user }) {
   const active = items.some((i) => pathname.startsWith(i.to));
   return (
     <div ref={box} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={`flex h-10 items-center gap-1 rounded-full px-4 text-label-lg transition-colors ${active || open ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={`flex h-9 items-center gap-1 rounded-lg px-3 text-label-md transition-colors ${active || open ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
         {t("Боз")}
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       <AnimatePresence>
         {open && (
-          <m.div initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }} className="absolute left-0 top-12 z-50 grid w-[440px] grid-cols-2 gap-1 rounded-[24px] bg-surface-container-lowest p-2 shadow-[0_24px_60px_-20px_rgb(16_38_92/0.35)] ring-1 ring-outline-variant/60">
+          <m.div initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }} className="absolute left-0 top-11 z-50 grid w-[420px] grid-cols-2 gap-0.5 rounded-xl bg-surface-container-lowest p-1.5 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.18)] ring-1 ring-outline-variant">
             {items.map((i) => (
-              <NavLink key={i.to} to={i.to} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-label-lg transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "hover:bg-surface-container-low"}`}>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-primary">
-                  <i.icon className="h-[18px] w-[18px]" aria-hidden />
+              <NavLink key={i.to} to={i.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-2.5 py-2 text-label-md transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-outline-variant">
+                  <i.icon className="h-4 w-4" aria-hidden />
                 </span>
                 <span className="flex-1">{i.label}</span>
                 {i.badge && <Count n={counts[i.badge]} />}
               </NavLink>
             ))}
             {canEdit(user) && (
-              <a href="/admin/" className="col-span-2 flex items-center gap-3 rounded-2xl bg-navy px-3 py-2.5 text-label-lg text-white hover:brightness-110">
+              <a href="/admin/" className="col-span-2 mt-1 flex items-center gap-3 rounded-lg border-t border-outline-variant px-2.5 py-2.5 text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface">
                 <PenSquare className="h-[18px] w-[18px]" aria-hidden />
                 {t("Идораи мундариҷа")}
               </a>
@@ -184,28 +184,28 @@ function MenuSheet({ open, onClose, items, counts, user }) {
     <AnimatePresence>
       {open && (
         <m.div className="fixed inset-0 z-[60] lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-navy/40 backdrop-blur-sm" onClick={onClose} />
-          <m.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[32px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
+          <m.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl bg-background p-5 ring-1 ring-outline-variant pb-[calc(env(safe-area-inset-bottom)+20px)]">
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-display text-[22px] font-extrabold">{t("Ҳамаи бахшҳо")}</span>
+              <span className="text-[18px] font-semibold">{t("Ҳамаи бахшҳо")}</span>
               <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-high">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {items.map((i) => (
-                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-[22px] p-2 text-center text-label-md ${isActive ? "bg-navy text-white" : "bg-surface-container-lowest ring-1 ring-outline-variant/60"}`}>
+                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
                   <i.icon className="h-6 w-6" aria-hidden />
                   <span className="leading-tight">{i.label}</span>
                   {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-3"><Count n={counts[i.badge]} /></span>}
                 </NavLink>
               ))}
             </div>
-            <div className="mt-4 flex items-center justify-between rounded-[22px] bg-surface-container-lowest p-3 ring-1 ring-outline-variant/60">
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-container-lowest p-3 ring-1 ring-outline-variant">
               <LangSwitch />
               <ThemeToggle />
               {canEdit(user) && (
-                <a href="/admin/" className="flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-label-md text-white">
+                <a href="/admin/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-label-md text-on-surface ring-1 ring-outline-variant">
                   <PenSquare className="h-4 w-4" aria-hidden />
                   {t("Идора")}
                 </a>
@@ -247,17 +247,17 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
-      {/* The flag line of Tajikistan: red, white, green. */}
-      <div className="flag-line fixed inset-x-0 top-0 z-50 h-[5px]" aria-hidden />
+      {/* The flag line of Tajikistan, thin: red, white, green. */}
+      <div className="flag-line fixed inset-x-0 top-0 z-50 h-[3px]" aria-hidden />
 
-      <header className={`fixed inset-x-0 top-[5px] z-40 transition-all duration-300 ${scrolled ? "bg-background/85 shadow-[0_8px_30px_-18px_rgb(16_38_92/0.35)] backdrop-blur-xl" : "bg-transparent"}`}>
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-3 px-4 md:px-6 lg:h-[72px]">
+      <header className={`fixed inset-x-0 top-[3px] z-40 border-b transition-colors duration-300 ${scrolled ? "border-outline-variant bg-background/80 backdrop-blur-xl" : "border-transparent bg-background"}`}>
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6">
           <Logo />
-          <nav className="ml-4 hidden flex-1 items-center gap-1 lg:flex" aria-label={t("Менюи асосӣ")}>
+          <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-10 items-center gap-2 rounded-full px-4 text-label-lg transition-colors ${isActive ? "bg-navy text-white shadow-[0_6px_16px_-8px_rgb(16_38_92/0.8)] dark:bg-primary dark:text-on-primary" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
-                {i.badge && <Count n={counts[i.badge]} tone="bg-warning-container text-on-warning-container" />}
+                {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
             ))}
             <MoreMenu items={more} counts={counts} user={user} />
@@ -275,20 +275,20 @@ export default function Layout() {
                 <IconButton to="/notifications" label={t("Огоҳиҳо")}>
                   <Bell className="h-5 w-5" />
                   {counts.unread > 0 && (
-                    <m.span key={counts.unread} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }} className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-on-secondary">
+                    <m.span key={counts.unread} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }} className="absolute right-0.5 top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-on-primary ring-2 ring-background">
                       {counts.unread}
                     </m.span>
                   )}
                 </IconButton>
-                <Link to="/profile" className="flex items-center gap-2 rounded-full p-1 pr-1 transition-colors hover:bg-surface-container-low sm:pr-3" aria-label={t("Профил ва танзимот")}>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-navy text-label-lg font-bold text-white" aria-hidden>
+                <Link to="/profile" className="flex items-center gap-2 rounded-lg p-1 pr-1 transition-colors hover:bg-surface-container-low sm:pr-2.5" aria-label={t("Профил ва танзимот")}>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-high text-label-md text-on-surface ring-1 ring-outline-variant" aria-hidden>
                     {(firstName || "?")[0].toUpperCase()}
                   </span>
                   <span className="hidden max-w-[120px] truncate text-label-md xl:block">{firstName}</span>
                 </Link>
               </>
             ) : (
-              <Link to="/login" className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-label-md text-on-secondary shadow-[0_8px_18px_-8px_rgb(var(--c-secondary)/0.8)] hover:bg-secondary-container">
+              <Link to="/login" className="inline-flex h-9 items-center gap-2 rounded-lg bg-ink px-3.5 text-label-md text-on-ink transition-colors hover:bg-ink/90">
                 <LogIn className="h-4 w-4" aria-hidden />
                 {t("Ворид шудан")}
               </Link>
@@ -298,10 +298,10 @@ export default function Layout() {
       </header>
 
       {/* The footer stays at the bottom even on short pages; on phones the page ends above the dock. */}
-      <main className="flex min-h-screen flex-col pt-[69px] lg:pt-[77px]">
-        <div className="mx-auto w-full max-w-[1240px] flex-1 px-4 pb-14 pt-4 md:px-6 md:pt-6 lg:pb-16">
+      <main className="flex min-h-screen flex-col pt-[67px]">
+        <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {!online && (
-            <p role="status" className="mb-4 flex items-center gap-2 rounded-full bg-warning-fixed px-4 py-3 text-label-md text-on-warning-fixed">
+            <p role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-warning-fixed px-4 py-3 text-label-md text-on-warning-fixed">
               <WifiOff className="h-4 w-4 shrink-0" aria-hidden />
               {t("Интернет нест. Маълумоти охирини захирашуда нишон дода мешавад.")}
             </p>
@@ -317,15 +317,15 @@ export default function Layout() {
       </main>
 
       {/* Phones and tablets: the floating dock. */}
-      <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-50 mx-auto flex max-w-md items-center justify-between gap-1 rounded-[28px] bg-navy/95 p-1.5 shadow-[0_18px_40px_-14px_rgb(16_38_92/0.7)] backdrop-blur-xl lg:hidden" aria-label={t("Менюи асосӣ")}>
+      <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-50 mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl bg-surface-container-lowest/90 p-1 shadow-[0_12px_32px_-12px_rgb(0_0_0/0.25)] ring-1 ring-outline-variant backdrop-blur-xl lg:hidden" aria-label={t("Менюи асосӣ")}>
         {dock.map((i) => (
-          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10.5px] font-semibold transition-colors ${isActive ? "bg-white text-navy" : "text-white/75 hover:text-white"}`}>
+          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
             <i.icon className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate px-1">{i.short || i.label}</span>
-            {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-2 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-navy" />}
+            {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-warning-container ring-2 ring-surface-container-lowest" />}
           </NavLink>
         ))}
-        <button type="button" onClick={() => setSheet(true)} className="flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10.5px] font-semibold text-white/75 hover:text-white">
+        <button type="button" onClick={() => setSheet(true)} className="flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium text-on-surface-variant hover:text-on-surface">
           <LayoutGrid className="h-5 w-5" aria-hidden />
           {t("Ҳама")}
         </button>
