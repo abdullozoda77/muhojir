@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Muhojir's design: minimal and calm. Near-white paper, deep blue for the main actions and dark blocks, one blue accent,
+/* Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent,
    hairline borders instead of shadows. The red, white and green of the flag appear only as a thin line on top.
    Colors are RGB channels, so Tailwind can add opacity (bg-primary/10). html.dark switches to the night set.
    "navy"/"banner" are the deep blue of dark blocks; "ink" the main buttons (deep blue, white at night);
@@ -13,17 +13,17 @@
   --c-on-navy: 214 224 246;
   --c-navy-muted: 160 176 214;
   --c-gold: 202 160 82;
-  --c-primary: 37 84 214;
+  --c-primary: 29 70 190;
   --c-on-primary: 255 255 255;
   --c-primary-container: 52 102 232;
   --c-on-primary-container: 255 255 255;
-  --c-primary-fixed: 236 241 254;
+  --c-primary-fixed: 232 237 250;
   --c-on-primary-fixed: 22 52 140;
   --c-secondary: 16 36 84;
   --c-on-secondary: 255 255 255;
   --c-secondary-container: 32 58 120;
   --c-on-secondary-container: 255 255 255;
-  --c-secondary-fixed: 238 242 250;
+  --c-secondary-fixed: 236 236 240;
   --c-on-secondary-fixed: 16 36 84;
   --c-warning: 161 98 7;
   --c-on-warning: 255 255 255;
@@ -40,19 +40,19 @@
   --c-on-error: 255 255 255;
   --c-error-container: 254 236 236;
   --c-on-error-container: 153 27 27;
-  --c-background: 250 250 250;
-  --c-surface: 255 255 255;
-  --c-on-surface: 15 23 42;
-  --c-on-surface-variant: 99 99 108;
-  --c-surface-container-lowest: 255 255 255;
-  --c-surface-container-low: 245 245 246;
-  --c-surface-container: 240 240 242;
-  --c-surface-container-high: 233 233 236;
-  --c-surface-container-highest: 222 222 226;
+  --c-background: 246 242 234;
+  --c-surface: 255 252 246;
+  --c-on-surface: 17 24 42;
+  --c-on-surface-variant: 66 70 86;
+  --c-surface-container-lowest: 255 252 246;
+  --c-surface-container-low: 241 236 226;
+  --c-surface-container: 236 230 219;
+  --c-surface-container-high: 229 222 209;
+  --c-surface-container-highest: 218 210 195;
   --c-inverse-surface: 16 36 84;
-  --c-inverse-on-surface: 244 244 245;
-  --c-outline: 150 150 160;
-  --c-outline-variant: 228 228 231;
+  --c-inverse-on-surface: 250 246 238;
+  --c-outline: 120 116 108;
+  --c-outline-variant: 222 214 200;
   --c-ink: 16 36 84;
   --c-on-ink: 255 255 255;
   color-scheme: light;
@@ -135,7 +135,7 @@ html.dark {
 
 @layer components {
   .card {
-    @apply rounded-2xl bg-surface-container-lowest ring-1 ring-outline-variant;
+    @apply rounded-2xl bg-surface-container-lowest ring-1 ring-outline-variant shadow-[0_1px_2px_rgba(60,45,20,0.05),0_8px_24px_-12px_rgba(60,45,20,0.12)] dark:shadow-none;
   }
   /* The flag line: Muhojir's signature, the red, white and green of the flag of Tajikistan (2:3:2). */
   .flag-line {

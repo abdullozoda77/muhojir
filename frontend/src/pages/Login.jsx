@@ -91,7 +91,7 @@ function CodeBoxes({ value, onChange, disabled }) {
 function WinterScene() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#bcd3f5] via-[#dce8fa] to-[#f6f9ff] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#dfe7f3] via-[#eeebe4] to-[#f6f2ea] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]" />
       <Snowfall className="absolute inset-0" />
     </div>
   );
