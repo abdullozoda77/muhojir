@@ -57,32 +57,32 @@ function refreshAccessToken() {
   return refreshing;
 }
 
-// The server answers in English; these are the messages people can meet, in the site language.
+// The server answers in English; these are the messages people can meet, in Tajik (t() translates them when shown).
 const SERVER_MESSAGES = {
-  "A code was just sent. Wait a minute before asking for a new one.": t("Рамз ҳозир фиристода шуд. Як дақиқа интизор шавед."),
-  "The email could not be sent. Try again in a few minutes.": t("Мактуб фиристода нашуд. Баъд аз чанд дақиқа боз кӯшиш кунед."),
-  "The code has expired. Ask for a new one.": t("Мӯҳлати рамз гузашт. Рамзи нав гиред."),
-  "Too many wrong tries. Ask for a new code.": t("Кӯшишҳои хато зиёд шуданд. Рамзи нав гиред."),
-  "Wrong code.": t("Рамз нодуруст аст."),
-  "The code is 6 digits.": t("Рамз 6 рақам дорад."),
-  "This account is blocked.": t("Ин ҳисоб баста шудааст."),
-  "This phone number is already used by another account.": t("Ин рақами телефон аллакай дар ҳисоби дигар ҳаст."),
-  "The end date must be after the issue date.": t("Санаи анҷом бояд баъд аз санаи додан бошад."),
-  "You already reviewed this employer. Edit that review instead.": t("Шумо аллакай ба ин корфармо баҳо додаед."),
-  "Wrong email or password.": t("Почта ё парол нодуруст аст."),
-  "This email is already registered. Log in or reset the password.": t("Ин почта аллакай сабти ном шудааст. Ворид шавед ё паролро барқарор кунед."),
-  "Confirm your email first. We sent you a code.": t("Аввал почтаро тасдиқ кунед. Мо рамз фиристодем."),
-  "This email is already confirmed or not registered.": t("Ин почта аллакай тасдиқ шудааст ё сабти ном нашудааст."),
+  "A code was just sent. Wait a minute before asking for a new one.": "Рамз ҳозир фиристода шуд. Як дақиқа интизор шавед.",
+  "The email could not be sent. Try again in a few minutes.": "Мактуб фиристода нашуд. Баъд аз чанд дақиқа боз кӯшиш кунед.",
+  "The code has expired. Ask for a new one.": "Мӯҳлати рамз гузашт. Рамзи нав гиред.",
+  "Too many wrong tries. Ask for a new code.": "Кӯшишҳои хато зиёд шуданд. Рамзи нав гиред.",
+  "Wrong code.": "Рамз нодуруст аст.",
+  "The code is 6 digits.": "Рамз 6 рақам дорад.",
+  "This account is blocked.": "Ин ҳисоб баста шудааст.",
+  "This phone number is already used by another account.": "Ин рақами телефон аллакай дар ҳисоби дигар ҳаст.",
+  "The end date must be after the issue date.": "Санаи анҷом бояд баъд аз санаи додан бошад.",
+  "You already reviewed this employer. Edit that review instead.": "Шумо аллакай ба ин корфармо баҳо додаед.",
+  "Wrong email or password.": "Почта ё парол нодуруст аст.",
+  "This email is already registered. Log in or reset the password.": "Ин почта аллакай сабти ном шудааст. Ворид шавед ё паролро барқарор кунед.",
+  "Confirm your email first. We sent you a code.": "Аввал почтаро тасдиқ кунед. Мо рамз фиристодем.",
+  "This email is already confirmed or not registered.": "Ин почта аллакай тасдиқ шудааст ё сабти ном нашудааст.",
   // Password rules: the server writes these in Russian (the same texts as Django).
-  "Введённый пароль слишком короткий. Он должен состоять из как минимум 8 символов.": t("Парол кӯтоҳ аст: ҳадди ақал 8 аломат лозим."),
-  "Введённый пароль слишком широко распространён.": t("Ин парол хеле оддӣ аст. Пароли дигар созед."),
-  "Введённый пароль состоит только из цифр.": t("Парол набояд танҳо аз рақамҳо иборат бошад."),
-  "Введённый пароль слишком похож на email.": t("Парол ба почтаи электронӣ хеле монанд аст."),
+  "Введённый пароль слишком короткий. Он должен состоять из как минимум 8 символов.": "Парол кӯтоҳ аст: ҳадди ақал 8 аломат лозим.",
+  "Введённый пароль слишком широко распространён.": "Ин парол хеле оддӣ аст. Пароли дигар созед.",
+  "Введённый пароль состоит только из цифр.": "Парол набояд танҳо аз рақамҳо иборат бошад.",
+  "Введённый пароль слишком похож на email.": "Парол ба почтаи электронӣ хеле монанд аст.",
 };
 
 export function errorText(data) {
   if (!data) return "";
-  if (typeof data === "string") return SERVER_MESSAGES[data] || data;
+  if (typeof data === "string") return SERVER_MESSAGES[data] ? t(SERVER_MESSAGES[data]) : data;
   if (Array.isArray(data)) return data.map(errorText).join(" ");
   if (data.detail) return errorText(data.detail);
   return Object.values(data).map(errorText).join(" ");

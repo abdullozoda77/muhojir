@@ -6,6 +6,8 @@ import { useAuth } from "../auth.jsx";
 import { t } from "../i18n.js";
 import { Button, ErrorBox } from "../components/ui.jsx";
 import { Emblem } from "../components/Pattern.jsx";
+import { LangSwitch, ThemeToggle } from "../components/Layout.jsx";
+import Snowfall from "../components/Snowfall.jsx";
 
 const RESEND_SECONDS = 60;
 
@@ -81,6 +83,16 @@ function CodeBoxes({ value, onChange, disabled }) {
           }}
         />
       ))}
+    </div>
+  );
+}
+
+// The winter sky behind the page (pale blue by day, deep blue at night) with slowly falling snow.
+function WinterScene() {
+  return (
+    <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#bcd3f5] via-[#dce8fa] to-[#f6f9ff] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]" />
+      <Snowfall className="absolute inset-0" />
     </div>
   );
 }
@@ -186,52 +198,63 @@ export default function Login() {
   const linkButton = "min-h-[44px] text-label-md text-primary hover:underline disabled:text-outline disabled:no-underline";
 
   return (
-    <div className="relative grid min-h-screen bg-background lg:grid-cols-[1.05fr_1fr]">
+    <div className="relative isolate grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       <div className="flag-line fixed inset-x-0 top-0 z-50 h-[3px]" aria-hidden />
+      <WinterScene />
 
-      {/* The welcome side: what the site does, quiet and plain. */}
-      <aside className="relative hidden flex-col justify-between border-r border-outline-variant bg-surface-container-low p-12 lg:flex xl:p-16">
+      {/* The welcome side: what the site does, over the winter sky. */}
+      <aside className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
         <Link to="/" className="flex items-center gap-2.5 self-start">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 ring-1 ring-outline-variant"><img src="/logo.png" alt="" className="h-full w-full" /></span>
-          <span className="text-[18px] font-semibold tracking-tight">Muhojir</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 shadow-sm ring-1 ring-white/70"><img src="/logo.png" alt="" className="h-full w-full" /></span>
+          <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
         </Link>
         <div className="flex max-w-lg flex-col gap-8">
-          <h1 className="text-[44px] font-semibold leading-[1.05] tracking-[-0.035em]">
+          <h1 className="text-[48px] font-semibold leading-[1.04] tracking-[-0.035em] text-navy dark:text-white">
             {t("Ҳуҷҷатҳо сари вақт.")}
             <br />
-            <span className="text-on-surface-variant">{t("Кори боэътимод.")}</span>
+            <span className="bg-gradient-to-r from-primary to-[#5b8def] bg-clip-text text-transparent dark:from-[#9cc0ff] dark:to-[#e3ecff]">{t("Кори боэътимод.")}</span>
           </h1>
           <ul className="flex flex-col gap-3">
             {[t("Ёдраскунӣ пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо"), t("Роҳнамои қадам ба қадам бо забони тоҷикӣ"), t("Ҷойҳои кори воқеӣ бо суроға")].map((line) => (
-              <li key={line} className="flex items-center gap-3 text-body-md text-on-surface-variant">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-on-surface" aria-hidden />
+              <li key={line} className="flex items-center gap-3 text-body-md text-navy/80 dark:text-[#c9d6f2]">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/60 ring-1 ring-white/80 backdrop-blur dark:bg-white/10 dark:ring-white/15">
+                  <CheckCircle2 className="h-4 w-4 text-primary dark:text-[#9cc0ff]" aria-hidden />
+                </span>
                 {line}
               </li>
             ))}
           </ul>
         </div>
-        <p className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+        <p className="flex items-center gap-2 self-start rounded-full bg-white/50 px-3 py-1.5 text-body-sm text-navy/80 ring-1 ring-white/70 backdrop-blur dark:bg-white/5 dark:text-[#c9d6f2] dark:ring-white/10">
           <Emblem className="h-3 w-[18px]" />
           {t("Бепул. Почтаи шумо бо рамз тасдиқ карда мешавад.")}
         </p>
       </aside>
 
-      {/* The form side. */}
-      <div className="flex flex-col justify-center px-4 py-12 sm:px-10">
+      {/* The form side: a frosted glass card with a little snow on top. */}
+      <div className="relative z-10 flex flex-col justify-center px-4 py-10 sm:px-10">
         <div className="mx-auto w-full max-w-[440px]">
-          <div className="mb-10 flex items-center justify-between">
-            <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-label-md text-on-surface-variant hover:text-on-surface">
+          <div className="mb-8 flex items-center justify-between gap-2">
+            <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-label-md text-navy/80 hover:text-navy dark:text-[#c9d6f2] dark:hover:text-white">
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("Ба саҳифаи асосӣ")}
             </Link>
-            <Link to="/" className="flex items-center gap-2 lg:hidden">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 ring-1 ring-outline-variant"><img src="/logo.png" alt="" className="h-full w-full" /></span>
-              <span className="text-[18px] font-semibold tracking-tight">Muhojir</span>
-            </Link>
+            <div className="flex items-center gap-1.5 rounded-xl bg-white/50 p-1 ring-1 ring-white/70 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+              <LangSwitch />
+              <ThemeToggle />
+            </div>
           </div>
-          <div className="rounded-2xl bg-surface-container-lowest p-7 ring-1 ring-outline-variant sm:p-9">
+          <Link to="/" className="mb-6 flex items-center justify-center gap-2 lg:hidden">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 shadow-sm ring-1 ring-white/70"><img src="/logo.png" alt="" className="h-full w-full" /></span>
+            <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
+          </Link>
+          <div className="relative rounded-3xl bg-white/75 p-7 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-9 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
+            {/* Snow lying on the top edge of the card */}
+            <svg className="pointer-events-none absolute -top-[13px] left-5 right-5 h-[22px] w-[calc(100%-2.5rem)] drop-shadow-[0_2px_2px_rgba(60,90,160,0.18)]" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden>
+              <path className="fill-white dark:fill-[#e3ebfb]" d="M0 22 C10 22 12 12 26 11 C40 10 44 4 62 5 C80 6 84 13 102 12 C118 11 124 3 146 3 C168 3 172 12 192 12 C212 12 218 6 238 6 C256 6 262 14 282 13 C302 12 306 2 330 2 C352 2 356 12 372 13 C386 14 392 22 400 22Z" />
+            </svg>
           <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#5b8def] text-white shadow-lg shadow-primary/30">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
           </div>

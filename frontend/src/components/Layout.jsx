@@ -85,7 +85,7 @@ function Count({ n, tone = "bg-secondary text-on-secondary" }) {
   return <span className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${tone}`}>{n}</span>;
 }
 
-function LangSwitch() {
+export function LangSwitch() {
   const { user } = useAuth();
   const choose = async (next) => {
     if (next === lang) return;
@@ -116,7 +116,7 @@ function IconButton({ children, label, ...props }) {
   );
 }
 
-function ThemeToggle() {
+export function ThemeToggle() {
   const { dark, toggle } = useTheme();
   return (
     <IconButton onClick={toggle} label={dark ? t("Мавзӯи равшан") : t("Мавзӯи торик")}>

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import Layout from "./components/Layout.jsx";
 import { useAuth } from "./auth.jsx";
+import { useLang } from "./i18n.js";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -41,6 +42,8 @@ function Private({ children }) {
 }
 
 export default function App() {
+  // A new language re-renders every page in place (no reload).
+  useLang();
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
