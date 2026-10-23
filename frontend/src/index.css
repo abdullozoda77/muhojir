@@ -5,11 +5,11 @@
 /* Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent,
    hairline borders instead of shadows. The red, white and green of the flag appear only as a thin line on top.
    Colors are RGB channels, so Tailwind can add opacity (bg-primary/10). html.dark switches to the night set.
-   "navy"/"banner" are the deep blue of dark blocks; "ink" the main buttons (deep blue, white at night);
+   "navy"/"banner" are the deep blue of dark blocks; "ink" the main buttons (bright blue by day, white at night);
    "secondary" is deep blue too, so there is one accent. The night theme is deep blue, not black. */
 :root {
-  --c-banner: 16 36 84;
-  --c-navy: 16 36 84;
+  --c-banner: 22 58 170;
+  --c-navy: 22 58 170;
   --c-on-navy: 214 224 246;
   --c-navy-muted: 160 176 214;
   --c-gold: 202 160 82;
@@ -53,7 +53,7 @@
   --c-inverse-on-surface: 250 246 238;
   --c-outline: 120 116 108;
   --c-outline-variant: 222 214 200;
-  --c-ink: 16 36 84;
+  --c-ink: 29 78 216;
   --c-on-ink: 255 255 255;
   color-scheme: light;
 }

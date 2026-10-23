@@ -79,7 +79,7 @@ export default function JobDetail() {
         <aside className="flex flex-col gap-4 lg:col-span-4">
           <Link to={`/employers/${job.employer.id}`} className="card group flex flex-col gap-3 p-5 transition-colors hover:ring-outline/50">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                 <Building2 className="h-5 w-5" aria-hidden />
               </div>
               <div className="min-w-0">

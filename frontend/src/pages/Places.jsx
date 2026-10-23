@@ -133,7 +133,7 @@ function PlaceCard({ place, onOpen }) {
   return (
     <button type="button" onClick={() => onOpen(place.id)} className="group flex w-full items-start gap-4 rounded-xl p-3.5 text-left transition-colors hover:bg-surface-container-low">
       {/* A quiet icon tile; the dot has the category's color, like its marker on the map. */}
-      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant transition-transform duration-300 group-hover:scale-105">
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15 transition-transform duration-300 group-hover:scale-105">
         <k.icon className="h-[18px] w-[18px]" aria-hidden />
         <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface-container-lowest" style={{ backgroundColor: k.color }} />
       </span>

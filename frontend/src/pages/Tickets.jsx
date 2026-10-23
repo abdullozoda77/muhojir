@@ -62,7 +62,7 @@ function Calendar({ calendar }) {
   return (
     <div className="card flex flex-col gap-4 p-6">
       <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <CalendarDays className="h-5 w-5" aria-hidden />
         </span>
         {t("Нархҳо аз рӯи рӯз")}
@@ -84,7 +84,7 @@ function TicketRow({ ticket }) {
   return (
     <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-5">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <Plane className="h-5 w-5" aria-hidden />
         </div>
         <div className="flex flex-col gap-0.5">
@@ -128,7 +128,7 @@ function PriceAlert({ origin, destination, month, cheapest }) {
     return (
       <div className="card flex flex-col gap-4 p-6">
         <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
             <BellPlus className="h-5 w-5" aria-hidden />
           </span>
           {t("Огоҳӣ дар бораи чиптаи арзон")}
@@ -159,7 +159,7 @@ function PriceAlert({ origin, destination, month, cheapest }) {
   return (
     <div className="card flex flex-col gap-4 p-6">
       <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <BellPlus className="h-5 w-5" aria-hidden />
         </span>
         {t("Огоҳӣ дар бораи чиптаи арзон")}
@@ -211,7 +211,7 @@ function TravelTips() {
   return (
     <div className="card flex flex-col gap-4 p-6">
       <h2 className="flex items-center gap-3 text-[17px] font-semibold">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <Info className="h-5 w-5" aria-hidden />
         </span>
         {t("Пеш аз сафар")}

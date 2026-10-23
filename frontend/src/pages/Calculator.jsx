@@ -131,7 +131,7 @@ export default function Calculator() {
             </div>
 
             <Reveal className="card flex flex-col gap-4 p-6 md:flex-row md:items-center">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                 <BellRing className="h-5 w-5" aria-hidden />
               </div>
               <div className="flex-1">
@@ -150,7 +150,7 @@ export default function Calculator() {
             <div id="print-area" className="card flex flex-col gap-4 p-6">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                     <ListChecks className="h-5 w-5" aria-hidden />
                   </span>
                   <div>
@@ -169,7 +169,7 @@ export default function Calculator() {
             </div>
             <div className="card flex flex-col gap-3 p-6">
               <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                   <MapPinned className="h-5 w-5" aria-hidden />
                 </span>
                 {t("Марказҳои муҳоҷират")}

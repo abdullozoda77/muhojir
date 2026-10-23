@@ -97,7 +97,7 @@ export default function Profile() {
       </form>
       {(user.role === "editor" || user.role === "admin") && (
         <a href="/admin/" className="card group flex items-center gap-4 p-5 transition-colors hover:ring-outline/50 md:p-6">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
             <PenSquare className="h-5 w-5" aria-hidden />
           </span>
           <span className="flex-1">

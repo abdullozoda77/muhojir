@@ -10,7 +10,7 @@ export default function PhoneApp() {
   return (
     <section className="card flex flex-col gap-4 p-5 md:p-6">
       <h2 className="flex items-center gap-3 text-[17px] font-semibold">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <Smartphone className="h-5 w-5" aria-hidden />
         </span>
         {t("Барнома дар телефон")}

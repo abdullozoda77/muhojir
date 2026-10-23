@@ -83,7 +83,7 @@ export function EmptyState({ icon: Icon, title, text, children }) {
   return (
     <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
       {Icon && (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
           <Icon className="h-6 w-6" aria-hidden />
         </div>
       )}
@@ -130,7 +130,7 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 p-5 backdrop-blur md:px-6">
               <div className="flex items-center gap-3">
                 {Icon && (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                 )}
@@ -166,7 +166,7 @@ export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
           )}
           <IntroItem as="h1" className="flex items-center gap-3 font-display text-[30px] font-semibold leading-[1.1] text-on-surface md:text-[40px]">
             {Icon && (
-              <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant md:flex">
+              <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15 md:flex">
                 <Icon className="h-5 w-5" aria-hidden />
               </span>
             )}

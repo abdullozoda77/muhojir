@@ -157,7 +157,7 @@ function MoreMenu({ items, counts, user }) {
         {open && (
           <m.div initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }} className="absolute left-0 top-11 z-50 grid w-[420px] grid-cols-2 gap-0.5 rounded-xl bg-surface-container-lowest p-1.5 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.18)] ring-1 ring-outline-variant">
             {items.map((i) => (
-              <NavLink key={i.to} to={i.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-2.5 py-2 text-label-md transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-2.5 py-2 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-outline-variant">
                   <i.icon className="h-4 w-4" aria-hidden />
                 </span>
@@ -255,7 +255,7 @@ export default function Layout() {
           <Logo />
           <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
@@ -319,7 +319,7 @@ export default function Layout() {
       {/* Phones and tablets: the floating dock. */}
       <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-50 mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl bg-surface-container-lowest/90 p-1 shadow-[0_12px_32px_-12px_rgb(0_0_0/0.25)] ring-1 ring-outline-variant backdrop-blur-xl lg:hidden" aria-label={t("Менюи асосӣ")}>
         {dock.map((i) => (
-          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors ${isActive ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
+          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
             <i.icon className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate px-1">{i.short || i.label}</span>
             {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-warning-container ring-2 ring-surface-container-lowest" />}

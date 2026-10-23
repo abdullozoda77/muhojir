@@ -65,7 +65,7 @@ const SERVICES = [
 
 function TileIcon({ icon: Icon }) {
   return (
-    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110">
+    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15 transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110">
       <Icon className="h-5 w-5" aria-hidden />
     </span>
   );
@@ -261,7 +261,7 @@ function GuestHome() {
           <IntroItem as="h1" className="text-[40px] font-semibold leading-[1.05] tracking-[-0.035em] md:text-[64px]">
             {t("Ҳуҷҷатҳо сари вақт.")}
             <br />
-            <span className="text-on-surface-variant">{t("Кори боэътимод.")}</span>
+            <span className="text-ink dark:text-on-surface-variant">{t("Кори боэътимод.")}</span>
           </IntroItem>
           <IntroItem as="p" className="max-w-xl text-body-lg text-on-surface-variant md:text-[18px] md:leading-[30px]">
             {t("Мӯҳлати патент ва бақайдгириро фаромӯш накунед, нархи патентро ҳисоб кунед ва ҷойҳои кори воқеиро аз сайти давлатӣ ёбед. Ҳамааш бепул ва бо забони тоҷикӣ.")}

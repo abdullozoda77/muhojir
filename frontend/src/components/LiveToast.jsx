@@ -27,7 +27,7 @@ export default function LiveToast({ notification, onClose }) {
             className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl bg-surface-container-lowest p-4 shadow-2xl ring-1 ring-outline-variant"
             role="status"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
               <BellRing className="h-5 w-5" aria-hidden />
             </span>
             <Link to="/notifications" onClick={onClose} className="min-w-0 flex-1">

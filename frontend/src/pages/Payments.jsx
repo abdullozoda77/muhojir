@@ -45,7 +45,7 @@ export default function Payments() {
           {list.map((p) => (
             <article key={p.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center">
               <div className="flex flex-1 items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                   <ReceiptText className="h-6 w-6" aria-hidden />
                 </div>
                 <div>

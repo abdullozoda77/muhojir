@@ -29,7 +29,7 @@ export default function Checks() {
           {checks.map((check) => (
             <StaggerItem key={check.id} className="card flex flex-col gap-5 p-6">
               <h2 className="flex items-center gap-3 text-[18px] font-semibold leading-snug">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                   <SearchCheck className="h-5 w-5" aria-hidden />
                 </span>
                 {check.title}
