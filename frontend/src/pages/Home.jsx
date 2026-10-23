@@ -39,12 +39,29 @@ function Eyebrow({ children }) {
 }
 
 // value: a number; it counts up once it has loaded.
-function Stat({ value, label }) {
+// The three numbers in the colors of the flag of Tajikistan in the light theme: red, white (wider), green.
+// At night the rows stay dark and keep only a thin stripe of their color on the left.
+const STAT_TONES = {
+  red: { row: "bg-[#cc1a22] text-white dark:bg-transparent dark:text-on-surface", label: "text-white/85 dark:text-on-surface-variant", bar: "dark:bg-[#e2343b]" },
+  white: { row: "bg-white py-7 text-on-surface dark:bg-transparent dark:py-5", label: "text-on-surface-variant", bar: "dark:bg-white" },
+  green: { row: "bg-[#167a32] text-white dark:bg-transparent dark:text-on-surface", label: "text-white/85 dark:text-on-surface-variant", bar: "dark:bg-[#2fa652]" },
+};
+
+const statRow = {
+  hidden: { opacity: 0, x: -28 },
+  shown: { opacity: 1, x: 0, transition: { duration: 0.55, ease: EASE } },
+};
+
+function Stat({ value, label, tone }) {
+  const c = STAT_TONES[tone];
   return (
-    <div className="flex items-baseline justify-between gap-4 px-6 py-5">
-      <span className="text-body-md text-on-surface-variant">{label}</span>
-      <span className="text-[28px] font-semibold leading-none tracking-tight tabular-nums">{value == null ? "—" : <CountUp value={value} duration={1.2} format={num} />}</span>
-    </div>
+    <m.div variants={statRow} className={`group relative flex items-baseline justify-between gap-4 px-6 py-5 transition-[filter] duration-300 hover:brightness-110 ${c.row}`}>
+      <span aria-hidden className={`absolute inset-y-3 left-0 hidden w-[3px] rounded-r-full dark:block ${c.bar}`} />
+      <span className={`text-body-md font-medium ${c.label}`}>{label}</span>
+      <span className="text-[30px] font-semibold leading-none tracking-tight tabular-nums transition-transform duration-300 ease-out group-hover:scale-110">
+        {value == null ? "—" : <CountUp value={value} duration={1.6} format={num} />}
+      </span>
+    </m.div>
   );
 }
 
@@ -247,11 +264,16 @@ function GuestHome() {
   const places = useApi("/places/summary/");
   const placesCount = places.data ? Object.values(places.data.categories).reduce((a, b) => a + b, 0) : null;
   const stats = (
-    <div className="card flex flex-col divide-y divide-outline-variant">
-      <Stat value={jobs.data?.count} label={t("ҷойи кори фаъол")} />
-      <Stat value={regions.data?.count} label={t("минтақа бо нархи патент")} />
-      <Stat value={placesCount || null} label={t("ҷойи муфид дар харита")} />
-    </div>
+    <m.div
+      className="flag-shine relative flex flex-col overflow-hidden rounded-2xl shadow-[0_24px_60px_-28px_rgba(120,20,20,0.45)] ring-1 ring-black/5 dark:divide-y dark:divide-outline-variant dark:bg-surface-container-lowest dark:shadow-none dark:ring-outline-variant"
+      initial={startShown() ? false : "hidden"}
+      animate="shown"
+      variants={{ hidden: {}, shown: { transition: { staggerChildren: 0.14, delayChildren: 0.2 } } }}
+    >
+      <Stat tone="red" value={jobs.data?.count} label={t("ҷойи кори фаъол")} />
+      <Stat tone="white" value={regions.data?.count} label={t("минтақа бо нархи патент")} />
+      <Stat tone="green" value={placesCount || null} label={t("ҷойи муфид дар харита")} />
+    </m.div>
   );
   return (
     <div className="flex flex-col gap-16 md:gap-24">
