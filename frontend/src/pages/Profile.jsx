@@ -27,7 +27,7 @@ function maskEmail(email) {
 function Avatar({ name, size = "h-20 w-20 text-[30px]" }) {
   return (
     <span className={`relative flex shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[4px] shadow-lg ${size}`} aria-hidden>
-      <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#4f7ff0] border-[3px] border-white font-semibold text-white dark:border-[#0b1533] dark:from-[#3a64d8] dark:to-[#6d93ff]">
+      <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] border-[3px] border-white font-semibold text-white dark:border-[#0b1533] dark:from-[#1e3a8a] dark:to-[#2b59d9]">
         {name ? name[0].toUpperCase() : <UserRound className="h-1/2 w-1/2" />}
       </span>
     </span>

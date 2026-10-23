@@ -128,7 +128,7 @@ export default function Assistant() {
         className="group fixed bottom-24 right-4 z-[65] overflow-hidden rounded-full p-[2px] shadow-[0_14px_34px_-12px_rgb(29_78_216/0.75)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.97] lg:bottom-6 lg:right-6"
       >
         <span aria-hidden className="assistant-edge absolute inset-[-150%] bg-[conic-gradient(from_0deg,#cc1a22_0deg,#cc1a22_100deg,#ffffff_120deg,#ffffff_220deg,#167a32_240deg,#167a32_340deg,#cc1a22_360deg)]" />
-        <span className="relative flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white sm:px-4">
+        <span className="relative flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] text-white sm:px-4">
           <AnimatePresence mode="wait" initial={false}>
             <m.span
               key={open ? "close" : "open"}
@@ -156,7 +156,7 @@ export default function Assistant() {
             aria-label={t("Ёрдамчии AI")}
           >
             <header className="flex items-center gap-3 border-b border-outline-variant px-4 py-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#172f73] to-[#1d4ed8] text-white">
                 <AssistantMark className="h-5 w-5" />
               </span>
               <span className="flex-1">
