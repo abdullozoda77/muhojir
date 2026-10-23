@@ -7,8 +7,8 @@ import { date, monthTitle } from "../format.js";
 import DocCard from "../components/DocCard.jsx";
 import DocForm from "../components/DocForm.jsx";
 import PaymentDrawer from "../components/PaymentDrawer.jsx";
-import { Stagger, StaggerItem } from "../components/motion.jsx";
-import { Button, EmptyState, ErrorBox, PageHeader, STATUS, Skeleton, StatusBadge } from "../components/ui.jsx";
+import { Stagger, StaggerItem, m } from "../components/motion.jsx";
+import { Button, EmptyState, ErrorBox, PageHeader, Skeleton, StatusBadge } from "../components/ui.jsx";
 
 const FILTERS = [
   { key: "all", label: () => t("Ҳама") },
@@ -29,20 +29,20 @@ function Calendar({ docs, onEdit }) {
   }, [docs]);
 
   return (
-    <ol className="relative flex flex-col gap-8 border-l-2 border-dashed border-outline-variant pl-6 md:pl-10">
+    <ol className="relative flex flex-col gap-8 border-l border-outline-variant pl-6 md:pl-10">
       {months.map(([month, list]) => (
         <li key={month} className="relative">
-          <span className="absolute -left-[33px] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-navy ring-4 ring-background md:-left-[49px] dark:bg-primary" />
-          <h3 className="mb-3 font-display text-[22px] font-extrabold capitalize text-navy dark:text-on-surface">{monthTitle(month)}</h3>
+          <span className="absolute -left-[30px] top-1.5 h-3 w-3 rounded-full bg-ink ring-4 ring-background md:-left-[46px]" />
+          <h3 className="mb-3 text-[18px] font-semibold capitalize">{monthTitle(month)}</h3>
           <div className="grid gap-3 md:grid-cols-3">
             {list.map((d) => (
-              <button key={d.id} type="button" onClick={() => onEdit(d)} className={`flex flex-col justify-between gap-3 rounded-[24px] p-5 text-left transition-transform hover:-translate-y-0.5 ${STATUS[d.status].box}`}>
+              <button key={d.id} type="button" onClick={() => onEdit(d)} className="card flex flex-col justify-between gap-3 p-5 text-left transition-colors hover:ring-outline/50">
                 <div>
-                  <span className="text-label-sm uppercase">{date(d.expires_at)}</span>
-                  <p className="mt-1 font-display text-[18px] font-bold leading-tight">{t(d.document_type_title)}</p>
-                  {d.region_name && <p className="text-body-sm opacity-80">{d.region_name}</p>}
+                  <span className="text-label-md tabular-nums text-on-surface-variant">{date(d.expires_at)}</span>
+                  <p className="mt-1 text-[17px] font-semibold leading-tight">{t(d.document_type_title)}</p>
+                  {d.region_name && <p className="text-body-sm text-on-surface-variant">{d.region_name}</p>}
                 </div>
-                <StatusBadge doc={d} className="self-start bg-surface-container-lowest/60" />
+                <StatusBadge doc={d} className="self-start" />
               </button>
             ))}
           </div>
@@ -92,32 +92,33 @@ export default function Documents() {
       </PageHeader>
 
       {/* The four counts are also the filter. */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" role="tablist">
-        {FILTERS.map((f) => {
+      <div className="card grid grid-cols-2 overflow-hidden md:grid-cols-4" role="tablist">
+        {FILTERS.map((f, i) => {
           const on = filter === f.key;
           return (
-            <button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)} className={`flex flex-col items-start gap-3 rounded-[28px] p-5 text-left transition-all ${on ? "bg-navy text-white shadow-[0_18px_36px_-18px_rgb(16_38_92/0.8)] dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest ring-1 ring-outline-variant/60 hover:-translate-y-0.5"}`}>
-              <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${on ? "bg-white/15" : "bg-surface-container-low"}`}>
-                {f.icon ? <f.icon className={`h-5 w-5 ${on ? "" : f.tone}`} aria-hidden /> : <LayoutList className="h-5 w-5" aria-hidden />}
+            <button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)} className={`relative flex flex-col items-start gap-2 p-5 text-left transition-colors ${i % 2 ? "border-l border-outline-variant" : ""} ${i > 1 ? "border-t border-outline-variant md:border-t-0" : ""} ${i === 2 ? "md:border-l" : ""} ${on ? "bg-surface-container-low" : "hover:bg-surface-container-low/60"}`}>
+              <span className="flex items-center gap-2 text-label-md text-on-surface-variant">
+                {f.icon ? <f.icon className={`h-4 w-4 ${f.tone}`} aria-hidden /> : <LayoutList className="h-4 w-4" aria-hidden />}
+                {f.label()}
               </span>
-              <span className="font-display text-[40px] font-black leading-none">{counts[f.key]}</span>
-              <span className={`text-label-md ${on ? "text-white/80" : "text-on-surface-variant"}`}>{f.label()}</span>
+              <span className="text-[32px] font-semibold leading-none tracking-tight tabular-nums">{counts[f.key]}</span>
+              {on && <m.span layoutId="doc-filter" className="absolute inset-x-0 bottom-0 h-0.5 bg-ink" />}
             </button>
           );
         })}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/checks" className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 text-label-md text-primary ring-1 ring-outline-variant hover:bg-surface-container-lowest">
+        <Link to="/checks" className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3.5 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
           <SearchCheck className="h-4 w-4" aria-hidden />
           {t("Санҷиш дар сайтҳои расмӣ")}
         </Link>
-        <div className="inline-flex rounded-full bg-surface-container-lowest p-1 ring-1 ring-outline-variant/60">
+        <div className="inline-flex rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant">
           {[
             ["list", LayoutList, t("Рӯйхат")],
             ["calendar", CalendarDays, t("Тақвим")],
           ].map(([key, Icon, label]) => (
-            <button key={key} type="button" onClick={() => setView(key)} aria-pressed={view === key} className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-label-md transition-colors ${view === key ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "text-on-surface-variant"}`}>
+            <button key={key} type="button" onClick={() => setView(key)} aria-pressed={view === key} className={`flex min-h-[36px] items-center gap-1.5 rounded-lg px-3.5 text-label-md transition-colors ${view === key ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
               <Icon className="h-4 w-4" aria-hidden />
               {label}
             </button>
@@ -140,34 +141,36 @@ export default function Documents() {
       ) : shown.length === 0 ? (
         <EmptyState icon={CheckCircle2} title={t("Дар ин бахш ҳуҷҷат нест")} />
       ) : (
-        <Stagger key={filter} className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <Stagger key={filter} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((d) => (
-            <StaggerItem key={d.id} className="flex">
+            <StaggerItem key={d.id} className="flex min-w-0">
               <DocCard doc={d} slug={slugOf(d)} onEdit={setEditing} onPay={setPaying} />
             </StaggerItem>
           ))}
         </Stagger>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <Stagger inView className="grid gap-3 md:grid-cols-3">
         {SERVICES.map((s) => (
-          <Link key={s.to} to={s.to} className="flex flex-col gap-3 rounded-[28px] bg-surface-container-lowest p-6 ring-1 ring-outline-variant/60 transition-all hover:-translate-y-0.5">
+          <StaggerItem key={s.to}>
+          <Link to={s.to} className="card group flex h-full flex-col gap-3 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] hover:ring-outline/50">
             <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-fixed text-on-primary-fixed">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
                 <s.icon className="h-5 w-5" aria-hidden />
               </div>
               <div>
-                <h3 className="font-display text-[18px] font-bold">{s.title()}</h3>
+                <h3 className="text-[16px] font-semibold">{s.title()}</h3>
                 <p className="mt-1 text-body-sm text-on-surface-variant">{s.text()}</p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1 self-end text-label-md text-primary">
+            <span className="mt-auto inline-flex items-center gap-1 self-end text-label-md text-on-surface-variant transition-colors group-hover:text-on-surface">
               {t("Кушодан")}
-              <ArrowRight className="h-4 w-4" aria-hidden />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
             </span>
           </Link>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
 
       <DocForm
         doc={editing}

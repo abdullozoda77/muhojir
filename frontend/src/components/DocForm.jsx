@@ -132,7 +132,7 @@ export default function DocForm({ doc, types, regions, onClose, onSaved }) {
           </Field>
         </div>
         {suggest && (
-          <button type="button" onClick={() => setForm((f) => ({ ...f, expires_at: suggest }))} className="self-start rounded-2xl bg-primary-fixed px-3 py-2 text-label-md text-on-primary-fixed">
+          <button type="button" onClick={() => setForm((f) => ({ ...f, expires_at: suggest }))} className="self-start rounded-lg bg-primary/[0.07] px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/[0.12]">
             {t("Одатан {0} рӯз: санаи анҷомро {1} гузорем?", type.default_validity_days, suggest.split("-").reverse().join("."))}
           </button>
         )}
@@ -147,7 +147,7 @@ export default function DocForm({ doc, types, regions, onClose, onSaved }) {
                 role="radio"
                 aria-checked={Number(form.remind_days_before) === days}
                 onClick={() => setForm((f) => ({ ...f, remind_days_before: days }))}
-                className={`flex min-h-[48px] flex-col items-center justify-center rounded-2xl text-center text-label-md ${Number(form.remind_days_before) === days ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-low hover:bg-surface-container"}`}
+                className={`flex min-h-[48px] flex-col items-center justify-center rounded-xl text-center text-label-md ${Number(form.remind_days_before) === days ? "bg-ink text-on-ink" : "ring-1 ring-inset ring-outline-variant hover:bg-surface-container"}`}
               >
                 <span className="text-label-lg">{days}</span>
                 <span className="text-label-sm font-normal">{t("рӯз қабл")}</span>
@@ -165,7 +165,7 @@ export default function DocForm({ doc, types, regions, onClose, onSaved }) {
               <Button variant="ghost" icon={Trash2} onClick={removePhoto}>{t("Нест кардан")}</Button>
             </div>
           )}
-          <label className="flex min-h-[96px] cursor-pointer flex-col items-center justify-center rounded-[22px] bg-surface-container-low p-4 text-center hover:bg-surface-container">
+          <label className="flex min-h-[96px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-outline/50 p-4 text-center transition-colors hover:border-outline hover:bg-surface-container-low">
             <Camera className="mb-1 h-7 w-7 text-primary" aria-hidden />
             <span className="text-label-md">{photo ? photo.name : editing && doc.has_photo ? t("Сурати навро интихоб кунед") : t("Сурати ҳуҷҷатро интихоб кунед")}</span>
             <span className="text-body-sm text-on-surface-variant">{t("JPG, PNG ё PDF, то 10 МБ. Сурат пӯшида нигоҳ дошта мешавад — танҳо шумо мебинед.")}</span>
