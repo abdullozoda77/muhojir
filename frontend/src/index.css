@@ -2,104 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-/* "Атлас" — Muhojir's design: milky white paper, deep lapis blue for banners, the menu and the main color,
-   saffron gold for the ornament (the crown and seven stars of Tajikistan), pomegranate red for the main actions.
-   Colors are RGB channels, so Tailwind can add opacity (bg-primary/10). html.dark switches to the night set. */
+/* Muhojir's design: minimal and calm. Near-white paper, deep blue for the main actions and dark blocks, one blue accent,
+   hairline borders instead of shadows. The red, white and green of the flag appear only as a thin line on top.
+   Colors are RGB channels, so Tailwind can add opacity (bg-primary/10). html.dark switches to the night set.
+   "navy"/"banner" are the deep blue of dark blocks; "ink" the main buttons (deep blue, white at night);
+   "secondary" is deep blue too, so there is one accent. The night theme is deep blue, not black. */
 :root {
-  --c-banner: 16 38 92;
-  --c-navy: 11 27 66;
-  --c-on-navy: 225 233 250;
-  --c-navy-muted: 236 194 110;
-  --c-gold: 233 175 62;
-  --c-primary: 24 64 160;
+  --c-banner: 16 36 84;
+  --c-navy: 16 36 84;
+  --c-on-navy: 214 224 246;
+  --c-navy-muted: 160 176 214;
+  --c-gold: 202 160 82;
+  --c-primary: 37 84 214;
   --c-on-primary: 255 255 255;
-  --c-primary-container: 38 88 196;
-  --c-on-primary-container: 230 238 255;
-  --c-primary-fixed: 222 231 252;
-  --c-on-primary-fixed: 0 26 72;
-  --c-secondary: 190 36 60;
+  --c-primary-container: 52 102 232;
+  --c-on-primary-container: 255 255 255;
+  --c-primary-fixed: 236 241 254;
+  --c-on-primary-fixed: 22 52 140;
+  --c-secondary: 16 36 84;
   --c-on-secondary: 255 255 255;
-  --c-secondary-container: 214 60 82;
+  --c-secondary-container: 32 58 120;
   --c-on-secondary-container: 255 255 255;
-  --c-secondary-fixed: 255 226 229;
-  --c-on-secondary-fixed: 72 0 16;
-  --c-warning: 140 82 0;
+  --c-secondary-fixed: 238 242 250;
+  --c-on-secondary-fixed: 16 36 84;
+  --c-warning: 161 98 7;
   --c-on-warning: 255 255 255;
-  --c-warning-container: 233 163 30;
-  --c-on-warning-container: 58 34 0;
-  --c-warning-fixed: 255 236 202;
-  --c-on-warning-fixed: 50 28 0;
-  --c-tertiary: 30 112 44;
+  --c-warning-container: 234 179 8;
+  --c-on-warning-container: 66 32 6;
+  --c-warning-fixed: 254 246 220;
+  --c-on-warning-fixed: 113 63 18;
+  --c-tertiary: 21 128 61;
   --c-on-tertiary: 255 255 255;
-  --c-tertiary-container: 44 142 62;
-  --c-tertiary-fixed: 208 240 206;
-  --c-on-tertiary-fixed: 0 40 10;
-  --c-error: 186 26 26;
+  --c-tertiary-container: 34 160 80;
+  --c-tertiary-fixed: 230 246 236;
+  --c-on-tertiary-fixed: 20 83 45;
+  --c-error: 200 34 42;
   --c-on-error: 255 255 255;
-  --c-error-container: 255 218 214;
-  --c-on-error-container: 147 0 10;
-  --c-background: 250 248 243;
-  --c-surface: 253 252 249;
-  --c-on-surface: 22 26 40;
-  --c-on-surface-variant: 80 84 98;
+  --c-error-container: 254 236 236;
+  --c-on-error-container: 153 27 27;
+  --c-background: 250 250 250;
+  --c-surface: 255 255 255;
+  --c-on-surface: 15 23 42;
+  --c-on-surface-variant: 99 99 108;
   --c-surface-container-lowest: 255 255 255;
-  --c-surface-container-low: 245 242 235;
-  --c-surface-container: 239 235 226;
-  --c-surface-container-high: 231 226 215;
-  --c-surface-container-highest: 222 216 203;
-  --c-inverse-surface: 22 30 52;
-  --c-inverse-on-surface: 242 240 234;
-  --c-outline: 116 114 108;
-  --c-outline-variant: 224 218 206;
+  --c-surface-container-low: 245 245 246;
+  --c-surface-container: 240 240 242;
+  --c-surface-container-high: 233 233 236;
+  --c-surface-container-highest: 222 222 226;
+  --c-inverse-surface: 16 36 84;
+  --c-inverse-on-surface: 244 244 245;
+  --c-outline: 150 150 160;
+  --c-outline-variant: 228 228 231;
+  --c-ink: 16 36 84;
+  --c-on-ink: 255 255 255;
   color-scheme: light;
 }
 
 html.dark {
-  --c-banner: 18 36 82;
-  --c-navy: 9 18 42;
+  --c-banner: 24 42 90;
+  --c-navy: 24 42 90;
   --c-on-navy: 214 224 246;
-  --c-navy-muted: 236 194 110;
-  --c-gold: 240 190 90;
-  --c-primary: 140 178 255;
-  --c-on-primary: 6 30 80;
-  --c-primary-container: 40 80 170;
-  --c-on-primary-container: 220 232 255;
-  --c-primary-fixed: 26 46 92;
-  --c-on-primary-fixed: 210 224 255;
-  --c-secondary: 255 116 132;
-  --c-on-secondary: 54 0 12;
-  --c-secondary-container: 206 58 80;
-  --c-on-secondary-container: 255 255 255;
-  --c-secondary-fixed: 82 22 32;
-  --c-on-secondary-fixed: 255 216 221;
-  --c-warning: 245 188 76;
+  --c-navy-muted: 160 176 214;
+  --c-gold: 222 184 110;
+  --c-primary: 132 164 255;
+  --c-on-primary: 12 22 56;
+  --c-primary-container: 52 92 210;
+  --c-on-primary-container: 236 241 255;
+  --c-primary-fixed: 26 34 62;
+  --c-on-primary-fixed: 196 212 255;
+  --c-secondary: 244 244 245;
+  --c-on-secondary: 24 24 27;
+  --c-secondary-container: 212 212 216;
+  --c-on-secondary-container: 24 24 27;
+  --c-secondary-fixed: 30 45 82;
+  --c-on-secondary-fixed: 226 232 245;
+  --c-warning: 250 204 21;
   --c-on-warning: 46 24 0;
-  --c-warning-container: 233 163 30;
+  --c-warning-container: 234 179 8;
   --c-on-warning-container: 46 24 0;
-  --c-warning-fixed: 74 52 10;
-  --c-on-warning-fixed: 255 226 172;
-  --c-tertiary: 124 222 132;
+  --c-warning-fixed: 52 40 12;
+  --c-on-warning-fixed: 253 230 160;
+  --c-tertiary: 110 220 140;
   --c-on-tertiary: 0 35 10;
-  --c-tertiary-container: 40 140 60;
-  --c-tertiary-fixed: 22 62 32;
-  --c-on-tertiary-fixed: 192 246 196;
-  --c-error: 255 107 107;
+  --c-tertiary-container: 34 150 76;
+  --c-tertiary-fixed: 20 48 30;
+  --c-on-tertiary-fixed: 187 247 208;
+  --c-error: 252 110 110;
   --c-on-error: 45 0 0;
-  --c-error-container: 77 20 20;
-  --c-on-error-container: 255 218 214;
-  --c-background: 9 13 24;
-  --c-surface: 13 18 32;
-  --c-on-surface: 236 238 245;
-  --c-on-surface-variant: 172 180 198;
-  --c-surface-container-lowest: 16 22 38;
-  --c-surface-container-low: 21 28 47;
-  --c-surface-container: 27 36 58;
-  --c-surface-container-high: 34 44 70;
-  --c-surface-container-highest: 43 54 83;
-  --c-inverse-surface: 0 0 0;
-  --c-inverse-on-surface: 236 238 245;
-  --c-outline: 128 138 160;
-  --c-outline-variant: 52 64 92;
+  --c-error-container: 64 22 24;
+  --c-on-error-container: 254 205 205;
+  --c-background: 7 13 30;
+  --c-surface: 10 18 40;
+  --c-on-surface: 236 240 248;
+  --c-on-surface-variant: 160 172 200;
+  --c-surface-container-lowest: 12 21 46;
+  --c-surface-container-low: 16 27 56;
+  --c-surface-container: 21 34 66;
+  --c-surface-container-high: 29 44 80;
+  --c-surface-container-highest: 40 57 98;
+  --c-inverse-surface: 236 240 248;
+  --c-inverse-on-surface: 10 18 40;
+  --c-outline: 108 124 160;
+  --c-outline-variant: 30 45 82;
+  --c-ink: 236 240 248;
+  --c-on-ink: 10 18 40;
   color-scheme: dark;
 }
 
@@ -109,33 +115,27 @@ html.dark {
   }
   /* Page and section headings: the display font, extra bold and a little tighter. */
   h1,
-  h2 {
+  h2,
+  h3 {
     @apply font-display;
-    font-weight: 800;
-    letter-spacing: -0.015em;
+    font-weight: 600;
+    letter-spacing: -0.022em;
   }
   body {
-    /* Silk paper: a warm light from the top corner and a fine woven grain. */
-    background-image:
-      radial-gradient(1200px 600px at 100% -10%, rgb(var(--c-gold) / 0.10), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, rgb(var(--c-primary) / 0.07), transparent 60%);
-    background-attachment: fixed;
+    font-feature-settings: "cv11", "ss01";
   }
   /* Checkboxes of @tailwindcss/forms follow the theme instead of staying white in dark mode. */
   [type="checkbox"] {
     @apply border-outline bg-surface-container-lowest;
   }
   :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-offset-2;
+    @apply outline-none ring-2 ring-primary/60 ring-offset-2 ring-offset-background;
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-[28px] bg-surface-container-lowest shadow-[0_1px_2px_rgb(20_30_60/0.05),0_8px_24px_-12px_rgb(20_30_60/0.18)] ring-1 ring-outline-variant/50;
-  }
-  html.dark .card {
-    @apply shadow-none ring-outline-variant;
+    @apply rounded-2xl bg-surface-container-lowest ring-1 ring-outline-variant;
   }
   /* The flag line: Muhojir's signature, the red, white and green of the flag of Tajikistan (2:3:2). */
   .flag-line {
@@ -150,10 +150,10 @@ html.dark {
     background: linear-gradient(90deg, #dc161d 0 28.6%, #ffffff 28.6% 71.4%, #197b30 71.4% 100%);
   }
   .input {
-    @apply h-[52px] w-full rounded-full border-0 bg-surface-container-low px-5 text-body-md text-on-surface ring-1 ring-inset ring-outline-variant/60 placeholder:text-outline focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary;
+    @apply h-12 w-full rounded-xl border-0 bg-surface-container-lowest px-4 text-body-md text-on-surface ring-1 ring-inset ring-outline-variant transition-shadow placeholder:text-outline hover:ring-outline/60 focus:ring-2 focus:ring-primary;
   }
   textarea.input {
-    @apply rounded-[22px];
+    @apply py-3;
   }
   .label {
     @apply mb-1.5 block text-label-md text-on-surface;
@@ -257,53 +257,7 @@ html.dark {
   .paper-shine { display: none; }
 }
 
-/* Soft lights in the page corners, behind everything: blue at the top right, a little red at the bottom left
-   (the site's two colors). Radial gradients instead of blur, so phones draw them cheaply. They slowly "breathe";
-   stronger in the dark theme, faint in the light one. */
-.corner-lights {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-  --glow: 0.2;
-}
-html.dark .corner-lights {
-  --glow: 0.45;
-}
-.corner-lights::before,
-.corner-lights::after {
-  content: "";
-  position: absolute;
-  width: min(70vw, 760px);
-  aspect-ratio: 1;
-  border-radius: 9999px;
-  animation: corner-glow 14s ease-in-out infinite alternate;
-}
-.corner-lights::before {
-  top: max(-30vw, -320px);
-  right: max(-25vw, -280px);
-  background: radial-gradient(circle, rgb(var(--c-primary) / var(--glow)) 0%, rgb(var(--c-primary) / 0) 65%);
-}
-.corner-lights::after {
-  bottom: max(-30vw, -320px);
-  left: max(-20vw, -220px);
-  background: radial-gradient(circle, rgb(var(--c-secondary) / calc(var(--glow) * 0.85)) 0%, rgb(var(--c-secondary) / 0) 65%);
-  animation-delay: -7s;
-}
-/* On wide screens the left menu (260px) covers the page's left edge: the light starts next to it. */
-@media (min-width: 1024px) {
-  .corner-lights::after {
-    left: calc(260px - min(20vw, 220px));
-  }
-}
-@keyframes corner-glow {
-  from { transform: scale(0.9); opacity: 0.75; }
-  to { transform: scale(1.1); opacity: 1; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .corner-lights::before,
-  .corner-lights::after { animation: none; }
   .route-art .route-dash,
   .route-art .route-pulse,
   .flag-showcase .flag-float,
@@ -336,4 +290,42 @@ html.dark .corner-lights {
 }
 .place-popup .maplibregl-popup-tip {
   @apply border-t-surface-container-lowest;
+}
+
+/* The map's own buttons (zoom, compass, full screen) and the credits: quiet, and dark in the night theme. */
+.maplibregl-ctrl-group:not(:empty) {
+  @apply overflow-hidden rounded-lg shadow-sm ring-1 ring-black/5;
+}
+html.dark .maplibregl-ctrl-group:not(:empty) {
+  @apply bg-surface-container-lowest ring-outline-variant;
+}
+html.dark .maplibregl-ctrl-group button + button {
+  @apply border-outline-variant;
+}
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+html.dark .maplibregl-ctrl-attrib,
+html.dark .maplibregl-ctrl-attrib.maplibregl-compact {
+  @apply bg-surface-container-lowest/80 text-on-surface-variant;
+}
+html.dark .maplibregl-ctrl-attrib a {
+  @apply text-on-surface-variant;
+}
+html.dark .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}
+html.dark .maplibregl-ctrl-scale {
+  @apply border-outline bg-surface-container-lowest/70 text-on-surface-variant;
+}
+
+/* The AI assistant's button: a thin light runs slowly around its edge. */
+.assistant-edge {
+  animation: assistant-edge 4s linear infinite;
+}
+@keyframes assistant-edge {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-edge { animation: none; }
 }

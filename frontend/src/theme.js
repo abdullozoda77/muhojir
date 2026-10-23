@@ -3,6 +3,17 @@ import { useEffect, useState } from "react";
 // Light / dark theme. index.html already set html.dark before the first paint; this keeps it in sync.
 const isDark = () => document.documentElement.classList.contains("dark");
 
+// Only reads the theme and follows it when it changes anywhere (e.g. the map, which draws its own colors).
+export function useIsDark() {
+  const [dark, setDark] = useState(isDark);
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+}
+
 export function useTheme() {
   const [dark, setDark] = useState(isDark);
 
