@@ -98,12 +98,12 @@ export function LangSwitch() {
     }
   };
   return (
-    <div className="inline-flex items-center rounded-lg bg-surface-container-low p-0.5 ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
+    <div className="inline-flex items-center gap-0.5 rounded-lg bg-surface-container-low p-[3px] ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
       {[
         ["tg", "TJ"],
         ["ru", "RU"],
       ].map(([code, name]) => (
-        <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`rounded-md px-2 py-1 text-label-md transition-colors ${lang === code ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
+        <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`flex h-7 w-8 items-center justify-center rounded-md text-[12px] font-semibold leading-none tracking-wide transition-colors ${lang === code ? "bg-ink text-on-ink shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}>
           {name}
         </button>
       ))}
