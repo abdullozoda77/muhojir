@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalendarClock, Check, ExternalLink, FileText, MapPin, Wallet } from "lucide-react";
 import { t } from "../i18n.js";
+import { Reveal } from "./motion.jsx";
 
 // The "what to bring" list of a step: one item per line in the admin panel. Ticks are only for the reader.
 export function Checklist({ items }) {
@@ -8,9 +9,9 @@ export function Checklist({ items }) {
   return (
     <div className="flex flex-col gap-2">
       {items.map((item) => (
-        <label key={item} className="flex min-h-[48px] cursor-pointer select-none items-start gap-3 rounded-[18px] bg-surface-container-low p-3.5 ring-1 ring-inset ring-outline-variant/40 hover:bg-surface-container">
+        <label key={item} className="flex min-h-[44px] cursor-pointer select-none items-start gap-3 rounded-xl p-3 ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
           <input type="checkbox" className="mt-0.5 h-5 w-5 rounded text-primary focus:ring-primary" checked={Boolean(done[item])} onChange={(e) => setDone((d) => ({ ...d, [item]: e.target.checked }))} />
-          <span className={`text-label-lg ${done[item] ? "text-on-surface-variant line-through" : ""}`}>{item}</span>
+          <span className={`text-body-md transition-colors ${done[item] ? "text-on-surface-variant line-through" : ""}`}>{item}</span>
         </label>
       ))}
     </div>
@@ -26,13 +27,13 @@ export const exampleOf = (step) =>
 
 function Example({ rows }) {
   return (
-    <div className="overflow-hidden rounded-[22px] ring-1 ring-outline-variant">
+    <div className="overflow-hidden rounded-xl ring-1 ring-outline-variant">
       <p className="flex flex-wrap items-center gap-2 bg-surface-container-low px-5 py-3 text-label-md">
-        <FileText className="h-4 w-4 text-primary" aria-hidden />
+        <FileText className="h-4 w-4 text-on-surface-variant" aria-hidden />
         {t("Намунаи пуркунӣ")}
         <span className="text-body-sm text-on-surface-variant">— {t("маълумоти худро ҳамин тавр нависед")}</span>
       </p>
-      <dl className="divide-y divide-surface-container bg-surface-container-lowest">
+      <dl className="divide-y divide-outline-variant bg-surface-container-lowest">
         {rows.map(([field, value], i) => (
           <div key={i} className="grid gap-0.5 px-5 py-2.5 sm:grid-cols-[220px_1fr] sm:gap-4">
             <dt className="text-body-sm text-on-surface-variant">{field}</dt>
@@ -48,18 +49,18 @@ export const papersOf = (step) => (step.required_papers || "").split("\n").map((
 
 export default function GuideSteps({ steps }) {
   return (
-    <ol className="flex flex-col gap-5">
+    <ol className="flex flex-col">
       {steps.map((step, i) => (
-        <li key={step.id} className="relative flex gap-4">
+        <li key={step.id} className="relative flex gap-4 md:gap-6">
           <div className="flex flex-col items-center">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-[17px] font-extrabold ring-4 ring-background ${i === steps.length - 1 ? "bg-tertiary text-on-tertiary" : "bg-navy text-white dark:bg-primary dark:text-on-primary"}`}>{i + 1}</span>
-            {i < steps.length - 1 && <span className="w-0 flex-1 border-l-2 border-dashed border-outline-variant" aria-hidden />}
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold tabular-nums ring-1 ${i === steps.length - 1 ? "bg-tertiary text-on-tertiary ring-tertiary" : "bg-surface-container-lowest ring-outline"}`}>{i + 1}</span>
+            {i < steps.length - 1 && <span className="my-1 w-px flex-1 bg-outline-variant" aria-hidden />}
           </div>
-          <div className="card mb-2 flex min-w-0 flex-1 flex-col gap-4 p-5 md:p-7">
-            <h3 className="font-display text-[20px] font-extrabold leading-tight text-navy dark:text-on-surface">{step.title}</h3>
-            <p className="whitespace-pre-line text-body-md">{step.body}</p>
+          <Reveal className="flex min-w-0 flex-1 flex-col gap-4 pb-10 pt-1.5">
+            <h3 className="text-[19px] font-semibold leading-tight">{step.title}</h3>
+            <p className="whitespace-pre-line text-body-md text-on-surface-variant">{step.body}</p>
             {step.where && (
-              <p className="flex items-start gap-3 rounded-[20px] bg-primary-fixed/60 p-4 text-body-md text-on-primary-fixed">
+              <p className="flex items-start gap-3 rounded-xl border-l-[3px] border-primary bg-primary/[0.05] p-4 text-body-md">
                 <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
                 <span><strong>{t("Куҷо равед")}:</strong> {step.where}</span>
               </p>
@@ -80,25 +81,25 @@ export default function GuideSteps({ steps }) {
             {exampleOf(step).length > 0 && <Example rows={exampleOf(step)} />}
             <div className="flex flex-wrap gap-2">
               {step.cost_note && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-fixed px-3.5 py-1.5 text-label-md text-on-secondary-fixed">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-2.5 py-1 text-label-md">
                   <Wallet className="h-4 w-4" aria-hidden />
                   {step.cost_note}
                 </span>
               )}
               {step.deadline_note && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-fixed px-3.5 py-1.5 text-label-md text-on-primary-fixed">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-warning-fixed px-2.5 py-1 text-label-md text-on-warning-fixed">
                   <CalendarClock className="h-4 w-4" aria-hidden />
                   {step.deadline_note}
                 </span>
               )}
             </div>
             {step.official_url && (
-              <a href={step.official_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 self-start rounded-full px-4 text-label-md text-primary ring-1 ring-outline-variant hover:bg-surface-container-low">
+              <a href={step.official_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] items-center gap-1.5 self-start rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
                 {t("Сайти расмӣ")}
                 <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
             )}
-          </div>
+          </Reveal>
         </li>
       ))}
     </ol>

@@ -6,6 +6,7 @@ import { LIVE_EVENT } from "../live.js";
 import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { Reveal } from "../components/motion.jsx";
 
 const KIND_ICON = { reminder: BellRing, job: Briefcase, news: Newspaper, system: Bell };
 
@@ -50,33 +51,35 @@ export default function Notifications() {
         <EmptyState icon={Bell} title={t("Огоҳӣ нест")} text={t("Ёдраскуниҳо дар бораи мӯҳлати ҳуҷҷатҳо дар ин ҷо пайдо мешаванд.")} />
       ) : (
         groups.map(([title, items]) => (
-          <section key={title} className="flex flex-col gap-3">
-            <h2 className="font-display text-[20px] font-extrabold text-navy dark:text-on-surface">{title}</h2>
-            {items.map((n) => {
-              const Icon = KIND_ICON[n.kind] || Bell;
-              return (
-                <div key={n.id} className={`card relative flex items-start gap-3 overflow-hidden p-5 ${n.is_read ? "" : "!ring-2 !ring-primary/40"}`}>
-                  {!n.is_read && <span aria-hidden className="ikat-stripe-v absolute inset-y-0 left-0" />}
-                  <button type="button" onClick={() => markRead(n)} className="flex flex-1 items-start gap-4 text-left">
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${n.kind === "reminder" ? "bg-warning-fixed text-on-warning-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                      <Icon className="h-5 w-5" aria-hidden />
-                    </span>
-                    <span className="flex-1">
-                      <span className="flex items-center gap-2 font-display text-[17px] font-bold">
-                        {!n.is_read && <span className="h-2 w-2 rounded-full bg-error" aria-label={t("Нав")} />}
-                        {n.title}
+          // One group (today, earlier): an inbox list; unread ones are tinted and have a blue dot.
+          <Reveal as="section" key={title} className="flex flex-col gap-3">
+            <h2 className="px-1 text-label-md text-on-surface-variant">{title}</h2>
+            <div className="card flex flex-col divide-y divide-outline-variant overflow-hidden">
+              {items.map((n) => {
+                const Icon = KIND_ICON[n.kind] || Bell;
+                return (
+                  <div key={n.id} className={`group relative flex items-start gap-3 p-4 transition-colors md:p-5 ${n.is_read ? "hover:bg-surface-container-low" : "bg-primary/[0.04] hover:bg-primary/[0.07]"}`}>
+                    <button type="button" onClick={() => markRead(n)} className="flex min-w-0 flex-1 items-start gap-4 text-left">
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${n.kind === "reminder" ? "bg-warning-fixed text-on-warning-fixed ring-warning-container/30" : "bg-surface-container-low text-on-surface ring-outline-variant"}`}>
+                        <Icon className="h-[18px] w-[18px]" aria-hidden />
                       </span>
-                      <span className="mt-0.5 block text-body-md">{n.message}</span>
-                      <span className="text-body-sm text-on-surface-variant">{ago(n.created_at)}</span>
-                    </span>
-                  </button>
-                  <button type="button" onClick={() => remove(n)} aria-label={t("Нест кардан")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-outline hover:bg-surface-container-low hover:text-error">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </section>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 text-[15px] font-semibold">
+                          {n.title}
+                          {!n.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label={t("Нав")} />}
+                        </span>
+                        <span className="mt-0.5 block text-body-md text-on-surface-variant">{n.message}</span>
+                        <span className="mt-1 block text-[12px] text-on-surface-variant/80">{ago(n.created_at)}</span>
+                      </span>
+                    </button>
+                    <button type="button" onClick={() => remove(n)} aria-label={t("Нест кардан")} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-outline transition-all hover:bg-surface-container-high hover:text-error md:opacity-0 md:focus:opacity-100 md:group-hover:opacity-100">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Reveal>
         ))
       )}
     </div>

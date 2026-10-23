@@ -8,6 +8,7 @@ import { date } from "../format.js";
 import { docIcon } from "../components/DocCard.jsx";
 import GuideSteps from "../components/GuideSteps.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { Stagger, StaggerItem } from "../components/motion.jsx";
 
 function News() {
   const first = useApi("/documents/news/");
@@ -25,8 +26,8 @@ function News() {
 
   return (
     <section className="flex flex-col gap-4" id="news">
-      <h2 className="flex items-center gap-3 text-[26px] font-display font-extrabold text-navy dark:text-on-surface">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary-fixed text-on-secondary-fixed">
+      <h2 className="flex items-center gap-3 text-[22px] font-semibold">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant">
           <Newspaper className="h-5 w-5" aria-hidden />
         </span>
         {t("Хабарҳои қонунгузорӣ")}
@@ -36,21 +37,23 @@ function News() {
       ) : items.length === 0 ? (
         <p className="card p-7 text-body-md text-on-surface-variant">{t("Ҳоло хабар нест.")}</p>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <Stagger inView className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {items.map((n) => (
-            <Link key={n.id} to={`/news/${n.id}`} className="card group flex flex-col gap-3 p-6 transition-transform hover:-translate-y-0.5">
-              <span className="inline-flex w-fit items-center rounded-full bg-secondary-fixed px-3 py-1 text-label-sm text-on-secondary-fixed">{date(n.published_at || n.created_at)}</span>
-              <h3 className="font-display text-[19px] font-bold leading-snug">{n.title}</h3>
+            <StaggerItem key={n.id}>
+            <Link to={`/news/${n.id}`} className="card group flex h-full flex-col gap-3 p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] hover:ring-outline/50">
+              <span className="text-label-md text-on-surface-variant">{date(n.published_at || n.created_at)}</span>
+              <h3 className="text-[17px] font-semibold leading-snug">{n.title}</h3>
               <p className="line-clamp-3 text-body-sm text-on-surface-variant">{n.summary}</p>
               <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-label-md text-primary">
                 {t("Муфассал хондан")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
               </span>
             </Link>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
-      {next && <Button variant="soft" loading={busy} onClick={more} className="self-center">{t("Боз нишон додан")}</Button>}
+      {next && <Button variant="plain" loading={busy} onClick={more} className="self-center">{t("Боз нишон додан")}</Button>}
     </section>
   );
 }
@@ -90,25 +93,23 @@ export default function Guides() {
         <EmptyState icon={BookOpen} title={t("Роҳнамоҳо ба наздикӣ илова мешаванд")} />
       ) : (
         <>
-          <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 md:grid md:grid-cols-3 md:overflow-visible lg:grid-cols-5" role="tablist">
+          <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist">
             {types.map((x) => {
               const Icon = docIcon(x.slug);
               const active = x.id === current?.id;
               return (
-                <button key={x.id} type="button" role="tab" aria-selected={active} onClick={() => setParams({ type: x.id }, { replace: true })} className={`flex min-h-[112px] w-44 shrink-0 flex-col items-start justify-between gap-3 rounded-[28px] p-5 text-left transition-all md:w-auto ${active ? "bg-navy text-white shadow-[0_18px_36px_-18px_rgb(16_38_92/0.8)] dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest ring-1 ring-outline-variant/60 hover:-translate-y-0.5"}`}>
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${active ? "bg-white/15" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="font-display text-[16px] font-bold leading-tight">{t(x.title)}</span>
+                <button key={x.id} type="button" role="tab" aria-selected={active} onClick={() => setParams({ type: x.id }, { replace: true })} className={`flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-label-md transition-colors ${active ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {t(x.title)}
                 </button>
               );
             })}
           </div>
 
           {current && (
-            <section className="flex flex-col gap-5">
+            <section className="flex flex-col gap-8">
               <div>
-                <h2 className="text-[30px] leading-tight md:text-[38px] font-display font-extrabold text-navy dark:text-on-surface">{t(current.title)}</h2>
+                <h2 className="text-[26px] font-semibold leading-tight tracking-tight md:text-[32px]">{t(current.title)}</h2>
                 {current.description && <p className="mt-2 max-w-3xl whitespace-pre-line text-body-lg text-on-surface-variant">{current.description}</p>}
               </div>
               {steps === null ? <Skeleton className="h-64" /> : steps.length ? <GuideSteps steps={steps} /> : <p className="card p-7 text-body-md text-on-surface-variant">{t("Қадамҳо ба наздикӣ илова мешаванд.")}</p>}
