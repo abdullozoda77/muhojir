@@ -80,11 +80,12 @@ tests/               pytest
 
 ## Server
 
-Next to the other projects on the same server: nginx on port **8050**, uvicorn on 127.0.0.1:8051, Redis
-database 15. First install (as root):
+Site: **https://king.tj** (also http://31.25.238.204:8050). nginx on port 8050 and on 80/443 for king.tj,
+uvicorn on 127.0.0.1:8051, Redis database 15. setup.sh takes king.tj from the old Django Muhojir (it stays on
+port 8040 only) and uses the certificate already issued for king.tj. First install (as root):
 
 ```bash
-sudo -u romin git clone <repository> /home/romin/muhojir-api
+sudo -u romin git clone https://github.com/abdullozoda77/muhojir.git /home/romin/muhojir-api
 bash /home/romin/muhojir-api/deploy/setup.sh
 cd /home/romin/muhojir-api && sudo -u romin .venv/bin/python -m app.cli createsuperuser
 ```
