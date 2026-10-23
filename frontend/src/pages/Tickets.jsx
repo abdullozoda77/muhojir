@@ -10,7 +10,7 @@ import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
 // Air tickets between Tajikistan and Russia, both ways. Prices come from Aviasales (the cheapest found in the last
-// days); the ticket is bought on aviasales.ru. Logged-in visitors can ask to be told when a route gets cheaper.
+// days); the ticket is bought on aviasales.ru or on the airlines' own sites (Somon Air, Tajik Air). Logged-in visitors can ask to be told when a route gets cheaper.
 
 const cityName = (a) => (lang === "ru" ? a.city : a.city_tg || a.city);
 
@@ -207,6 +207,39 @@ function PriceAlert({ origin, destination, month, cheapest }) {
   );
 }
 
+// The airlines' own booking pages: the user picks the route and buys there. Their booking engines take no route
+// in the link, so Somon Air and Tajik Air open on the search form; Aviasales opens with this route filled in.
+const AIRLINES = [
+  { name: "Somon Air", url: "https://somonair.com/ru/booking", text: () => t("Ширкати ҳавопаймоии тоҷикӣ") },
+  { name: "Tajik Air", url: "https://www.tajikair.tj/", text: () => t("Ширкати ҳавопаймоии давлатӣ") },
+];
+
+function AirlineLinks({ searchUrl }) {
+  const links = [...AIRLINES, ...(searchUrl ? [{ name: "Aviasales", url: searchUrl, text: () => t("Ҳамаи ширкатҳо дар як ҷо") }] : [])];
+  return (
+    <div className="card flex flex-col gap-4 p-6">
+      <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
+          <Plane className="h-5 w-5" aria-hidden />
+        </span>
+        {t("Харид аз ширкатҳои ҳавопаймоӣ")}
+      </h2>
+      <div className="flex flex-col gap-2">
+        {links.map((a) => (
+          <a key={a.name} href={a.url} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between gap-3 rounded-xl px-4 py-3 ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+            <span className="flex min-w-0 flex-col">
+              <span className="text-[15px] font-semibold">{a.name}</span>
+              <span className="text-body-sm text-on-surface-variant">{a.text()}</span>
+            </span>
+            <ExternalLink className="h-4 w-4 shrink-0 text-outline transition-colors group-hover:text-on-surface" aria-hidden />
+          </a>
+        ))}
+      </div>
+      <p className="text-body-sm text-on-surface-variant">{t("Роҳ ва санаро дар сайти ширкат интихоб кунед — нархи дақиқ ҳамон ҷост.")}</p>
+    </div>
+  );
+}
+
 function TravelTips() {
   return (
     <div className="card flex flex-col gap-4 p-6">
@@ -378,6 +411,7 @@ export default function Tickets() {
           ) : null}
         </div>
         <aside className="grid gap-4 md:grid-cols-2 xl:col-span-4 xl:flex xl:flex-col">
+          <AirlineLinks searchUrl={result?.search_url} />
           <PriceAlert origin={from} destination={to} month={month} cheapest={cheapest} />
           <TravelTips />
         </aside>
