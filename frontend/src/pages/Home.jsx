@@ -311,6 +311,9 @@ function GuestHome() {
   );
 }
 
+// Shown beside the greeting while there are no documents yet (the hero button already adds one).
+const QUICK = ["/calculator", "/checks", "/exam"];
+
 function MigrantHome({ user }) {
   const { docs, types, loading } = useDocuments();
   const order = { expired: 0, expiring: 1, valid: 2 };
@@ -328,7 +331,7 @@ function MigrantHome({ user }) {
         ? t("Ҳамаи ҳуҷҷатҳо тартиб аст. Мо пеш аз мӯҳлат хабар медиҳем.")
         : t("Ҳуҷҷатҳои худро илова кунед — мо мӯҳлатҳоро назорат мекунем.");
 
-  // The nearest deadline, or an invitation to add the first document.
+  // The nearest deadline, or quick links to the main services.
   const aside = loading ? (
     <Skeleton className="h-44" />
   ) : next ? (
@@ -344,13 +347,19 @@ function MigrantHome({ user }) {
       </span>
     </Link>
   ) : (
-    <Link to="/documents" className="card flex items-center gap-5 p-6 transition-colors hover:ring-outline/50">
-      <TileIcon icon={FilePlus2} />
-      <span className="flex flex-col gap-1">
-        <span className="text-[18px] font-semibold leading-tight">{t("Ҳуҷҷати аввалини худро илова кунед")}</span>
-        <span className="text-body-sm text-on-surface-variant">{t("Мо пеш аз тамом шудани мӯҳлат ба почтаи шумо ёдрас мекунем.")}</span>
-      </span>
-    </Link>
+    <div className="card flex flex-col p-2">
+      <span className="px-4 pb-2 pt-4 text-label-md text-on-surface-variant">{t("Зуд оғоз кунед")}</span>
+      {QUICK.map((to) => SERVICES.find((s) => s.to === to)).map((s) => (
+        <Link key={s.to} to={s.to} className="group flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-surface-container-low">
+          <TileIcon icon={s.icon} />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[16px] font-semibold leading-tight">{s.title()}</span>
+            <span className="truncate text-body-sm text-on-surface-variant">{s.text()}</span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-outline transition-all group-hover:translate-x-0.5 group-hover:text-on-surface" aria-hidden />
+        </Link>
+      ))}
+    </div>
   );
 
   return (
