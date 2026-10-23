@@ -1,18 +1,20 @@
 import { useEffect } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { AlertTriangle, CheckCircle2, Clock, Loader2, X, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Loader2, X, XCircle } from "lucide-react";
 import { t } from "../i18n.js";
 import { daysText } from "../format.js";
 import { Emblem } from "./Pattern.jsx";
+import { Intro, IntroItem, startShown } from "./motion.jsx";
 
 const BUTTON = {
-  primary: "bg-navy text-white hover:brightness-125 shadow-[0_10px_22px_-10px_rgb(16_38_92/0.8)] dark:bg-primary dark:text-on-primary",
-  soft: "bg-primary-fixed text-on-primary-fixed hover:brightness-95",
-  plain: "bg-surface-container-lowest text-on-surface ring-1 ring-outline-variant hover:bg-surface-container-low",
+  primary: "bg-ink text-on-ink hover:bg-ink/90",
+  soft: "bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed/70",
+  plain: "bg-surface-container-lowest text-on-surface ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low",
   danger: "bg-error text-on-error hover:opacity-90",
-  // For the blue patterned banners: red main action, white secondary one.
-  accent: "bg-secondary text-on-secondary hover:bg-secondary-container shadow-[0_8px_20px_-8px_rgb(var(--c-secondary)/0.8)]",
-  light: "bg-surface-container-lowest text-navy ring-1 ring-outline-variant hover:bg-surface-container-low dark:text-on-surface",
+  // The one blue action of a page.
+  accent: "bg-primary text-on-primary hover:bg-primary/90",
+  light: "bg-surface-container-lowest text-on-surface ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low",
   ghost: "text-on-surface-variant hover:bg-surface-container-low",
 };
 
@@ -20,7 +22,7 @@ export function Button({ variant = "primary", icon: Icon, loading, className = "
   return (
     <button
       type="button"
-      className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-2.5 text-label-lg transition-all hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON[variant]} ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 py-2 text-label-lg transition-colors active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON[variant]} ${className}`}
       disabled={loading || props.disabled}
       {...props}
     >
@@ -81,8 +83,8 @@ export function EmptyState({ icon: Icon, title, text, children }) {
   return (
     <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
       {Icon && (
-        <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-navy text-white shadow-[0_12px_28px_-12px_rgb(16_38_92/0.7)] dark:bg-primary dark:text-on-primary">
-          <Icon className="h-7 w-7" aria-hidden />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant">
+          <Icon className="h-6 w-6" aria-hidden />
         </div>
       )}
       <h3 className="text-headline-sm">{title}</h3>
@@ -123,22 +125,21 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
     <AnimatePresence>
       {open && (
         <m.div key="drawer" className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-label={title} exit={{ opacity: 1 }}>
-          <m.div className="absolute inset-0 bg-navy/40 backdrop-blur-sm" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
-          <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-background shadow-2xl md:my-3 md:mr-3 md:h-[calc(100%-24px)] md:rounded-[36px]" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 overflow-hidden bg-navy p-5 text-white md:p-6">
-              <div className="flag-line absolute inset-x-0 bottom-0 h-[4px]" />
+          <m.div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
+          <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-background shadow-2xl ring-1 ring-outline-variant md:my-3 md:mr-3 md:h-[calc(100%-24px)] md:rounded-2xl" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 p-5 backdrop-blur md:px-6">
               <div className="flex items-center gap-3">
                 {Icon && (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                 )}
                 <div>
-                  <h2 className="font-display text-[20px] font-extrabold leading-tight">{title}</h2>
-                  {subtitle && <p className="text-body-sm text-white/70">{subtitle}</p>}
+                  <h2 className="text-[18px] font-semibold leading-tight">{title}</h2>
+                  {subtitle && <p className="text-body-sm text-on-surface-variant">{subtitle}</p>}
                 </div>
               </div>
-              <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 hover:bg-white/20">
+              <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -150,33 +151,47 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
   );
 }
 
-// The top of every page: a small flag label, a big headline, one line of text, and the page's main actions on the
-// right. Light, on the milky paper; a soft glow of the flag's colors behind it. children: buttons (any variant).
+// The top of every page: a small label, a headline, one line of text, and the page's main actions on the right.
+// Plain, on the page, with a hairline under it. children: buttons (any variant).
 export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
   return (
-    <section className="relative isolate mb-2 pt-2 md:pt-6">
-      <div aria-hidden className="pointer-events-none absolute -top-24 right-0 -z-10 h-64 w-[60%] rounded-full bg-gradient-to-l from-primary/10 via-gold/10 to-transparent blur-3xl" />
+    <section className="mb-2 pt-2 md:pt-8">
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-        <div className="flex max-w-3xl flex-col gap-3">
+        <Intro className="flex max-w-3xl flex-col gap-3">
           {eyebrow && (
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-surface-container-lowest py-1.5 pl-1.5 pr-3.5 text-label-md text-on-surface-variant ring-1 ring-outline-variant/70">
-              <Emblem className="h-4 w-6" />
+            <IntroItem as="span" className="inline-flex w-fit items-center gap-2 text-label-md text-on-surface-variant">
+              <Emblem className="h-3 w-[18px]" />
               {eyebrow}
-            </span>
+            </IntroItem>
           )}
-          <h1 className="flex items-center gap-3 font-display text-[34px] font-extrabold leading-[1.08] tracking-tight text-navy dark:text-on-surface md:text-[52px]">
+          <IntroItem as="h1" className="flex items-center gap-3 font-display text-[30px] font-semibold leading-[1.1] text-on-surface md:text-[40px]">
             {Icon && (
-              <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-navy text-white shadow-[0_10px_24px_-10px_rgb(16_38_92/0.7)] md:flex">
-                <Icon className="h-7 w-7" aria-hidden />
+              <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant md:flex">
+                <Icon className="h-5 w-5" aria-hidden />
               </span>
             )}
             {title}
-          </h1>
-          {text && <p className="max-w-2xl text-body-lg text-on-surface-variant md:text-[18px] md:leading-7">{text}</p>}
-        </div>
-        {children && <div className="flex shrink-0 flex-wrap gap-2">{children}</div>}
+          </IntroItem>
+          {text && <IntroItem as="p" className="max-w-2xl text-body-lg text-on-surface-variant">{text}</IntroItem>}
+        </Intro>
+        {children && (
+          <Intro className="flex shrink-0 flex-wrap gap-2">
+            <IntroItem className="flex flex-wrap gap-2">{children}</IntroItem>
+          </Intro>
+        )}
       </div>
-      <div className="mt-6 h-px bg-gradient-to-r from-outline-variant via-outline-variant/60 to-transparent" />
+      {/* The hairline under the header draws itself from the left. */}
+      <m.div className="mt-8 h-px origin-left bg-outline-variant" initial={startShown() ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }} />
     </section>
+  );
+}
+
+// "← Back" above a detail page: a quiet text link.
+export function BackLink({ to, children }) {
+  return (
+    <Link to={to} className="group inline-flex min-h-[40px] items-center gap-1.5 self-start text-label-md text-on-surface-variant transition-colors hover:text-on-surface">
+      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
+      {children}
+    </Link>
   );
 }

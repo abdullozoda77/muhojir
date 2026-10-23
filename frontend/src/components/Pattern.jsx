@@ -79,7 +79,7 @@ export default function Pattern({ opacity = 1, motion = "drift" }) {
 
 // On phones the banner touches the screen edges and the dark header above it, so both read as one block;
 // from md on it is a rounded card. (The page container has px-4 py-6 on phones.)
-export const EDGE_TO_EDGE = "-mx-4 -mt-6 rounded-b-[28px] md:mx-0 md:mt-0 md:rounded-[28px]";
+export const EDGE_TO_EDGE = "-mx-4 -mt-6 rounded-b-2xl md:mx-0 md:mt-0 md:rounded-2xl";
 
 // A deep lapis banner with the ornament and the ikat stripe at its foot. Content that should lie over its bottom edge goes right after it,
 // wrapped in <Overlap>.
@@ -89,11 +89,10 @@ export function Hero({ eyebrow, title, text, children, tall = false, art = null 
     <section className={`${EDGE_TO_EDGE} relative overflow-hidden bg-banner px-6 pt-8 text-white md:px-10 md:pt-10 ${tall ? "pb-28 md:pb-32" : "pb-8 md:pb-10"}`}>
       <Glow />
       <Pattern opacity={art ? 0.55 : 1} />
-      <div className="ikat-stripe absolute inset-x-0 bottom-0" />
       <div className="relative grid items-center gap-6 xl:grid-cols-[1.15fr_1fr]">
         <div className="flex max-w-3xl flex-col gap-2">
           {eyebrow && <span className="flex items-center gap-2 text-label-md uppercase tracking-[0.18em] text-navy-muted"><Emblem className="h-3.5 w-3.5" />{eyebrow}</span>}
-          <h1 className="font-display text-[36px] font-extrabold leading-[42px] md:text-[54px] md:leading-[60px]">{title}</h1>
+          <h1 className="font-display text-[36px] font-semibold leading-[42px] md:text-[54px] md:leading-[60px]">{title}</h1>
           {text && <p className="text-body-lg text-on-navy md:text-[18px] md:leading-7">{text}</p>}
           {children}
         </div>
@@ -122,7 +121,7 @@ export function Glow() {
 export function FlagShowcase({ className = "" }) {
   return (
     <div className={`flag-showcase relative mx-auto w-full max-w-[520px] [perspective:1200px] ${className}`}>
-      <div className="flag-float relative aspect-[2/1] overflow-hidden rounded-[20px] shadow-[0_40px_80px_-30px_rgb(0_0_0/0.65)] ring-1 ring-white/20 [transform:rotateY(-14deg)_rotateX(6deg)]">
+      <div className="flag-float relative aspect-[2/1] overflow-hidden rounded-xl ring-1 ring-white/20 [transform:rotateY(-14deg)_rotateX(6deg)]">
         <img src={FLAG_SRC} alt={""} aria-hidden className="h-full w-full object-cover" />
         <div aria-hidden className="flag-folds absolute inset-0" />
         <div aria-hidden className="flag-shine absolute inset-0" />

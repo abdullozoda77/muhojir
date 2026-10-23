@@ -33,10 +33,12 @@ const itemVariants = {
   shown: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
 };
 
-export function Stagger({ as = "div", className = "", children, ...props }) {
+// inView: wait until the list scrolls into view (once) instead of starting at once.
+export function Stagger({ as = "div", className = "", inView = false, children, ...props }) {
   const Tag = m[as];
+  const play = inView ? { whileInView: "shown", viewport: { once: true, amount: 0.15 } } : { animate: "shown" };
   return (
-    <Tag className={className} variants={listVariants} initial={startShown() ? false : "hidden"} animate="shown" {...props}>
+    <Tag className={className} variants={listVariants} initial={startShown() ? false : "hidden"} {...play} {...props}>
       {children}
     </Tag>
   );
@@ -63,9 +65,52 @@ export function StaggerItem({ as = "div", className = "", children, ...props }) 
   );
 }
 
+// A section that fades in and rises a little when it scrolls into view (once).
+export function Reveal({ as = "div", className = "", delay = 0, children, ...props }) {
+  const Tag = m[as];
+  return (
+    <Tag
+      className={className}
+      initial={startShown() ? false : { opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.6, ease: EASE, delay }}
+      {...props}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+// The opening of a page: its parts (label, headline, text, buttons) come in one after another.
+const introVariants = { hidden: {}, shown: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } };
+const introItemVariants = {
+  hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
+  shown: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: EASE } },
+};
+
+export function Intro({ as = "div", className = "", children, ...props }) {
+  const Tag = m[as];
+  return (
+    <Tag className={className} variants={introVariants} initial={startShown() ? false : "hidden"} animate="shown" {...props}>
+      {children}
+    </Tag>
+  );
+}
+
+export function IntroItem({ as = "div", className = "", children, ...props }) {
+  const Tag = m[as];
+  return (
+    <Tag className={className} variants={introItemVariants} {...props}>
+      {children}
+    </Tag>
+  );
+}
+
 // A number counting up from 0 (days left on the deadline ring). In a tab that is not visible the browser
 // pauses animations, so there the real number is shown at once: "0 days" must never be left on screen.
-export function CountUp({ value, duration = 0.9 }) {
+// format: how to show it (e.g. num, for "1 118").
+export function CountUp({ value, duration = 0.9, format = String }) {
   const reduce = useReducedMotion();
   const skip = reduce || startShown();
   const [shown, setShown] = useState(skip ? value : 0);
@@ -77,7 +122,7 @@ export function CountUp({ value, duration = 0.9 }) {
     const controls = animate(0, value, { duration, ease: EASE, onUpdate: (v) => setShown(Math.round(v)) });
     return () => controls.stop();
   }, [value, duration, skip]);
-  return shown;
+  return format(shown);
 }
 
 export { m, EASE };
