@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, m } from "motion/react";
-import { Loader2, Mic, MicOff, Send, Trash2, X } from "lucide-react";
+import { Loader2, Send, Trash2, X } from "lucide-react";
 import { api } from "../api.js";
 import { lang, t } from "../i18n.js";
 
@@ -15,8 +15,6 @@ const SUGGESTIONS = [
   () => t("Чиптаи Душанбе – Маскавро нишон деҳ"),
   () => t("Масҷидҳоро дар Маскав нишон деҳ"),
 ];
-
-const Recognition = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 function load() {
   try {
@@ -60,9 +58,7 @@ export default function Assistant() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [listening, setListening] = useState(false);
   const listRef = useRef(null);
-  const recognition = useRef(null);
 
   useEffect(() => {
     if (!open || enabled !== null) return;
@@ -98,23 +94,6 @@ export default function Assistant() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const listen = () => {
-    if (!Recognition) return;
-    if (listening) {
-      recognition.current?.stop();
-      return;
-    }
-    const rec = new Recognition();
-    rec.lang = "ru-RU"; // browsers do not recognise Tajik speech; Russian works everywhere
-    rec.interimResults = false;
-    rec.onresult = (e) => send(e.results[0][0].transcript);
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
-    recognition.current = rec;
-    setListening(true);
-    rec.start();
   };
 
   return (
@@ -210,15 +189,10 @@ export default function Assistant() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={1000}
-                placeholder={listening ? t("Гӯш мекунам…") : t("Саволи худро нависед…")}
+                placeholder={t("Саволи худро нависед…")}
                 disabled={enabled === false}
                 lang={lang === "ru" ? "ru" : "tg"}
               />
-              {Recognition && (
-                <button type="button" onClick={listen} disabled={enabled === false || busy} aria-label={listening ? t("Бас кардан") : t("Бо овоз гуфтан")} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${listening ? "bg-secondary text-on-secondary" : "bg-surface-container-low text-primary"} disabled:opacity-50`}>
-                  {listening ? <MicOff className="h-5 w-5" aria-hidden /> : <Mic className="h-5 w-5" aria-hidden />}
-                </button>
-              )}
               <button type="submit" disabled={!text.trim() || busy || enabled === false} aria-label={t("Фиристодан")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink text-on-ink transition-colors hover:bg-ink/90 disabled:opacity-40">
                 <Send className="h-5 w-5" aria-hidden />
               </button>
