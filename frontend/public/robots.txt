@@ -1,0 +1,12 @@
+# Search engines may read the public pages; personal pages and the API are closed.
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /documents
+Disallow: /payments
+Disallow: /saved-jobs
+Disallow: /notifications
+Disallow: /profile
+
+Sitemap: https://king.tj/sitemap.xml
