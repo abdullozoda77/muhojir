@@ -45,7 +45,7 @@ export default function Footer() {
         <RevealGroup className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
           <StaggerItem className="col-span-2 flex flex-col gap-3 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 self-start">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white p-0.5 ring-1 ring-outline-variant">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm">
                 <img src="/logo.png" alt="" className="h-full w-full" />
               </span>
               <span className="text-[17px] font-semibold tracking-tight">Muhojir</span>

@@ -1,22 +1,108 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight, LogOut, Mail, PenSquare, Save, UserRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowRight, Bell, Bookmark, Building2, ChevronRight, Eye, EyeOff, FileText, Languages, LogOut, Mail, Moon, PenSquare, Phone,
+  ReceiptText, Save, Sun, UserRound,
+} from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { lang, setLang, t } from "../i18n.js";
+import { date } from "../format.js";
+import { useApi } from "../hooks.js";
+import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
-import { Button, ErrorBox, Field, PageHeader } from "../components/ui.jsx";
+import { Button, ErrorBox, Field } from "../components/ui.jsx";
+import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 
 const ROLE_NAMES = { editor: () => t("Муҳаррир"), admin: () => t("Админ") };
 
+// "marufromin2007@gmail.com" -> "ma••••••07@gmail.com": the address stays recognisable but is not readable over a shoulder.
+function maskEmail(email) {
+  const [name, domain] = email.split("@");
+  if (name.length <= 4) return `${name[0]}•••@${domain}`;
+  return `${name.slice(0, 2)}${"•".repeat(Math.min(name.length - 4, 8))}${name.slice(-2)}@${domain}`;
+}
+
+// The avatar: the first letter in a blue circle, inside a ring in the colors of the flag.
+function Avatar({ name, size = "h-20 w-20 text-[30px]" }) {
+  return (
+    <span className={`relative flex shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[4px] shadow-lg ${size}`} aria-hidden>
+      <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#4f7ff0] border-[3px] border-white font-semibold text-white dark:border-[#0b1533] dark:from-[#3a64d8] dark:to-[#6d93ff]">
+        {name ? name[0].toUpperCase() : <UserRound className="h-1/2 w-1/2" />}
+      </span>
+    </span>
+  );
+}
+
+// Two or three choices side by side, like iOS settings.
+function Segmented({ value, onChange, options, label }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl bg-surface-container-low p-1 ring-1 ring-inset ring-outline-variant">
+      {options.map(({ value: v, label: text, icon: Icon }) => (
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={() => onChange(v)}
+          className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-3 text-label-md transition-all ${value === v ? "bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/20" : "text-on-surface-variant hover:text-on-surface"}`}
+        >
+          {Icon && <Icon className="h-4 w-4" aria-hidden />}
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange, title, text }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex min-h-[64px] w-full items-center gap-4 rounded-xl p-4 text-left ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+        <Bell className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-label-lg">{title}</span>
+        <span className="text-body-sm text-on-surface-variant">{text}</span>
+      </span>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 ${checked ? "bg-primary" : "bg-surface-container-highest"}`}>
+        <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-300 ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+      </span>
+    </button>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="card flex flex-col gap-5 p-5 md:p-7">
+      <h2 className="text-[17px] font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+// An input with an icon inside it on the left.
+function IconInput({ icon: Icon, ...props }) {
+  return (
+    <span className="relative block">
+      <Icon className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-on-surface-variant" aria-hidden />
+      <input className="input pl-11" {...props} />
+    </span>
+  );
+}
+
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
+  const { dark, setDark } = useTheme();
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const docs = useApi("/documents/my-documents/?page_size=1");
+  const savedJobs = useApi("/jobs/jobs/?saved=true&page_size=1");
 
   useEffect(() => {
     setForm({ full_name: user.full_name || "", phone: user.phone || "", city: user.city || "", language: user.language, email_reminders: user.email_reminders });
@@ -46,57 +132,105 @@ export default function Profile() {
     }
   };
 
+  const name = user.full_name?.trim();
+  const shortcuts = [
+    { to: "/documents", icon: FileText, label: t("Ҳуҷҷатҳои ман"), count: docs.data?.count },
+    { to: "/saved-jobs", icon: Bookmark, label: t("Захирашуда"), count: savedJobs.data?.count },
+    { to: "/payments", icon: ReceiptText, label: t("Бойгонии чекҳо") },
+    { to: "/notifications", icon: Bell, label: t("Огоҳиҳо") },
+  ];
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <PageHeader title={t("Профил ва танзимот")} icon={UserRound} />
-      {/* Who is signed in: the initial, name and email. */}
-      <div className="card flex items-center gap-4 p-5 md:p-6">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-[22px] font-semibold ring-1 ring-outline-variant">
-          {(user.full_name || user.email).charAt(0).toUpperCase()}
-        </span>
-        <div className="min-w-0 flex-1">
-          {user.full_name && <span className="block truncate text-[19px] font-semibold leading-tight">{user.full_name}</span>}
-          <span className="flex min-w-0 items-center gap-1.5 text-body-md text-on-surface-variant">
-            <Mail className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">{user.email}</span>
-          </span>
-          <span className="mt-0.5 block text-[12px] text-on-surface-variant/80">{t("Почтаи электронӣ (барои воридшавӣ)")}</span>
+      {/* Who is signed in: a blue card with the avatar, the name and a hidden email. */}
+      <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 text-white shadow-[0_24px_60px_-28px_rgba(29,78,216,0.7)] md:p-8 dark:from-[#0f1d4a] dark:via-[#132a66] dark:to-[#1a3a8a] dark:shadow-none dark:ring-1 dark:ring-white/10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-sky-300/20 blur-2xl" aria-hidden />
+        <div className="relative flex items-center gap-5">
+          <Avatar name={name} />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight md:text-[30px]">{name || t("Номи худро нависед")}</h1>
+            <div className="mt-1.5 flex min-w-0 items-center gap-2 text-body-md text-white/85">
+              <Mail className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{showEmail ? user.email : maskEmail(user.email)}</span>
+              <button type="button" onClick={() => setShowEmail((v) => !v)} aria-label={showEmail ? t("Почтаро пинҳон кардан") : t("Почтаро нишон додан")} className="-m-2 rounded-full p-2 text-white/80 hover:bg-white/10 hover:text-white">
+                {showEmail ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+              </button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {user.role !== "migrant" && ROLE_NAMES[user.role] && (
+                <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-label-sm text-white ring-1 ring-white/25">{ROLE_NAMES[user.role]()}</span>
+              )}
+              {user.date_joined && <span className="text-label-sm font-normal text-white/75">{t("Аз {0} бо мо", date(user.date_joined))}</span>}
+            </div>
+          </div>
         </div>
-        {user.role !== "migrant" && (
-          <span className="shrink-0 rounded-md bg-surface-container-high px-2 py-1 text-label-sm">{ROLE_NAMES[user.role]?.() || user.role}</span>
-        )}
-      </div>
-      <form onSubmit={submit} className="card flex flex-col gap-4 p-6 md:p-8">
-        <Field label={t("Ному насаб")} error={errors.full_name}>
-          <input className="input" value={form.full_name} onChange={(e) => set("full_name", e.target.value)} autoComplete="name" />
-        </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("Телефон (ихтиёрӣ)")} error={errors.phone} hint={t("Ба касе нишон дода намешавад")}>
-            <input className="input" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+7 999 123-45-67" autoComplete="tel" />
+      </Reveal>
+
+      {/* Quick ways to the user's own things, with how many there are. */}
+      <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {shortcuts.map(({ to, icon: Icon, label, count }) => (
+          <StaggerItem key={to}>
+            <Link to={to} className="card group flex h-full flex-col gap-3 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:ring-primary/30">
+              <span className="flex items-center justify-between">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                {count != null && <span className="text-[22px] font-semibold tabular-nums">{count}</span>}
+              </span>
+              <span className="flex items-center justify-between gap-1 text-label-md">
+                {label}
+                <ChevronRight className="h-4 w-4 shrink-0 text-on-surface-variant transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </span>
+            </Link>
+          </StaggerItem>
+        ))}
+      </Stagger>
+
+      <form onSubmit={submit} className="flex flex-col gap-6">
+        <Section title={t("Маълумоти шахсӣ")}>
+          <Field label={t("Ному насаб")} error={errors.full_name}>
+            <IconInput icon={UserRound} value={form.full_name} onChange={(e) => set("full_name", e.target.value)} autoComplete="name" placeholder={t("Масалан: Алӣ Каримов")} />
           </Field>
-          <Field label={t("Шаҳр дар Русия")} error={errors.city}>
-            <input className="input" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder={t("Масалан: Москва")} />
-          </Field>
-        </div>
-        <Field label={t("Забон")} error={errors.language}>
-          <select className="input" value={form.language} onChange={(e) => set("language", e.target.value)}>
-            <option value="tg">Тоҷикӣ</option>
-            <option value="ru">Русский</option>
-          </select>
-        </Field>
-        <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-xl p-4 ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
-          <input type="checkbox" className="h-5 w-5 rounded text-primary focus:ring-primary" checked={form.email_reminders} onChange={(e) => set("email_reminders", e.target.checked)} />
-          <span>
-            <span className="block text-label-lg">{t("Ёдраскунӣ ба почтаи электронӣ")}</span>
-            <span className="text-body-sm text-on-surface-variant">{t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")}</span>
-          </span>
-        </label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label={t("Телефон (ихтиёрӣ)")} error={errors.phone} hint={t("Ба касе нишон дода намешавад")}>
+              <IconInput icon={Phone} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+7 999 123-45-67" autoComplete="tel" />
+            </Field>
+            <Field label={t("Шаҳр дар Русия")} error={errors.city}>
+              <IconInput icon={Building2} value={form.city} onChange={(e) => set("city", e.target.value)} placeholder={t("Масалан: Москва")} />
+            </Field>
+          </div>
+        </Section>
+
+        <Section title={t("Танзимот")}>
+          <div className="flex flex-col gap-2">
+            <span className="label flex items-center gap-2"><Languages className="h-4 w-4 text-primary" aria-hidden />{t("Забон")}</span>
+            <Segmented
+              label={t("Забон")}
+              value={form.language}
+              onChange={(v) => set("language", v)}
+              options={[{ value: "tg", label: "Тоҷикӣ" }, { value: "ru", label: "Русский" }]}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="label flex items-center gap-2">{dark ? <Moon className="h-4 w-4 text-primary" aria-hidden /> : <Sun className="h-4 w-4 text-primary" aria-hidden />}{t("Намуди сайт")}</span>
+            <Segmented
+              label={t("Намуди сайт")}
+              value={dark ? "dark" : "light"}
+              onChange={(v) => setDark(v === "dark")}
+              options={[{ value: "light", label: t("Равшан"), icon: Sun }, { value: "dark", label: t("Торик"), icon: Moon }]}
+            />
+          </div>
+          <Toggle checked={form.email_reminders} onChange={(v) => set("email_reminders", v)} title={t("Ёдраскунӣ ба почтаи электронӣ")} text={t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")} />
+        </Section>
+
         <ErrorBox error={error} />
         {saved && <p role="status" className="rounded-xl bg-tertiary-fixed p-4 text-label-md text-on-tertiary-fixed">{t("Сабт шуд")}</p>}
-        <Button type="submit" icon={Save} loading={busy}>{t("Сабт кардан")}</Button>
+        <Button type="submit" icon={Save} loading={busy} className="min-h-[52px] w-full text-[16px] shadow-lg shadow-primary/25 dark:shadow-none">{t("Сабт кардан")}</Button>
       </form>
+
       {(user.role === "editor" || user.role === "admin") && (
-        <a href="/admin/" className="card group flex items-center gap-4 p-5 transition-colors hover:ring-outline/50 md:p-6">
+        <a href="/admin/" className="card group flex items-center gap-4 p-5 transition-colors hover:ring-primary/30 md:p-6">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
             <PenSquare className="h-5 w-5" aria-hidden />
           </span>
@@ -110,17 +244,17 @@ export default function Profile() {
         </a>
       )}
       <PhoneApp />
-      <Button
-        variant="plain"
-        icon={LogOut}
+      <button
+        type="button"
         onClick={async () => {
           await logout();
           navigate("/");
         }}
-        className="text-error"
+        className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl text-label-lg text-error ring-1 ring-inset ring-error/30 transition-colors hover:bg-error-container"
       >
+        <LogOut className="h-5 w-5" aria-hidden />
         {t("Баромадан")}
-      </Button>
+      </button>
     </div>
   );
 }

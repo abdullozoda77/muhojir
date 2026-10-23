@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
-  PenSquare, Plane, ReceiptText, SearchCheck, Settings, ShieldCheck, Sun, WifiOff, X,
+  PenSquare, Plane, ReceiptText, SearchCheck, Settings, ShieldCheck, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -72,8 +72,8 @@ function useCounters(user, onNew) {
 function Logo() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Muhojir">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-0.5 ring-1 ring-outline-variant">
-        <img src="/logo.png" alt="" className="h-full w-full" />
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm">
+        <img src="/logo.png" alt="" className="h-full w-full rounded-full" />
       </span>
       <span className="text-[18px] font-semibold tracking-tight text-on-surface">Muhojir</span>
     </Link>
@@ -243,7 +243,8 @@ export default function Layout() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const firstName = user?.full_name?.split(" ")[0] || user?.email?.split("@")[0];
+  // Only the name is shown in the header, never the email (the screen may be seen by others).
+  const firstName = user?.full_name?.trim().split(/\s+/)[0];
   const tabs = items.filter((i) => i.main);
   const more = items.filter((i) => !i.main && i.to !== "/login" && i.to !== "/profile" && i.to !== "/notifications");
   const dock = items.filter((i) => i.dock).sort((a, b) => a.dock - b.dock);
@@ -283,11 +284,21 @@ export default function Layout() {
                     </m.span>
                   )}
                 </IconButton>
-                <Link to="/profile" className="flex items-center gap-2 rounded-lg p-1 pr-1 transition-colors hover:bg-surface-container-low sm:pr-2.5" aria-label={t("Профил ва танзимот")}>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-high text-label-md text-on-surface ring-1 ring-outline-variant" aria-hidden>
-                    {(firstName || "?")[0].toUpperCase()}
+                <Link
+                  to="/profile"
+                  aria-label={t("Профил ва танзимот")}
+                  className="group flex items-center gap-2.5 rounded-full p-0.5 transition-colors hover:bg-surface-container-low sm:pr-1 xl:bg-surface-container-lowest xl:pr-3.5 xl:ring-1 xl:ring-outline-variant xl:hover:ring-primary/30"
+                >
+                  {/* The avatar: a blue circle inside a thin ring in the colors of the flag, turning slowly on hover. */}
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[3px] shadow-sm transition-transform duration-500 group-hover:rotate-[120deg]" aria-hidden>
+                    <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#4f7ff0] border-2 border-background text-[14px] font-semibold text-white transition-transform duration-500 group-hover:-rotate-[120deg] dark:from-[#3a64d8] dark:to-[#6d93ff]">
+                      {firstName ? firstName[0].toUpperCase() : <UserRound className="h-4 w-4" />}
+                    </span>
                   </span>
-                  <span className="hidden max-w-[120px] truncate text-label-md xl:block">{firstName}</span>
+                  <span className="hidden min-w-0 flex-col leading-tight xl:flex">
+                    <span className="max-w-[130px] truncate text-label-md text-on-surface">{firstName || t("Профил")}</span>
+                    <span className="text-[11px] text-on-surface-variant">{t("Ҳисоби ман")}</span>
+                  </span>
                 </Link>
               </>
             ) : (
