@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, Check, GraduationCap, Landmark, RotateCcw, Scale, Shuffle, Volume2, X } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, GraduationCap, Landmark, RotateCcw, Scale, Shuffle, Volume2, X } from "lucide-react";
 import { apiAll } from "../api.js";
 import { t } from "../i18n.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { Stagger, StaggerItem } from "../components/motion.jsx";
 
 // Practice for the exam in Russian language, history and law that is needed for the patent.
 // Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place.
@@ -62,7 +63,7 @@ function speak(text) {
 function Listen({ text }) {
   const [shown, setShown] = useState(false);
   return (
-    <div className="flex flex-col gap-3 rounded-[24px] bg-primary-fixed/60 p-5">
+    <div className="flex flex-col gap-3 rounded-xl bg-surface-container-low p-4 ring-1 ring-outline-variant">
       <div className="flex flex-wrap gap-2">
         {canSpeak && (
           <Button icon={Volume2} onClick={() => speak(text)}>
@@ -73,7 +74,7 @@ function Listen({ text }) {
           {shown ? t("Матнро пинҳон кардан") : t("Матнро нишон додан")}
         </Button>
       </div>
-      {shown && <p className="rounded-[18px] bg-surface-container-lowest p-4 text-body-lg">{text}</p>}
+      {shown && <p className="rounded-lg bg-surface-container-lowest p-4 text-body-lg ring-1 ring-outline-variant">{text}</p>}
     </div>
   );
 }
@@ -115,18 +116,17 @@ function Quiz({ section, questions, onExit }) {
   if (done) {
     const passed = right / list.length >= PASS;
     return (
-      <div className="card relative flex flex-col items-center gap-4 overflow-hidden p-8 text-center md:p-12">
-        <div className="ikat-stripe absolute inset-x-0 top-0" />
-        <span className={`flex h-28 w-28 items-center justify-center rounded-full font-display text-[34px] font-black ring-8 ${passed ? "bg-tertiary-fixed text-on-tertiary-fixed ring-tertiary-fixed/40" : "bg-warning-fixed text-on-warning-fixed ring-warning-fixed/40"}`}>
+      <div className="card mx-auto flex w-full max-w-2xl flex-col items-center gap-4 p-8 text-center md:p-12">
+        <span className={`flex h-24 w-24 items-center justify-center rounded-full text-[30px] font-semibold tabular-nums ring-4 ${passed ? "text-tertiary ring-tertiary/40" : "text-warning ring-warning-container/50"}`}>
           {percent}%
         </span>
-        <h2 className="text-[26px] font-display font-extrabold text-navy dark:text-on-surface">{t("{0} аз {1} ҷавоби дуруст", right, list.length)}</h2>
+        <h2 className="text-[24px] font-semibold">{t("{0} аз {1} ҷавоби дуруст", right, list.length)}</h2>
         <p className="max-w-md text-body-md text-on-surface-variant">
           {passed ? t("Офарин! Шумо хуб тайёр ҳастед. Боз машқ кунед, то боварӣ зиёд шавад.") : t("Боз каме машқ кунед. Саволҳои хаторо такрор кунед ва шарҳҳоро хонед.")}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {wrong.length > 0 && <Button icon={RotateCcw} onClick={() => restart(wrong)}>{t("Саволҳои хаторо такрор кардан")}</Button>}
-          <Button variant="soft" icon={Shuffle} onClick={() => restart(questions)}>{t("Аз нав")}</Button>
+          <Button variant="plain" icon={Shuffle} onClick={() => restart(questions)}>{t("Аз нав")}</Button>
           <Button variant="plain" onClick={onExit}>{t("Қисми дигар")}</Button>
         </div>
       </div>
@@ -134,20 +134,20 @@ function Quiz({ section, questions, onExit }) {
   }
 
   return (
-    <div className="card flex flex-col gap-5 p-6 md:p-9">
+    <div className="card mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-9">
       <div className="flex items-center justify-between gap-3">
-        <span className="rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">{t("Савол {0} аз {1}", index + 1, list.length)}</span>
-        <button type="button" onClick={onExit} className="inline-flex min-h-[44px] items-center gap-1 rounded-full px-4 text-label-md text-on-surface-variant ring-1 ring-outline-variant hover:text-primary">
+        <span className="text-label-md tabular-nums text-on-surface-variant">{t("Савол {0} аз {1}", index + 1, list.length)}</span>
+        <button type="button" onClick={onExit} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg px-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface">
           <X className="h-4 w-4" aria-hidden />
           {t("Баромадан")}
         </button>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-container-high" role="progressbar" aria-valuenow={index} aria-valuemin={0} aria-valuemax={list.length}>
-        <div className="h-full rounded-full bg-gradient-to-r from-navy to-primary transition-all dark:from-primary dark:to-primary" style={{ width: `${(index / list.length) * 100}%` }} />
+      <div className="h-1 overflow-hidden rounded-full bg-surface-container-high" role="progressbar" aria-valuenow={index} aria-valuemin={0} aria-valuemax={list.length}>
+        <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(index / list.length) * 100}%` }} />
       </div>
 
       {q.listen_text && <Listen key={q.id} text={q.listen_text} />}
-      <h2 className="font-display text-[22px] font-bold leading-snug md:text-[26px]" lang="ru">{q.question}</h2>
+      <h2 className="text-[22px] font-semibold leading-snug tracking-tight md:text-[26px]" lang="ru">{q.question}</h2>
 
       <div className="flex flex-col gap-2.5">
         {q.choices.map((choice) => {
@@ -159,11 +159,11 @@ function Quiz({ section, questions, onExit }) {
               lang="ru"
               disabled={Boolean(picked)}
               onClick={() => choose(choice)}
-              className={`flex min-h-[56px] items-center justify-between gap-3 rounded-[20px] border-2 px-5 py-3 text-left text-body-lg transition-colors ${
-                state === "right" ? "border-tertiary bg-tertiary-fixed text-on-tertiary-fixed"
-                  : state === "wrong" ? "border-error bg-error-container text-on-error-container"
-                  : state === "dim" ? "border-transparent bg-surface-container-low opacity-60"
-                  : "border-transparent bg-surface-container-low hover:border-primary"
+              className={`flex min-h-[52px] items-center justify-between gap-3 rounded-xl px-5 py-3 text-left text-body-lg ring-1 ring-inset transition-all ${
+                state === "right" ? "bg-tertiary-fixed text-on-tertiary-fixed ring-2 ring-tertiary"
+                  : state === "wrong" ? "bg-error-container text-on-error-container ring-2 ring-error"
+                  : state === "dim" ? "opacity-50 ring-outline-variant"
+                  : "ring-outline-variant hover:bg-surface-container-low hover:ring-outline/60"
               }`}
             >
               {choice.text}
@@ -176,7 +176,7 @@ function Quiz({ section, questions, onExit }) {
 
       {picked && (
         <div className="flex flex-col gap-3">
-          <p className={`rounded-[20px] p-5 text-body-md ${picked.right ? "bg-tertiary-fixed/60" : "bg-error-container/60"}`} role="status">
+          <p className={`rounded-xl border-l-[3px] p-4 text-body-md ${picked.right ? "border-tertiary bg-tertiary-fixed/50" : "border-error bg-error-container/50"}`} role="status">
             <strong>{picked.right ? t("Дуруст!") : t("Хато.")}</strong> {q.explanation}
           </p>
           <Button onClick={next} className="self-end">
@@ -215,33 +215,35 @@ export default function Exam() {
         <Quiz key={section.key + section.round} section={section.key} questions={section.questions} onExit={() => setSection(null)} />
       ) : (
         <>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <Stagger className="grid gap-3 sm:grid-cols-2">
             {SECTIONS.map((s) => {
               const count = s.key === "mixed" ? Math.min(MIXED_COUNT, all.length) : all.filter((q) => q.section === s.key).length;
               if (!count) return null;
               return (
+                <StaggerItem key={s.key}>
                 <button
-                  key={s.key}
                   type="button"
                   onClick={() => setSection({ key: s.key, questions: questionsOf(s.key), round: Date.now() })}
-                  className={`group flex items-start gap-4 rounded-[28px] p-6 text-left transition-all hover:-translate-y-0.5 md:p-7 ${s.key === "mixed" ? "bg-navy text-white shadow-[0_18px_36px_-18px_rgb(16_38_92/0.8)] dark:bg-primary-fixed dark:text-on-primary-fixed" : "bg-surface-container-lowest ring-1 ring-outline-variant/60"}`}
+                  className={`group flex h-full w-full items-start gap-4 rounded-2xl bg-surface-container-lowest p-6 text-left ring-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] ${s.key === "mixed" ? "ring-2 ring-ink" : "ring-outline-variant hover:ring-outline/50"}`}
                 >
-                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${s.key === "mixed" ? "bg-gold text-navy" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                    <s.icon className="h-6 w-6" aria-hidden />
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${s.key === "mixed" ? "bg-ink text-on-ink" : "bg-surface-container-low text-on-surface ring-1 ring-outline-variant"}`}>
+                    <s.icon className="h-5 w-5" aria-hidden />
                   </span>
-                  <span className="flex flex-col gap-1">
-                    <span className="font-display text-[20px] font-extrabold leading-tight">{s.title()}</span>
-                    <span className={`text-body-sm ${s.key === "mixed" ? "opacity-75" : "text-on-surface-variant"}`}>{s.text()}</span>
-                    <span className={`mt-1 text-label-md ${s.key === "mixed" ? "text-gold dark:text-primary" : "text-primary"}`}>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="text-[18px] font-semibold leading-tight">{s.title()}</span>
+                    <span className="text-body-sm text-on-surface-variant">{s.text()}</span>
+                    <span className="mt-2 text-label-md text-on-surface-variant">
                       {t("{0} савол", count)}
-                      {best[s.key] != null && ` · ${t("беҳтарин натиҷа: {0}%", best[s.key])}`}
+                      {best[s.key] != null && <span className="text-tertiary"> · {t("беҳтарин натиҷа: {0}%", best[s.key])}</span>}
                     </span>
                   </span>
+                  <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-outline transition-all group-hover:translate-x-0.5 group-hover:text-on-surface" aria-hidden />
                 </button>
+                </StaggerItem>
               );
             })}
-          </div>
-          <p className="rounded-[24px] bg-surface-container-low p-5 text-body-sm text-on-surface-variant ring-1 ring-outline-variant/40">
+          </Stagger>
+          <p className="flex items-start gap-2 px-1 text-body-sm text-on-surface-variant">
             {t("Ин саволҳо барои машқ аст, на саволҳои худи имтиҳон. Имтиҳонро танҳо дар марказҳои иҷозатдошта супоред.")}
           </p>
         </>

@@ -87,7 +87,7 @@ export default function PaymentDrawer({ doc, monthlyPrice, onClose, onSaved }) {
         </div>
       ) : doc ? (
         <form onSubmit={submit} className="flex flex-col gap-4">
-          <p className="rounded-[22px] bg-primary-fixed p-3 text-body-sm text-on-primary-fixed">
+          <p className="rounded-xl border-l-[3px] border-primary bg-primary/[0.05] p-3 text-body-sm">
             {t("Пулро дар бонк ё терминал пардохт кунед, баъд инҷо сабт кунед. Санаи анҷоми ҳуҷҷат ба қадри моҳҳои пардохтшуда дароз мешавад.")}
           </p>
           <p className="text-body-md">
@@ -96,7 +96,7 @@ export default function PaymentDrawer({ doc, monthlyPrice, onClose, onSaved }) {
           <Field label={t("Барои чанд моҳ?")} required error={errors.months}>
             <div className="grid grid-cols-6 gap-2">
               {[1, 2, 3, 4, 6, 12].map((m) => (
-                <button key={m} type="button" onClick={() => changeMonths(m)} aria-pressed={months === m} className={`min-h-[48px] rounded-2xl text-label-lg ${months === m ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-low hover:bg-surface-container"}`}>
+                <button key={m} type="button" onClick={() => changeMonths(m)} aria-pressed={months === m} className={`min-h-[44px] rounded-xl text-label-lg tabular-nums ${months === m ? "bg-ink text-on-ink" : "ring-1 ring-inset ring-outline-variant hover:bg-surface-container"}`}>
                   {m}
                 </button>
               ))}
@@ -112,7 +112,7 @@ export default function PaymentDrawer({ doc, monthlyPrice, onClose, onSaved }) {
           </div>
           <div>
             <span className="label">{t("Сурати чек")}</span>
-            <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center rounded-[22px] bg-surface-container-low p-4 text-center hover:bg-surface-container">
+            <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-outline/50 p-4 text-center transition-colors hover:border-outline hover:bg-surface-container-low">
               <ReceiptText className="mb-1 h-7 w-7 text-primary" aria-hidden />
               <span className="text-label-md">{receipt ? receipt.name : t("Сурати чекро интихоб кунед")}</span>
               <span className="text-body-sm text-on-surface-variant">{t("Чек дар «Архиви чекҳо» нигоҳ дошта мешавад.")}</span>
