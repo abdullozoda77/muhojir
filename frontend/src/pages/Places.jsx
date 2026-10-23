@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Banknote, Building2, Clock, ExternalLink, Flag, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin, MapPinned, Moon,
-  Phone, Plus, Search, ShoppingBasket, Stamp, Store, Utensils,
+  Banknote, Building2, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
+  MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShoppingBasket, Stamp, Store, Utensils,
 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
@@ -11,7 +11,7 @@ import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import Map3D from "../components/Map3D.jsx";
 import { Stars, StarPicker } from "../components/Stars.jsx";
-import { Stagger, StaggerItem } from "../components/motion.jsx";
+import { EASE, Stagger, StaggerItem, m } from "../components/motion.jsx";
 import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton } from "../components/ui.jsx";
 
 // Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes,
@@ -43,17 +43,104 @@ const REGION_VIEW = {
   "Самарская область": [53.195, 50.1, 9],
 };
 
+// Routes: the free OSRM servers of openstreetmap.de, on foot or by car. Coordinates are "lon,lat".
+const ROUTER = "https://routing.openstreetmap.de";
+
+export async function findRoute(from, to, mode) {
+  const url = `${ROUTER}/routed-${mode}/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+  const data = await fetch(url).then((r) => r.json()).catch(() => null);
+  const best = data?.code === "Ok" && data.routes[0];
+  if (!best) throw new Error(t("Маршрут ёфт нашуд. Баъдтар боз кӯшиш кунед."));
+  return { geometry: best.geometry, distance: best.distance, duration: best.duration, mode, from, to };
+}
+
+// The person's position, once (asks for permission the first time).
+function myPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error(t("Ҷойгиршавии шуморо муайян карда нашуд. Иҷозатро дар браузер санҷед.")));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, name: t("Ҷойгиршавии ман") }),
+      () => reject(new Error(t("Ҷойгиршавии шуморо муайян карда нашуд. Иҷозатро дар браузер санҷед."))),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+}
+
+// "Route": from my position or from another place on the map to this place, on foot or by car.
+function RouteBuilder({ place, points, onRoute }) {
+  const [from, setFrom] = useState("me");
+  const [mode, setMode] = useState("foot");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const others = useMemo(() => points.filter((p) => p.id !== place.id).sort((a, b) => a.name.localeCompare(b.name)), [points, place.id]);
+
+  const build = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const start = from === "me" ? await myPosition() : others.find((p) => String(p.id) === from);
+      onRoute(await findRoute(start, { lat: place.lat, lon: place.lon, name: place.name }, mode));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl p-5 ring-1 ring-outline-variant">
+      <span className="flex items-center gap-2 text-[17px] font-semibold">
+        <Route className="h-5 w-5 text-primary" aria-hidden />
+        {t("Маршрут")}
+      </span>
+      <Field label={t("Аз куҷо")}>
+        <select className="input" value={from} onChange={(e) => setFrom(e.target.value)}>
+          <option value="me">{t("Ҷойгиршавии ман")}</option>
+          {others.map((p) => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
+        </select>
+      </Field>
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant" role="group" aria-label={t("Маршрут")}>
+        {[["foot", Footprints, t("Пиёда")], ["car", Car, t("Бо мошин")]].map(([value, Icon, label]) => (
+          <button key={value} type="button" onClick={() => setMode(value)} aria-pressed={mode === value} className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg text-label-md transition-colors ${mode === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+      <ErrorBox error={error} />
+      <Button icon={Route} loading={busy} onClick={build}>{t("Маршрут сохтан")}</Button>
+    </div>
+  );
+}
+
+// True on wide screens (Tailwind's xl), where the list floats over the map instead of having its own tab.
+function useWide() {
+  const query = "(min-width: 1280px)";
+  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const change = (e) => setWide(e.matches);
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
+  return wide;
+}
+
+const PANEL = 368; // width of the list over the map, px
+
 function PlaceCard({ place, onOpen }) {
   const k = kind(place.category);
   return (
-    <button type="button" onClick={() => onOpen(place.id)} className="flex w-full items-start gap-4 rounded-[24px] p-4 text-left transition-colors hover:bg-surface-container-low">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm" style={{ backgroundColor: k.color }}>
-        <k.icon className="h-5 w-5" aria-hidden />
+    <button type="button" onClick={() => onOpen(place.id)} className="group flex w-full items-start gap-4 rounded-xl p-3.5 text-left transition-colors hover:bg-surface-container-low">
+      {/* A quiet icon tile; the dot has the category's color, like its marker on the map. */}
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface ring-1 ring-outline-variant transition-transform duration-300 group-hover:scale-105">
+        <k.icon className="h-[18px] w-[18px]" aria-hidden />
+        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface-container-lowest" style={{ backgroundColor: k.color }} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="font-display text-[17px] font-bold leading-snug">{place.name}</span>
-        <span className="text-body-sm text-on-surface-variant">{k.label()}{place.address && ` · ${place.address}`}</span>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
+        <span className="truncate text-[16px] font-semibold leading-snug">{place.name}</span>
+        <span className="line-clamp-2 text-body-sm text-on-surface-variant">{k.label()}{place.address && ` · ${place.address}`}</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-on-surface-variant">
           {place.rating ? (
             <span className="inline-flex items-center gap-1">
               <Stars value={place.rating} size="h-3.5 w-3.5" /> {place.rating} ({place.reviews_count})
@@ -61,15 +148,15 @@ function PlaceCard({ place, onOpen }) {
           ) : (
             <span>{t("Ҳоло баҳо нест")}</span>
           )}
-          {place.distance_km != null && <span className="rounded-full bg-primary-fixed px-2 py-0.5 text-on-primary-fixed">{t("{0} км", place.distance_km)}</span>}
-          {!place.is_approved && <span className="rounded-full bg-warning-fixed px-2 py-0.5 text-on-warning-fixed">{t("Интизори санҷиш")}</span>}
+          {place.distance_km != null && <span className="rounded-md bg-primary-fixed px-1.5 py-0.5 font-medium text-on-primary-fixed">{t("{0} км", place.distance_km)}</span>}
+          {!place.is_approved && <span className="rounded-md bg-warning-fixed px-1.5 py-0.5 font-medium text-on-warning-fixed">{t("Интизори санҷиш")}</span>}
         </span>
       </span>
     </button>
   );
 }
 
-function PlaceDetails({ placeId, onClose }) {
+function PlaceDetails({ placeId, onClose, points, onRoute }) {
   const { user } = useAuth();
   const { data: place, reload } = useApi(placeId ? `/places/${placeId}/` : null);
   const { data: reviews, reload: reloadReviews } = useApi(placeId ? `/places/${placeId}/reviews/?page_size=50` : null);
@@ -105,28 +192,30 @@ function PlaceDetails({ placeId, onClose }) {
         <Skeleton className="h-60" />
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2.5 rounded-[24px] bg-surface-container-low p-5">
+          <div className="flex flex-col gap-2.5 rounded-2xl p-5 ring-1 ring-outline-variant">
             {place.address && <span className="flex items-start gap-2 text-body-md"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{place.address}</span>}
             {place.opening_hours && <span className="flex items-start gap-2 text-body-md"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{place.opening_hours}</span>}
             {place.phone && <a href={`tel:${place.phone.split(";")[0]}`} className="flex items-center gap-2 text-body-md text-primary"><Phone className="h-4 w-4" aria-hidden />{place.phone}</a>}
             {place.website && <a href={place.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 break-all text-body-md text-primary"><Globe className="h-4 w-4 shrink-0" aria-hidden />{place.website.replace(/^https?:\/\//, "")}</a>}
             {place.description && <p className="text-body-sm text-on-surface-variant">{place.description}</p>}
             {directions && (
-              <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-full bg-navy px-5 text-label-md text-white hover:brightness-125 dark:bg-primary dark:text-on-primary">
+              <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-xl bg-ink px-4 text-label-md text-on-ink transition-colors hover:bg-ink/90">
                 {t("Роҳ то ин ҷо")}
                 <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
             )}
           </div>
 
+          {place.lat != null && <RouteBuilder place={place} points={points} onRoute={onRoute} />}
+
           <div className="flex items-center gap-2">
             <Stars value={place.rating || 0} size="h-5 w-5" />
-            <span className="font-display text-[16px] font-bold">{place.rating ? `${place.rating} · ${t("{0} шарҳ", place.reviews_count)}` : t("Ҳоло баҳо нест")}</span>
+            <span className="font-display text-[16px] font-semibold">{place.rating ? `${place.rating} · ${t("{0} шарҳ", place.reviews_count)}` : t("Ҳоло баҳо нест")}</span>
           </div>
 
           {user ? (
-            <div className="flex flex-col gap-3 rounded-[24px] p-5 ring-1 ring-outline-variant">
-              <span className="text-[18px] font-display font-extrabold text-navy dark:text-on-surface">{place.my_review ? t("Шарҳи шумо") : t("Баҳо диҳед")}</span>
+            <div className="flex flex-col gap-3 rounded-2xl p-5 ring-1 ring-outline-variant">
+              <span className="text-[17px] font-semibold">{place.my_review ? t("Шарҳи шумо") : t("Баҳо диҳед")}</span>
               <StarPicker value={rating} onChange={setRating} />
               <textarea className="input h-24 py-3" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={t("Чӣ хуб буд ё чӣ бад буд? (ихтиёрӣ)")} />
               <ErrorBox error={error} />
@@ -138,9 +227,9 @@ function PlaceDetails({ placeId, onClose }) {
 
           <div className="flex flex-col gap-3">
             {(reviews?.results || []).map((r) => (
-              <div key={r.id} className="flex flex-col gap-1 rounded-[20px] bg-surface-container-low p-4">
+              <div key={r.id} className="flex flex-col gap-1 rounded-xl bg-surface-container-low p-4">
                 <span className="flex items-center justify-between gap-2">
-                  <span className="font-display text-[15px] font-bold">{r.author_name}{r.is_mine && ` (${t("шумо")})`}</span>
+                  <span className="font-display text-[15px] font-semibold">{r.author_name}{r.is_mine && ` (${t("шумо")})`}</span>
                   <span className="text-label-sm text-on-surface-variant">{ago(r.created_at)}</span>
                 </span>
                 <Stars value={r.rating} />
@@ -232,10 +321,13 @@ export default function Places() {
   const [near, setNear] = useState(null);
   const [locating, setLocating] = useState(false);
   const [view, setView] = useState("list"); // phones: list or map
+  const wide = useWide();
+  const [panel, setPanel] = useState(true); // wide screens: the list over the map is open
   const [openId, setOpenId] = useState(null);
   const [suggesting, setSuggesting] = useState(false);
   const [page, setPage] = useState({ results: [], count: 0, next: null });
   const [points, setPoints] = useState([]);
+  const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
   const [error, setError] = useState(null);
@@ -319,6 +411,28 @@ export default function Places() {
     );
   };
 
+  // The found places (used in the panel over the map and in the phone list).
+  const listBody = loading ? (
+    <div className="flex flex-col gap-2 p-1">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
+  ) : page.results.length === 0 ? (
+    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+      <MapPin className="h-6 w-6 text-on-surface-variant" aria-hidden />
+      <span className="text-[16px] font-semibold">{t("Ҷой ёфт нашуд")}</span>
+      <span className="text-body-sm text-on-surface-variant">{t("Намуд ё минтақаи дигарро интихоб кунед.")}</span>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-2">
+      <Stagger key={query + (near ? "near" : "")} className="flex flex-col divide-y divide-outline-variant">
+        {page.results.map((place) => (
+          <StaggerItem key={place.id}>
+            <PlaceCard place={place} onOpen={setOpenId} />
+          </StaggerItem>
+        ))}
+      </Stagger>
+      {page.next && <Button variant="plain" loading={more} onClick={loadMore} className="m-1.5">{t("Боз нишон додан")}</Button>}
+    </div>
+  );
+
   const regions = summary?.regions?.map((r) => r.name) || Object.keys(REGION_VIEW);
   const counts = summary?.categories || {};
 
@@ -331,39 +445,40 @@ export default function Places() {
       <div className="card flex flex-col gap-5 p-5 md:p-6">
         <div className="grid gap-3 md:grid-cols-12">
           <label className="md:col-span-6">
-            <span className="label flex items-center gap-1 text-on-surface-variant"><Search className="h-4 w-4 text-primary" aria-hidden />{t("Ном ё кӯча")}</span>
+            <span className="label flex items-center gap-1.5 text-on-surface-variant"><Search className="h-4 w-4" aria-hidden />{t("Ном ё кӯча")}</span>
             <input className="input" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Масалан: чайхана, Ленина")} />
           </label>
           <label className="md:col-span-4">
-            <span className="label flex items-center gap-1 text-on-surface-variant"><MapPin className="h-4 w-4 text-primary" aria-hidden />{t("Минтақа")}</span>
+            <span className="label flex items-center gap-1.5 text-on-surface-variant"><MapPin className="h-4 w-4" aria-hidden />{t("Минтақа")}</span>
             <select className="input" value={region} onChange={(e) => (setNear(null), update("region", e.target.value))}>
               {near && <option value="">{t("Дар наздикии ман")}</option>}
               {regions.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </label>
           <div className="flex items-end md:col-span-2">
-            <Button variant={near ? "primary" : "soft"} icon={LocateFixed} loading={locating} onClick={locate} className="w-full">
+            <Button variant={near ? "primary" : "plain"} icon={LocateFixed} loading={locating} onClick={locate} className="w-full">
               {near ? t("Наздик ✓") : t("Наздики ман")}
             </Button>
           </div>
         </div>
-        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          <button type="button" onClick={() => update("category", "")} aria-pressed={!category} className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 text-label-md transition-colors ${!category ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant/60 hover:bg-surface-container-low"}`}>
+        <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          <button type="button" onClick={() => update("category", "")} aria-pressed={!category} className={`min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-4 text-label-md transition-colors ${!category ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
             {t("Ҳама")}
           </button>
           {PLACE_KINDS.map((k) => (
-            <button key={k.value} type="button" onClick={() => update("category", category === k.value ? "" : k.value)} aria-pressed={category === k.value} className={`flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-label-md transition-colors ${category === k.value ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant/60 hover:bg-surface-container-low"}`}>
-              <k.icon className="h-4 w-4" aria-hidden style={category === k.value ? undefined : { color: k.color }} />
+            <button key={k.value} type="button" onClick={() => update("category", category === k.value ? "" : k.value)} aria-pressed={category === k.value} className={`flex min-h-[40px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${category === k.value ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: k.color }} aria-hidden />
               {k.label()}
-              {counts[k.value] > 0 && <span className="text-label-sm opacity-70">{counts[k.value]}</span>}
+              {counts[k.value] > 0 && <span className="text-[12px] tabular-nums opacity-60">{counts[k.value]}</span>}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="inline-flex self-start rounded-full bg-surface-container-lowest p-1 ring-1 ring-outline-variant/60 xl:hidden" role="group">
+      {/* Phones and tablets: the list or the map. */}
+      <div className="inline-flex self-start rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant xl:hidden" role="group">
         {[["list", List, t("Рӯйхат")], ["map", MapIcon, t("Харита")]].map(([value, Icon, label]) => (
-          <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 text-label-md transition-colors ${view === value ? "bg-navy text-white dark:bg-primary dark:text-on-primary" : "text-on-surface-variant"}`}>
+          <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[40px] items-center gap-2 rounded-lg px-4 text-label-md transition-colors ${view === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
             <Icon className="h-4 w-4" aria-hidden />
             {label}
           </button>
@@ -371,36 +486,63 @@ export default function Places() {
       </div>
 
       <ErrorBox error={error} />
-      <div className="grid items-start gap-6 xl:grid-cols-12">
-        <div className={`flex flex-col gap-3 xl:col-span-5 ${view === "map" ? "hidden xl:flex" : ""}`}>
-          <div className="flex items-center gap-2 px-1">
-            <h2 className="text-[22px] font-display font-extrabold text-navy dark:text-on-surface">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
-            {!loading && <span className="rounded-full bg-navy px-2.5 py-0.5 text-label-sm text-white dark:bg-primary dark:text-on-primary">{page.count}</span>}
+      {/* The map takes the whole width; on wide screens the list floats over its left side and can be folded away. */}
+      <div className="flex flex-col gap-2">
+        <div className="relative">
+          <div className={!wide && view === "list" ? "hidden" : ""}>
+            <Map3D
+              points={points} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]}
+              selectedId={openId} onOpen={setOpenId} route={route} onClearRoute={() => setRoute(null)}
+              className="h-[560px] xl:h-[calc(100vh-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
+            />
           </div>
-          {loading ? (
-            [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)
-          ) : page.results.length === 0 ? (
-            <EmptyState icon={MapPin} title={t("Ҷой ёфт нашуд")} text={t("Намуд ё минтақаи дигарро интихоб кунед.")} />
-          ) : (
-            <>
-              <Stagger key={query + (near ? "near" : "")} className="flex flex-col divide-y divide-outline-variant/50 rounded-[32px] bg-surface-container-lowest p-2 ring-1 ring-outline-variant/60">
-                {page.results.map((place) => (
-                  <StaggerItem key={place.id}>
-                    <PlaceCard place={place} onOpen={setOpenId} />
-                  </StaggerItem>
-                ))}
-              </Stagger>
-              {page.next && <Button variant="soft" loading={more} onClick={loadMore} className="self-center">{t("Боз нишон додан")}</Button>}
-            </>
+          {wide && panel && (
+            <m.aside
+              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, ease: EASE }}
+              className="absolute bottom-3 left-3 top-3 z-10 flex flex-col overflow-hidden rounded-xl bg-surface-container-lowest/95 shadow-lg ring-1 ring-outline-variant backdrop-blur-md"
+              style={{ width: PANEL }}
+            >
+              <header className="flex items-center gap-2 border-b border-outline-variant py-2.5 pl-4 pr-2">
+                <h2 className="text-[17px] font-semibold">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
+                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{page.count}</span>}
+                <button type="button" onClick={() => setPanel(false)} aria-label={t("Рӯйхатро пинҳон кардан")} title={t("Рӯйхатро пинҳон кардан")} className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface">
+                  <PanelLeftClose className="h-4 w-4" aria-hidden />
+                </button>
+              </header>
+              <div className="flex-1 overflow-y-auto p-1.5">{listBody}</div>
+            </m.aside>
+          )}
+          {wide && !panel && (
+            <button type="button" onClick={() => setPanel(true)} className="absolute left-3 top-[60px] z-10 flex h-9 items-center gap-2 rounded-lg bg-surface-container-lowest/90 px-3 text-label-md text-on-surface shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-surface-container-lowest">
+              <List className="h-4 w-4" aria-hidden />
+              {t("Рӯйхат")}
+              {!loading && <span className="text-[12px] tabular-nums text-on-surface-variant">{page.count}</span>}
+            </button>
+          )}
+          {!wide && view === "list" && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 px-1">
+                <h2 className="text-[20px] font-semibold">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
+                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{page.count}</span>}
+              </div>
+              <div className="rounded-2xl bg-surface-container-lowest p-1.5 ring-1 ring-outline-variant">{listBody}</div>
+            </div>
           )}
         </div>
-        <div className={`xl:sticky xl:top-24 xl:col-span-7 ${view === "list" ? "hidden xl:block" : ""}`}>
-          <Map3D points={points} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]} selectedId={openId} onOpen={setOpenId} />
-          <p className="mt-2 px-1 text-label-sm text-on-surface-variant">{t("Маълумот аз OpenStreetMap. Агар хато бинед, ҷойи навро пешниҳод кунед.")}</p>
-        </div>
+        <p className="px-1 text-[12px] text-on-surface-variant">{t("Маълумот аз OpenStreetMap. Агар хато бинед, ҷойи навро пешниҳод кунед.")}</p>
       </div>
 
-      <PlaceDetails placeId={openId} onClose={() => setOpenId(null)} />
+      <PlaceDetails
+        placeId={openId}
+        onClose={() => setOpenId(null)}
+        points={points}
+        onRoute={(r) => {
+          // Show the route: close the panel and, on phones, switch to the map.
+          setRoute(r);
+          setOpenId(null);
+          setView("map");
+        }}
+      />
       <SuggestPlace open={suggesting} onClose={() => setSuggesting(false)} regions={regions} onSaved={reloadSummary} />
     </div>
   );
