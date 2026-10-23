@@ -1,0 +1,14 @@
+[Unit]
+Description=Muhojir FastAPI: Celery beat (06:00 vacancies, 06:30 reminders)
+After=network.target redis-server.service
+
+[Service]
+User=romin
+Group=romin
+WorkingDirectory=/home/romin/muhojir-api
+ExecStart=/home/romin/muhojir-api/.venv/bin/celery -A app.worker beat --loglevel INFO --schedule /home/romin/muhojir-api/celerybeat-schedule
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

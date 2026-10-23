@@ -1,0 +1,14 @@
+[Unit]
+Description=Muhojir FastAPI: Celery worker (emails, daily jobs)
+After=network.target redis-server.service
+
+[Service]
+User=romin
+Group=romin
+WorkingDirectory=/home/romin/muhojir-api
+ExecStart=/home/romin/muhojir-api/.venv/bin/celery -A app.worker worker --concurrency 2 --loglevel INFO
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
