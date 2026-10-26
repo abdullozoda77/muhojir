@@ -95,7 +95,8 @@ TOOLS = [
         "description": (
             "Searches the directory of useful places in Russia: migration centers, clinics for the migrants' "
             "medical exam, notaries, translation bureaus, the embassy/consulates of Tajikistan, mosques, Tajik and "
-            "Uzbek cafes, halal shops, money transfers. Returns up to 5 with address and rating."
+            "Uzbek cafes, halal shops, money transfers, hostels, markets, photo for documents. Returns up to 5 "
+            "with address and rating."
         ),
         "input_schema": {
             "type": "object",

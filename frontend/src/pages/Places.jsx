@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Banknote, Building2, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
+  Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
   MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShoppingBasket, Stamp, Store, Utensils,
 } from "lucide-react";
 import { api } from "../api.js";
@@ -24,6 +24,9 @@ export const PLACE_KINDS = [
   { value: "food", label: () => t("Ошхонаи тоҷикӣ ва ӯзбекӣ"), icon: Utensils, color: "#ef6c00" },
   { value: "halal", label: () => t("Мағозаи ҳалол"), icon: ShoppingBasket, color: "#558b2f" },
   { value: "money", label: () => t("Интиқоли пул"), icon: Banknote, color: "#5d4037" },
+  { value: "hostel", label: () => t("Хостел"), icon: BedDouble, color: "#3949ab" },
+  { value: "market", label: () => t("Бозор"), icon: Store, color: "#f9a825" },
+  { value: "photo", label: () => t("Акс барои ҳуҷҷат"), icon: Camera, color: "#546e7a" },
 ];
 const kind = (value) => PLACE_KINDS.find((k) => k.value === value) || { label: () => value, icon: Store, color: "#455a64" };
 const COLORS = Object.fromEntries(PLACE_KINDS.map((k) => [k.value, k.color]));
@@ -37,6 +40,28 @@ const REGION_VIEW = {
   "Республика Татарстан": [55.79, 49.12, 9],
   "Краснодарский край": [45.035, 38.975, 8],
   "Самарская область": [53.195, 50.1, 9],
+  "Ленинградская область": [59.9, 30.6, 8],
+  "Нижегородская область": [56.327, 44.006, 9],
+  "Челябинская область": [55.16, 61.4, 9],
+  "Тюменская область": [57.153, 65.534, 9],
+  "Ханты-Мансийский автономный округ — Югра": [61.25, 73.4, 8],
+  "Ямало-Ненецкий автономный округ": [66.53, 66.6, 7],
+  "Ростовская область": [47.222, 39.72, 9],
+  "Красноярский край": [56.01, 92.87, 9],
+  "Иркутская область": [52.287, 104.28, 9],
+  "Калужская область": [54.513, 36.261, 9],
+  "Тульская область": [54.193, 37.617, 9],
+  "Воронежская область": [51.66, 39.2, 9],
+  "Пермский край": [58.01, 56.25, 9],
+  "Республика Башкортостан": [54.735, 55.958, 9],
+  "Омская область": [54.989, 73.368, 9],
+  "Волгоградская область": [48.708, 44.513, 9],
+  "Саратовская область": [51.533, 46.034, 9],
+  "Ярославская область": [57.626, 39.894, 9],
+  "Владимирская область": [56.129, 40.407, 9],
+  "Калининградская область": [54.71, 20.51, 9],
+  "Белгородская область": [50.595, 36.587, 9],
+  "Томская область": [56.485, 84.948, 9],
 };
 
 const ROUTER = "https://routing.openstreetmap.de";

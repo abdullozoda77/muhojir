@@ -739,7 +739,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `query(region, selector)` | function | The Overpass query for one search (one selector) inside one region. |
-| `fetch_one(client, region, selector)` | async function | Asks the Overpass servers in turn, waiting longer after each busy answer (15, 45, 90, 180 s); returns the elements, or raises the last error. |
+| `fetch_one(client, region, selector)` | async function | Asks the Overpass servers in turn, waiting longer after each busy answer (15, 60 s); returns the elements, or raises the last error. |
 | `fetch(client, region, category, pause, log)` | async function | Runs every search of a category one by one (small queries pass the servers' time limits) and merges the results without duplicates; a failed search is logged and the others are still used. |
 | `_clean(value, limit)` | function | One line of text without extra spaces, cut to the column's length. |
 | `place_fields(element, region, category)` | function | The fields of a Place from an OSM element (name, address, coordinates, phone, website, hours); None when it has no name or position. |

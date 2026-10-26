@@ -52,7 +52,7 @@ cheapest prices of a month with a calendar of prices by day, a button to buy on 
 (login needed) that tell the visitor when the ticket gets cheaper than their price.
 - [places] Useful places on a map: migration centers, clinics for the medical exam, notaries, translation \
 bureaus, the embassy and consulates of Tajikistan, mosques, Tajik and Uzbek cafes, halal shops, money \
-transfers; with ratings and reviews, "near me", and a form to suggest a new place.
+transfers, hostels, markets, photo for documents; in 30 regions of Russia; with ratings and reviews, "near me", and a form to suggest a new place.
 - [notifications] Notifications (login needed).
 - [profile] Profile and settings (login needed): name, phone, city, language, email reminders, installing \
 the site on the phone.

@@ -16,6 +16,9 @@ PLACE_CATEGORIES = (
     "food",
     "halal",
     "money",
+    "hostel",
+    "market",
+    "photo",
 )
 
 
