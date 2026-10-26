@@ -74,7 +74,7 @@ export default function JobDetail() {
               </div>
             )}
             <Perks job={job} />
-            <div className="border-t border-outline-variant pt-6">
+            <div className="flag-border-t [--flag-pad:1.5rem]">
               <h2 className="mb-3 text-[19px] font-semibold">{t("Тавсифи кор")}</h2>
               <p className="whitespace-pre-line text-[16px] leading-7">{job.description}</p>
             </div>

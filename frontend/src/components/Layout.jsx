@@ -246,7 +246,7 @@ export default function Layout() {
       <div className="fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-background" aria-hidden />
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
-      <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 border-b transition-colors duration-300 ${scrolled ? "border-outline-variant bg-background/80 backdrop-blur-xl" : "border-transparent bg-background"}`}>
+      <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
         <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6">
           <Logo />
           <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>

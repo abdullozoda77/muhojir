@@ -22,7 +22,7 @@ export default function NewsDetail() {
         <IntroItem as="h1" className="text-[32px] font-semibold leading-[1.12] tracking-[-0.03em] md:text-[44px]">{data.title}</IntroItem>
         {data.summary && <IntroItem as="p" className="text-[18px] leading-8 text-on-surface-variant md:text-[20px]">{data.summary}</IntroItem>}
       </Intro>
-      <Reveal className="whitespace-pre-line border-t border-outline-variant pt-8 text-[17px] leading-8">{data.body}</Reveal>
+      <Reveal className="flag-border-t whitespace-pre-line [--flag-pad:2rem] text-[17px] leading-8">{data.body}</Reveal>
       {data.source_url && (
         <a href={data.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-2 self-start rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
           {t("Манбаъ")}

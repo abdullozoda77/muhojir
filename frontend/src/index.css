@@ -163,6 +163,29 @@ html.dark {
   .flag-line {
     background: linear-gradient(180deg, #dc161d 0 28.6%, #ffffff 28.6% 71.4%, #197b30 71.4% 100%);
   }
+  .flag-border-t,
+  .flag-border-b {
+    background-image: linear-gradient(180deg, #dc161d 0 28.6%, #ffffff 28.6% 71.4%, #197b30 71.4% 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 3px;
+  }
+  .flag-border-t {
+    border-top: 0;
+    padding-top: calc(var(--flag-pad, 0px) + 3px);
+    background-position: top;
+  }
+  .flag-border-b {
+    border-bottom: 0;
+    background-position: bottom;
+  }
+  .ribbons-box {
+    container-type: size;
+  }
+  @container (max-height: 90px) {
+    .ribbons-box > svg {
+      display: none;
+    }
+  }
   .ikat-stripe {
     height: 7px;
     background: linear-gradient(180deg, #dc161d 0 28.6%, #ffffff 28.6% 71.4%, #197b30 71.4% 100%);

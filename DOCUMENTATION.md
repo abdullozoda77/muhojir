@@ -71,7 +71,7 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 13 files
-- `frontend/src/components/` — reusable parts of pages — 20 files
+- `frontend/src/components/` — reusable parts of pages — 21 files
 - `frontend/src/pages/` — one file per page of the site — 20 files
 
 
@@ -789,7 +789,7 @@ A generic, single database configuration.
 
 ### `app/assistant/knowledge.py`
 
-**What it is for:** What the AI assistant is told: who it is, how to behave, and how the site is built (pages and what they do).
+**What it is for:** What the AI assistant is told: who it is, how to behave, and how the site is built (pages and what they do). It tells the model its name is Брат.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1246,7 +1246,7 @@ A generic, single database configuration.
 
 ### `frontend/src/index.css`
 
-**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px.
+**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px. Page dividers are flag stripes: .flag-border-t / .flag-border-b draw a 3px red-white-green line instead of a border (--flag-pad adds space under it).
 
 ### `frontend/src/live.js`
 
@@ -1297,7 +1297,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Assistant.jsx`
 
-**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages).
+**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Брат (Brat).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1340,6 +1340,16 @@ A generic, single database configuration.
 |---|---|---|
 | `addDays` | function | Pure date math in UTC: local midnight in Moscow (UTC+3) would turn into the previous day in toISOString(). |
 | `DocForm` | export function | Add or edit one of the user's documents. doc = null: closed, {}: new, a document: edit it. |
+
+### `frontend/src/components/FlagRibbons.jsx`
+
+**What it is for:** A Tajik flag made of three waving silk ribbons (red, white, green in the flag's 2:3:2 proportions) with a soft blue glow and moving folds. On the home page it fills the empty space under the jobs card; in a box lower than 90px it is hidden (.ribbons-box). Stops moving when the visitor asked for less motion.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `STRIPES` | const | The three ribbons: offset, width and color. |
+| `wave(y)` | function | An SVG path of a long smooth wave at height y (period PERIOD, height AMPLITUDE). |
+| `FlagRibbons` | export function | The picture; the ribbons slide by one wave period in 9 s, so the loop is seamless. |
 
 ### `frontend/src/components/Footer.jsx`
 
