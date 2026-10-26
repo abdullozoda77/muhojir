@@ -4,7 +4,6 @@ import { AnimatePresence, m } from "motion/react";
 import { BellRing, X } from "lucide-react";
 import { t } from "../i18n.js";
 
-// A new notification that just arrived over the WebSocket: slides in at the corner, goes away by itself.
 const SHOW_SECONDS = 7;
 
 export default function LiveToast({ notification, onClose }) {

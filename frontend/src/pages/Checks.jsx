@@ -4,8 +4,6 @@ import { t } from "../i18n.js";
 import { EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 
-// Official pages where people check their own papers (admins keep the list: help contacts of kind "mvd_check").
-// Each description holds the steps, one per line.
 const stepsOf = (check) => (check.description || "").split("\n").map((s) => s.trim()).filter(Boolean);
 
 export default function Checks() {

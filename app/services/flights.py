@@ -1,6 +1,3 @@
-"""Ticket prices between Tajikistan and Russia from Travelpayouts (Aviasales Data API v3, prices_for_dates).
-They are the cheapest prices other people found in the last days, cached by Aviasales; the button opens the
-search on aviasales.ru, where the ticket is bought. Our own cache keeps an answer for 30 minutes."""
 import logging
 from datetime import date
 
@@ -27,7 +24,6 @@ def enabled():
 
 
 def search_url(origin, destination, day=None):
-    """The search page on aviasales.ru: /search/DYU0112MOW1 = from DYU on 1 December to MOW, 1 passenger."""
     day = day or date.today()
     return f"https://www.aviasales.ru/search/{origin}{day:%d%m}{destination}1"
 
@@ -49,8 +45,6 @@ def _ticket(item):
 
 
 async def prices(origin, destination, month=None, direct=False):
-    """The one-way tickets of the month (or the nearest ones), cheapest first (up to 200, so every day has its
-    flights), and the cheapest price of every day."""
     key = f"flights:{origin}:{destination}:{month or 'any'}:{int(direct)}"
     cached = await cache.get(key)
     if cached is not None:
@@ -84,7 +78,6 @@ async def prices(origin, destination, month=None, direct=False):
 
 
 async def check_watches(db, today=None):
-    """Every day: tells users whose watched route got cheaper than their price. Returns how many were told."""
     if not enabled():
         return 0
     today = today or date.today()
@@ -94,7 +87,7 @@ async def check_watches(db, today=None):
                                 .where(FlightWatch.is_active.is_(True), User.is_active.is_(True)))).unique().all()
     for watch in watches:
         if watch.month < this_month:
-            watch.is_active = False  # the month is over
+            watch.is_active = False
             await db.commit()
             continue
         try:
@@ -105,7 +98,7 @@ async def check_watches(db, today=None):
         if cheapest is None or cheapest["price"] > watch.max_price:
             continue
         if watch.last_price is not None and cheapest["price"] >= watch.last_price:
-            continue  # already told about this price (or a cheaper one)
+            continue
         watch.last_price = cheapest["price"]
         await db.commit()
         user = await db.get(User, watch.user_id)

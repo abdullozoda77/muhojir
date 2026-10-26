@@ -1,10 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useIsDark } from "../theme.js";
 
-// Slowly falling snow drawn on a canvas. Far flakes are small and dim, near ones bigger and brighter, and a few
-// big blurred flakes float right in front, like out of focus. Each flake rocks gently side to side and shimmers a
-// little. With "reduce motion" on the phone the snow stands still.
-// Every flake is a ready-made picture (sprite), so even 200 flakes cost little on a phone.
 function makeSprite(dark, soft) {
   const size = 64;
   const c = document.createElement("canvas");
@@ -12,18 +8,15 @@ function makeSprite(dark, soft) {
   const g = c.getContext("2d");
   const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   if (soft) {
-    // A blurred flake close to the eye: no hard edge at all.
     grad.addColorStop(0, "rgba(255,255,255,0.9)");
     grad.addColorStop(0.4, "rgba(230,240,255,0.45)");
     grad.addColorStop(1, "rgba(210,225,255,0)");
   } else if (dark) {
-    // A bright core with a cold blue glow around it.
     grad.addColorStop(0, "rgba(255,255,255,1)");
     grad.addColorStop(0.22, "rgba(255,255,255,0.95)");
     grad.addColorStop(0.4, "rgba(205,225,255,0.35)");
     grad.addColorStop(1, "rgba(160,195,255,0)");
   } else {
-    // On a light sky a white dot alone is lost, so it gets a soft blue rim.
     grad.addColorStop(0, "rgba(255,255,255,1)");
     grad.addColorStop(0.4, "rgba(255,255,255,0.95)");
     grad.addColorStop(0.6, "rgba(120,150,215,0.35)");
@@ -51,7 +44,7 @@ export default function Snowfall({ className = "" }) {
     let last = performance.now();
 
     const flake = (anywhere) => {
-      const z = Math.random() ** 1.8; // most flakes are far away
+      const z = Math.random() ** 1.8;
       const soft = Math.random() < 0.035;
       return {
         x: Math.random() * w,
@@ -59,9 +52,9 @@ export default function Snowfall({ className = "" }) {
         soft,
         r: soft ? 7 + Math.random() * 8 : 0.9 + z * 3.2,
         alpha: soft ? 0.1 + Math.random() * 0.12 : 0.45 + z * 0.55,
-        vy: soft ? 9 + Math.random() * 5 : 5 + z * 14, // pixels per second: a slow, quiet fall
+        vy: soft ? 9 + Math.random() * 5 : 5 + z * 14,
         drift: (Math.random() - 0.5) * 4,
-        rock: 6 + Math.random() * 18, // how far it rocks side to side, in pixels
+        rock: 6 + Math.random() * 18,
         phase: Math.random() * Math.PI * 2,
         freq: 0.25 + Math.random() * 0.5,
         shimmer: 0.6 + Math.random() * 1.6,
@@ -95,7 +88,6 @@ export default function Snowfall({ className = "" }) {
       const dt = Math.min((time - last) / 1000, 0.05);
       last = time;
       draw(time);
-      // A light wind that slowly turns now and then.
       const wind = Math.sin(time * 0.0001) * 4 + Math.sin(time * 0.00031) * 2;
       for (const f of flakes) {
         f.y += f.vy * dt;

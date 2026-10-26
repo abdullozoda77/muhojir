@@ -1,10 +1,3 @@
-"""Workers put companies on the blacklist themselves: blacklist_reports and employers.reports_count.
-
-Revision ID: 0004
-Revises: 0003
-Create Date: 2026-10-26 12:50:00
-
-"""
 from typing import Sequence, Union
 
 import sqlalchemy as sa

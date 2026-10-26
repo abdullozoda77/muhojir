@@ -1,9 +1,3 @@
-"""Live notifications: every logged-in browser tab keeps a WebSocket open (/ws/notifications/?token=...).
-A new notification goes to all tabs of its user at once, so the bell updates without a reload.
-
-With several server processes (and the Celery worker, which makes reminders) the events travel through Redis
-(REDIS_URL): every process listens and delivers to the tabs connected to it. Without Redis it all stays in this
-process (development). A problem here must never break saving the notification itself, so errors are logged."""
 import asyncio
 import json
 import logging
@@ -34,7 +28,7 @@ class Hub:
             self.sockets.pop(user_id, None)
 
     async def deliver(self, user_id, message):
-        message = jsonable_encoder(message)  # dates as ISO text, like the API
+        message = jsonable_encoder(message)
         for socket in list(self.sockets.get(user_id, ())):
             try:
                 await socket.send_json(message)
@@ -54,7 +48,6 @@ class Hub:
         await self.deliver(user_id, message)
 
     async def listen(self):
-        """Started with the app when REDIS_URL is set: delivers events from every process to this one's tabs."""
         import redis.asyncio as redis
 
         while True:
@@ -96,7 +89,6 @@ async def push_new(db, notification):
 
 
 async def push_count(db, user_id):
-    """After notifications were read or deleted: every open tab updates its bell."""
     try:
         await hub.publish(user_id, {"type": "unread", "unread": await unread_count(db, user_id)})
     except Exception:

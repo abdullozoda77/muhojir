@@ -1,4 +1,3 @@
-"""The daily jobs, as plain async functions: used by the Celery worker and by the command line (app/cli.py)."""
 from app.db.session import SessionLocal
 from app.db.types import utcnow
 from app.services.alerts import notify_alerts
@@ -9,7 +8,6 @@ from app.services.trudvsem import import_jobs
 
 
 async def run_import_jobs(log=print, **options):
-    """New vacancies from «Работа России», then alerts about the new ones."""
     started = utcnow()
     async with SessionLocal() as db:
         counts = await import_jobs(db, log=log, **options)
@@ -26,7 +24,6 @@ async def run_send_reminders(log=print):
 
 
 async def run_import_places(log=print, **options):
-    """Real places from OpenStreetMap (migration centers, notaries, mosques, Tajik cafes...)."""
     async with SessionLocal() as db:
         counts = await import_places(db, log=log, **options)
     log(f"Places: {counts}")

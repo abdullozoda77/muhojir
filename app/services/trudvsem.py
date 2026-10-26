@@ -1,9 +1,3 @@
-"""Real job ads from «Работа России» (trudvsem.ru), the state job portal. Its ads are open data with a free API
-(no key): https://opendata.trudvsem.ru/api/v1/vacancies/region/<code>?text=...&offset=<page>&limit=<n>
-
-We import the jobs migrants usually look for, in the regions where most of them work. Ads of recruitment
-agencies are skipped (a common way to cheat migrants), and contact persons' names and phones are not copied:
-people apply on the source page (external_url)."""
 import asyncio
 import html
 import logging
@@ -21,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 API = "https://opendata.trudvsem.ru/api/v1/vacancies/region/{region}?{query}"
 
-# Region codes of the portal. The first three are imported by default.
 REGIONS = {
     "7700000000000": "Москва",
     "5000000000000": "Московская область",
@@ -124,7 +117,6 @@ async def save(db, vacancy, industry):
                                     Job.salary_to.is_(salary_to) if salary_to is None else Job.salary_to == salary_to)
         same_ids = (await db.scalars(same)).all()
         if same_ids:
-            # Still advertised, so keep the copy we have open.
             await db.execute(update(Job).where(Job.id.in_(same_ids)).values(expires_at=fields["expires_at"]))
             await db.commit()
             return "skipped"
@@ -145,7 +137,7 @@ async def import_jobs(db, regions=None, limit=20, pause=0.3, log=print):
             for industry, words in SEARCHES.items():
                 for word in words:
                     await import_one(db, client, region, industry, word, limit, counts, log)
-                    await asyncio.sleep(pause)  # be polite to the portal
+                    await asyncio.sleep(pause)
             log(f"{REGIONS.get(region, region)}: done")
     return counts
 

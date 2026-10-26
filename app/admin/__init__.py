@@ -1,8 +1,3 @@
-"""The admin panel at /admin/ (SQLAdmin). Log in with the email and password of an editor or admin.
-
-Admins see everything. Editors see only the site's content: news, guides, exam questions, help sites, centers and
-patent prices (document types they may only edit). Users, their documents and payments, jobs and companies stay
-hidden from editors. The start page shows the site's numbers (for admins)."""
 from datetime import date, timedelta
 
 from sqladmin import Admin
@@ -44,7 +39,7 @@ class StaffLogin(AuthenticationBackend):
             return False
         async with SessionLocal() as db:
             user = await db.get(User, user_id)
-        if user is None or not user.is_editor:  # blocked, or no longer staff: the session ends
+        if user is None or not user.is_editor:
             request.session.clear()
             return False
         request.state.admin_user = user
@@ -55,7 +50,6 @@ class StaffLogin(AuthenticationBackend):
 
 
 class RoleAccess(AuthorizationBackend):
-    """Admins may do everything; editors only what EDITOR_VIEWS gives them on content."""
 
     def has_permission(self, request, identity, action, obj=None):
         user = getattr(request.state, "admin_user", None)
@@ -70,7 +64,7 @@ async def stats():
     now, today = utcnow(), date.today()
     week_ago, month_start = now - timedelta(days=7), today.replace(day=1)
     async with SessionLocal() as db:
-        count = lambda query: db.scalar(select(func.count()).select_from(query.subquery()))  # noqa: E731
+        count = lambda query: db.scalar(select(func.count()).select_from(query.subquery()))
         open_jobs = select(Job).where(Job.is_active.is_(True), Job.expires_at > now,
                                       Job.employer_id.in_(select(Employer.id).where(Employer.is_blacklisted.is_(False))))
         month_payments = select(Payment).where(Payment.paid_at >= month_start)
@@ -121,7 +115,6 @@ class MuhojirAdmin(Admin):
     @login_required
     async def index(self, request: Request):
         user = getattr(request.state, "admin_user", None)
-        # The numbers (users, payments) are for admins only; editors see just their sections.
         context = {"stats": await stats()} if user is not None and user.is_admin else {}
         return await self.templates.TemplateResponse(request, "dashboard.html", context)
 

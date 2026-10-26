@@ -8,7 +8,6 @@ import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
-// Every other page is downloaded only when it is opened, so the first visit on a slow phone is lighter.
 const BlacklistPage = lazy(() => import("./pages/BlacklistPage.jsx"));
 const Calculator = lazy(() => import("./pages/Calculator.jsx"));
 const Checks = lazy(() => import("./pages/Checks.jsx"));
@@ -27,7 +26,6 @@ const Profile = lazy(() => import("./pages/Profile.jsx"));
 const Tickets = lazy(() => import("./pages/Tickets.jsx"));
 const Places = lazy(() => import("./pages/Places.jsx"));
 
-// Pages that need a login.
 function Private({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -43,7 +41,6 @@ function Private({ children }) {
 }
 
 export default function App() {
-  // A new language re-renders every page in place (no reload).
   useLang();
   return (
     <Routes>

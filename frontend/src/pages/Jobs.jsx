@@ -67,7 +67,6 @@ function WhereJobsComeFrom() {
   );
 }
 
-// "Tell me about new jobs like these": keeps the current filters as an alert (see jobs/alerts.py on the server).
 function AlertButton({ params }) {
   const { user } = useAuth();
   const [state, setState] = useState("idle");
@@ -136,7 +135,6 @@ export default function Jobs() {
     );
   };
 
-  // Typing in the search and city boxes updates the list half a second after the last key.
   useEffect(() => {
     const id = setTimeout(() => {
       setParams(
@@ -194,7 +192,6 @@ export default function Jobs() {
         </Link>
       </PageHeader>
 
-      {/* One big search bar: the job and the city, like a travel site. */}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1 rounded-2xl bg-surface-container-lowest p-1.5 ring-1 ring-outline-variant transition-shadow focus-within:ring-2 focus-within:ring-primary/40 md:flex-row md:items-center">
           <label className="flex flex-1 items-center gap-3 rounded-xl px-4 py-2 transition-colors hover:bg-surface-container-low">

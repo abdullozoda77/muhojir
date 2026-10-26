@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, apiAll } from "./api.js";
 
-// const { data, error, loading, reload } = useApi("/jobs/jobs/"). Pass null as the path to skip loading.
 export function useApi(path) {
   const [state, setState] = useState({ data: null, error: null, loading: Boolean(path) });
   const [tick, setTick] = useState(0);
@@ -25,7 +24,6 @@ export function useApi(path) {
   return { ...state, reload };
 }
 
-// Loads everything the documents screens need: the user's documents, document types and regions.
 export function useDocuments() {
   const [state, setState] = useState({ docs: [], types: [], regions: [], loading: true, error: null });
   const load = useCallback(async () => {

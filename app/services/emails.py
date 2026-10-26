@@ -1,5 +1,3 @@
-"""Emails (SMTP from .env): codes after sign-up and for a new password, and notifications.
-Without SMTP settings the letter is only printed in the console (development)."""
 import logging
 import secrets
 from email.message import EmailMessage
@@ -21,8 +19,6 @@ LINES = {"verify": "Рамзи тасдиқи почтаи шумо дар Muhoj
 
 
 def build_message(subject, body, to):
-    """A plain-text email, kept like an ordinary personal one, because Gmail hides automatic-looking letters:
-    plain text, and a Message-ID with the sender's own domain."""
     sender = settings.from_email
     domain = sender.rsplit("@", 1)[-1].strip(">").strip() or "localhost"
     message = EmailMessage()
@@ -33,7 +29,6 @@ def build_message(subject, body, to):
 
 
 async def send_plain(subject, body, to):
-    """Sends the email through the SMTP server from .env (async). Without SMTP settings it is only printed."""
     if not settings.smtp_ready:
         print(f"\n--- email to {to} ---\nSubject: {subject}\n\n{body}\n---\n", flush=True)
         return
@@ -46,12 +41,10 @@ async def send_plain(subject, body, to):
             timeout=15,
         )
     except aiosmtplib.SMTPException as error:
-        raise OSError(f"SMTP: {error}") from error  # callers treat every mail problem as OSError
+        raise OSError(f"SMTP: {error}") from error
 
 
 async def queue_email(subject, body, to):
-    """Sends the email in the background (Celery). Without a queue (development), or when the queue itself is
-    unreachable (Redis down), it is sent right here, so codes keep working. Raises OSError if SMTP fails then."""
     if settings.celery_broker_url:
         from app.worker import send_email
 
@@ -64,7 +57,6 @@ async def queue_email(subject, body, to):
 
 
 async def send_code(db, email, purpose="verify"):
-    """Makes a new code, saves its hash (replacing any older code for this email) and emails the code."""
     code = f"{secrets.randbelow(10**6):06d}"
     entry = await db.scalar(select(EmailCode).where(EmailCode.email == email))
     if entry is None:
@@ -73,7 +65,6 @@ async def send_code(db, email, purpose="verify"):
     entry.purpose, entry.code_hash, entry.sent_at, entry.attempts = purpose, hash_password(code), utcnow(), 0
     await db.commit()
     if settings.debug:
-        # Development only: the code is also shown in the server log, to test while email is slow or lost.
         print(f"\n*** {purpose} code for {email}: {code} ***\n", flush=True)
     minutes = int(LOGIN_CODE_LIFETIME.total_seconds() // 60)
     await queue_email(

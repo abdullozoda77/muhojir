@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react";
 
-// The site as a phone app: the service worker (public/sw.js) and "install on the phone".
-
-// Only in the built site: in development the service worker would keep old files while the code changes.
 export function registerServiceWorker() {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
 
-// After logout (or a login as someone else) the saved copies of the user's own data are forgotten.
 export function clearUserData() {
   navigator.serviceWorker?.controller?.postMessage({ type: "clear-user-data" });
 }
 
-// Chrome on Android offers installing through this event; it comes once, so it is caught early and kept.
 let installEvent = null;
 const installListeners = new Set();
 if (typeof window !== "undefined") {
@@ -31,7 +26,6 @@ if (typeof window !== "undefined") {
 const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-// {installed, canInstall, install()}: canInstall is true where the browser can install it with one button.
 export function useInstall() {
   const [, redraw] = useState(0);
   useEffect(() => {

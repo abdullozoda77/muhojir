@@ -1,4 +1,3 @@
-// Starts the FastAPI dev server (uvicorn, port 8002) with the project's virtualenv Python (Windows, macOS and Linux).
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";

@@ -1,5 +1,3 @@
-"""Times are kept in UTC. SQLite has no time zones and gives naive datetimes back, so this type always
-returns aware UTC datetimes, the same on SQLite and PostgreSQL."""
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime

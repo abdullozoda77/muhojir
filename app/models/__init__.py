@@ -1,4 +1,3 @@
-"""All tables; importing this module registers every model with Base (Alembic and the admin need that)."""
 from app.models.accounts import EmailCode, Notification, RevokedToken, User
 from app.models.documents import (
     DocumentType, ExamQuestion, GuideStep, LawNews, MigrationCenter, Payment, Region, ReminderLog, UserDocument,

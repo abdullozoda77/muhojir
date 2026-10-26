@@ -1,10 +1,3 @@
-"""Commands:
-  python -m app.cli createsuperuser            an admin account for /admin/ (asks for email and password)
-  python -m app.cli import-jobs [--limit 20]   real vacancies from «Работа России» now
-  python -m app.cli send-reminders             today's document reminders now
-  python -m app.cli import-places [--region Москва] [--category mosque]   real places from OpenStreetMap
-  python -m app.cli check-flights                 ticket price alerts now
-  python -m app.cli has-jobs                   exit code 0 if there are vacancies (used by deploy/setup.sh)"""
 import sys
 import argparse
 import asyncio

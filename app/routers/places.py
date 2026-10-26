@@ -1,6 +1,3 @@
-"""/api/places/: the directory of useful places (migration centers, clinics for the medical exam, notaries,
-translators, the embassy, mosques, Tajik cafes, halal shops, money transfers) with a map, ratings and reviews.
-Places come from OpenStreetMap; logged-in users may suggest new ones, which editors approve."""
 import math
 from typing import Literal
 
@@ -18,9 +15,8 @@ from app.schemas.common import Form
 router = APIRouter(prefix="/api/places", tags=["places"])
 
 Category = Literal[PLACE_CATEGORIES]
-MAP_LIMIT = 3000  # markers on the map at most
+MAP_LIMIT = 3000
 
-# Rating of every place: average and number of reviews, joined to the place lists.
 ratings = (select(PlaceReview.place_id, func.avg(PlaceReview.rating).label("avg"), func.count().label("n"))
            .group_by(PlaceReview.place_id).subquery())
 
@@ -31,13 +27,11 @@ def place_json(place, avg=None, n=None, distance=None):
         "address": place.address, "lat": place.lat, "lon": place.lon, "phone": place.phone, "website": place.website,
         "opening_hours": place.opening_hours, "description": place.description, "source": place.source,
         "is_approved": place.is_approved, "rating": round(float(avg), 1) if avg else None, "reviews_count": n or 0,
-        # distance comes squared (in degrees²) from the query; SQLite has no sqrt, so the root is taken here.
         "distance_km": round(math.sqrt(distance) * 111.2, 1) if distance is not None else None,
     }
 
 
 def visible(query, user):
-    """Guests see approved places; a user also sees their own suggestions; editors see everything."""
     if user and user.is_editor:
         return query
     if user:
@@ -55,7 +49,6 @@ def filtered(query, request):
     if words := param(request, "search"):
         query = query.where(or_(Place.name.ilike(f"%{words}%"), Place.address.ilike(f"%{words}%")))
     if bbox := param(request, "bbox"):
-        # The part of the map on the screen: west,south,east,north
         try:
             west, south, east, north = (float(x) for x in bbox.split(","))
         except ValueError:
@@ -65,7 +58,6 @@ def filtered(query, request):
 
 
 def near(request):
-    """?near=55.75,37.61 -> (lat, lon) to sort by distance."""
     value = param(request, "near")
     if not value:
         return None
@@ -78,13 +70,10 @@ def near(request):
 
 @router.get("/")
 async def list_places(request: Request, db: DB, user: OptionalUser, page: Paginate):
-    """Filters: category (one or several, comma-separated), region, city, search, bbox; near=lat,lon sorts by
-    distance; ordering=rating or name (by default the best rated first)."""
     point = near(request)
     columns = [Place, ratings.c.avg, ratings.c.n]
     distance = None
     if point:
-        # Distance on a flat map (squared, to sort): exact enough inside one city, and cheap for the database.
         lat, lon = point
         k = math.cos(math.radians(lat))
         distance = (Place.lat - lat) * (Place.lat - lat) + (Place.lon - lon) * k * (Place.lon - lon) * k
@@ -102,7 +91,6 @@ async def list_places(request: Request, db: DB, user: OptionalUser, page: Pagina
 
 @router.get("/map/")
 async def map_points(request: Request, db: DB, user: OptionalUser):
-    """Light points for the map (id, category, name, lat, lon), with the same filters as the list."""
     query = filtered(visible(select(Place.id, Place.category, Place.name, Place.lat, Place.lon), user), request)
     rows = (await db.execute(query.where(Place.lat.is_not(None)).limit(MAP_LIMIT))).all()
     return [{"id": r.id, "category": r.category, "name": r.name, "lat": r.lat, "lon": r.lon} for r in rows]
@@ -110,7 +98,6 @@ async def map_points(request: Request, db: DB, user: OptionalUser):
 
 @router.get("/summary/")
 async def summary(request: Request, db: DB, user: OptionalUser):
-    """How many places of each category, and the regions with places (for the filters)."""
     base = visible(select(Place), user).subquery()
     region = param(request, "region")
     by_category = select(base.c.category, func.count()).group_by(base.c.category)
@@ -155,15 +142,12 @@ class PlaceIn(Form):
 
 @router.post("/", status_code=201)
 async def suggest_place(data: PlaceIn, db: DB, user: CurrentUser):
-    """A user suggests a place: it is shown to everyone after an editor approves it (editors' places at once)."""
     place = Place(**data.model_dump(), source="editor" if user.is_editor else "user", is_approved=user.is_editor,
                   created_by_id=user.id)
     db.add(place)
     await db.commit()
     return place_json(place)
 
-
-# --- Reviews ---------------------------------------------------------------------------------------------------
 
 def review_json(review, viewer=None):
     name = (review.author.full_name or "").split() if review.author else []
@@ -186,7 +170,6 @@ async def place_reviews(place_id: int, db: DB, user: OptionalUser, page: Paginat
 
 @router.put("/{place_id}/reviews/mine/")
 async def write_review(place_id: int, data: ReviewIn, db: DB, user: CurrentUser):
-    """My review of the place: written the first time, changed after that."""
     place, _, _ = await get_place(db, user, place_id)
     review = await db.scalar(select(PlaceReview).where(PlaceReview.place_id == place.id, PlaceReview.author_id == user.id))
     if review is None:

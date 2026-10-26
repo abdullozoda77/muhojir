@@ -6,7 +6,6 @@ import { t } from "../i18n.js";
 import { date, rub } from "../format.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
-// The receipts archive: every payment the user recorded, with the photo of its receipt.
 export default function Payments() {
   const { data, loading, error, reload } = useApi("/documents/payments/?page_size=100");
   const list = data?.results || [];
@@ -30,7 +29,6 @@ export default function Payments() {
         </EmptyState>
       ) : (
         <>
-          {/* The totals: how many payments and how much in all. */}
           <div className="card grid grid-cols-2 divide-x divide-outline-variant">
             <div className="flex flex-col gap-1 p-5 md:p-6">
               <span className="text-body-sm text-on-surface-variant">{t("Пардохтҳо")}</span>

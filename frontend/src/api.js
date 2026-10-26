@@ -1,6 +1,5 @@
 import { lang, t } from "./i18n.js";
 
-// API calls to the FastAPI server with JWT tokens. Tokens are stored in localStorage.
 const API = "/api";
 
 function store(key, value) {
@@ -30,14 +29,11 @@ export const tokens = {
   },
 };
 
-// Called when tokens are no longer valid, so the app can show the user as logged out.
 let onLogout = () => {};
 export function setLogoutHandler(handler) {
   onLogout = handler;
 }
 
-// A refresh token works only once (the server gives a new one and blocks the old), so when several requests
-// find the access token expired at the same moment they all wait for one refresh instead of each sending theirs.
 let refreshing = null;
 
 function refreshAccessToken() {
@@ -57,7 +53,6 @@ function refreshAccessToken() {
   return refreshing;
 }
 
-// The server answers in English; these are the messages people can meet, in Tajik (t() translates them when shown).
 const SERVER_MESSAGES = {
   "A code was just sent. Wait a minute before asking for a new one.": "Рамз ҳозир фиристода шуд. Як дақиқа интизор шавед.",
   "The email could not be sent. Try again in a few minutes.": "Мактуб фиристода нашуд. Баъд аз чанд дақиқа боз кӯшиш кунед.",
@@ -73,7 +68,6 @@ const SERVER_MESSAGES = {
   "This email is already registered. Log in or reset the password.": "Ин почта аллакай сабти ном шудааст. Ворид шавед ё паролро барқарор кунед.",
   "Confirm your email first. We sent you a code.": "Аввал почтаро тасдиқ кунед. Мо рамз фиристодем.",
   "This email is already confirmed or not registered.": "Ин почта аллакай тасдиқ шудааст ё сабти ном нашудааст.",
-  // Password rules: the server writes these in Russian (the same texts as Django).
   "Введённый пароль слишком короткий. Он должен состоять из как минимум 8 символов.": "Парол кӯтоҳ аст: ҳадди ақал 8 аломат лозим.",
   "Введённый пароль слишком широко распространён.": "Ин парол хеле оддӣ аст. Пароли дигар созед.",
   "Введённый пароль состоит только из цифр.": "Парол набояд танҳо аз рақамҳо иборат бошад.",
@@ -89,9 +83,6 @@ export function errorText(data) {
   return Object.values(data).map(errorText).join(" ");
 }
 
-// api("/jobs/jobs/") or api("/documents/my-documents/", { method: "POST", body: {...} }).
-// body is sent as JSON, or as it is when it is FormData (for files: photos, receipts).
-// raw: true returns the Response itself (for downloading files).
 export async function api(path, { method = "GET", body, raw = false } = {}) {
   const isForm = body instanceof FormData;
   let sentWith = null;
@@ -112,13 +103,10 @@ export async function api(path, { method = "GET", body, raw = false } = {}) {
   if (res.status === 401) {
     const hadToken = Boolean(tokens.access);
     if (hadToken && tokens.access !== sentWith) {
-      // Another request has already got a new token while this one was on its way: just repeat it.
       res = await send();
     } else if (hadToken && (await refreshAccessToken())) {
       res = await send();
     } else {
-      // The saved login is gone or expired: show the site as logged out and repeat as a guest,
-      // so public data (jobs, news) still loads.
       tokens.clear();
       onLogout();
       if (hadToken) res = await send();
@@ -137,7 +125,6 @@ export async function api(path, { method = "GET", body, raw = false } = {}) {
   return data;
 }
 
-// Every list endpoint is paginated ({count, results}); this reads all pages (for short lists like regions).
 export async function apiAll(path) {
   const sep = path.includes("?") ? "&" : "?";
   let page = await api(`${path}${sep}page_size=100`);
@@ -149,10 +136,8 @@ export async function apiAll(path) {
   return results;
 }
 
-// Private files (document photos, receipts) need the login token, so a plain <a href> can not open them.
-// This downloads the file and opens it in a new tab.
 export async function openPrivateFile(path) {
-  const tab = window.open("", "_blank"); // opened right away, so the browser does not block it as a pop-up
+  const tab = window.open("", "_blank");
   try {
     const res = await api(path, { raw: true });
     const url = URL.createObjectURL(await res.blob());
@@ -164,7 +149,6 @@ export async function openPrivateFile(path) {
   }
 }
 
-// Checks a chosen file before uploading: the same limits as the server (jpg, png, webp, pdf; 10 MB).
 export function fileProblem(file) {
   if (!file) return null;
   if (!/\.(jpe?g|png|webp|pdf)$/i.test(file.name)) return t("Танҳо сурат (jpg, png, webp) ё PDF.");

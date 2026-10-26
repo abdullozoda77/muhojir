@@ -1,6 +1,3 @@
-"""The database connection. On SQLite lower() only knows Latin letters, so a search for «москва» would not find
-«Москва»; it is replaced with Python's lower(), which knows every alphabet (Cyrillic, Tajik). SQLAlchemy's
-ilike() is lower(x) LIKE lower(y) on SQLite, so every search ignores case. PostgreSQL does not need this."""
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 

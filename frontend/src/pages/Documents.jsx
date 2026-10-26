@@ -17,7 +17,6 @@ const FILTERS = [
   { key: "valid", label: () => t("Эътибор дорад"), icon: CheckCircle2, tone: "text-tertiary" },
 ];
 
-// The calendar view: a timeline by month of the end date, nearest first.
 function Calendar({ docs, onEdit }) {
   const months = useMemo(() => {
     const groups = new Map();
@@ -66,7 +65,6 @@ export default function Documents() {
   const [paying, setPaying] = useState(null);
   const [params, setParams] = useSearchParams();
 
-  // /documents?pay=<id> (from the home page or the calculator) opens the payment form for that document.
   useEffect(() => {
     const id = Number(params.get("pay"));
     const doc = id && docs.find((d) => d.id === id);
@@ -81,7 +79,6 @@ export default function Documents() {
   const slugOf = (doc) => types.find((x) => x.id === doc.document_type)?.slug;
   const counts = { all: docs.length, expiring: 0, expired: 0, valid: 0 };
   docs.forEach((d) => (counts[d.status] += 1));
-  // Most urgent first: expired, then ending soon, then the rest by end date.
   const order = { expired: 0, expiring: 1, valid: 2 };
   const shown = docs.filter((d) => filter === "all" || d.status === filter).sort((a, b) => order[a.status] - order[b.status] || a.expires_at.localeCompare(b.expires_at));
 
@@ -91,7 +88,6 @@ export default function Documents() {
         <Button variant="accent" icon={FilePlus2} onClick={() => setEditing({})}>{t("Ҳуҷҷати нав")}</Button>
       </PageHeader>
 
-      {/* The four counts are also the filter. */}
       <div className="card grid grid-cols-2 overflow-hidden md:grid-cols-4" role="tablist">
         {FILTERS.map((f, i) => {
           const on = filter === f.key;

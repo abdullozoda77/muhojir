@@ -1,6 +1,3 @@
-"""Live notifications. Browsers can not send an Authorization header with a WebSocket, so the page passes its
-access token in the address: /ws/notifications/?token=<access token>. Without a valid token the connection is
-closed with code 4401, which the page understands as "get a fresh token and connect again"."""
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.core.security import read_token
@@ -27,7 +24,7 @@ async def notifications_socket(socket: WebSocket, token: str = ""):
     try:
         while True:
             message = await socket.receive_json()
-            if isinstance(message, dict) and message.get("type") == "ping":  # keeps it alive through proxies
+            if isinstance(message, dict) and message.get("type") == "ping":
                 await socket.send_json({"type": "pong"})
     except (WebSocketDisconnect, ValueError):
         pass

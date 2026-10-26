@@ -8,15 +8,12 @@ from app.schemas.common import Form
 
 
 def money(value):
-    """Decimals go out as text, "10000.00", like Django REST Framework."""
     return None if value is None else f"{Decimal(value):.2f}"
 
 
 def day(value):
     return value.isoformat() if value else None
 
-
-# --- Content (staff write, everyone reads) ---------------------------------------------------------------------
 
 class DocumentTypeIn(Form):
     slug: str = Field(max_length=50, pattern=r"^[-a-zA-Z0-9_]+$")
@@ -146,8 +143,6 @@ def exam_question_json(q):
             "answer": q.answer, "explanation": q.explanation, "is_active": q.is_active, "order": q.order}
 
 
-# --- The user's own documents and payments ---------------------------------------------------------------------
-
 class UserDocumentIn(Form):
     document_type_id: int = Field(alias="document_type")
     region_id: int | None = Field(None, alias="region")
@@ -177,7 +172,6 @@ def user_document_json(d):
 def payment_json(p):
     return {
         "id": p.id, "document": p.document_id, "document_title": p.document.document_type.title,
-        # The document's end date after this payment (it moves forward by the months paid).
         "document_expires_at": day(p.document.expires_at), "months": p.months, "amount": money(p.amount),
         "paid_at": day(p.paid_at), "has_receipt": bool(p.receipt), "note": p.note, "created_at": p.created_at,
     }

@@ -25,7 +25,7 @@ async def test_tools():
         text, error, _ = await run_tool(db, "patent_price", {"region": "Свердловской области"})
         assert not error and json.loads(text)["regions"][0]["name"] == "Свердловская область"
         text, error, _ = await run_tool(db, "my_documents", {})
-        assert error  # a guest has no documents
+        assert error
         text, error, _ = await run_tool(db, "guide_steps", {"document": "patent"})
         assert json.loads(text)["steps"]
 

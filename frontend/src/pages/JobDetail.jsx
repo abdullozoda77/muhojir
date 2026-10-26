@@ -10,9 +10,6 @@ import { BackLink, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { ReportButton, ReportsList } from "../components/Blacklist.jsx";
 import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 
-// One job: the title and salary on the page, the address, perks and description in a card; the employer, the
-// official ad and a note on the right.
-
 export default function JobDetail() {
   const { id } = useParams();
   const { data: job, error, loading, reload } = useApi(`/jobs/jobs/${id}/`);
@@ -50,7 +47,6 @@ export default function JobDetail() {
 
       <div className="grid items-start gap-8 lg:grid-cols-12">
         <article className="flex min-w-0 flex-col gap-6 lg:col-span-8">
-          {/* The job's header, plain on the page: badges, the title, the salary. */}
           <Intro as="header" className="flex flex-col gap-4">
             <IntroItem className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-2 py-1 text-label-sm text-on-surface">

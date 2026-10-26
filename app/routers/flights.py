@@ -1,5 +1,3 @@
-"""/api/flights/: air tickets between Tajikistan and Russia (both ways): airports, prices for a month with the
-cheapest price of every day, and price alerts ("tell me when it is cheaper than ...")."""
 import re
 from datetime import date
 from typing import Annotated
@@ -27,7 +25,6 @@ def airport_json(a):
 
 @router.get("/airports/")
 async def airports(db: DB, country: str | None = None):
-    """All airports (not paged: there are about 30). ?country=TJ or ?country=RU."""
     query = select(Airport).where(Airport.is_active.is_(True)).order_by(Airport.country.desc(), Airport.order, Airport.city)
     if country:
         query = query.where(Airport.country == country.upper())
@@ -35,7 +32,6 @@ async def airports(db: DB, country: str | None = None):
 
 
 async def country_of(db, code, field):
-    """A code is an airport (SVO) or a city (MOW). Returns TJ or RU; unknown codes are refused."""
     if not CODE.match(code or ""):
         raise FieldError(field, "Use a 3-letter IATA code, e.g. DYU or MOW.")
     country = await db.scalar(select(Airport.country).where((Airport.code == code) | (Airport.city_code == code)).limit(1))
@@ -67,8 +63,6 @@ async def prices(
     month: str | None = None,
     direct: bool = False,
 ):
-    """The one-way tickets of the month (cheapest first) and a calendar {day: cheapest price}.
-    enabled=false means no TRAVELPAYOUTS_TOKEN: then only search_url (aviasales.ru) is given."""
     origin, destination = origin.upper(), destination.upper()
     await check_route(db, origin, destination)
     month = check_month(month)
@@ -84,8 +78,6 @@ async def prices(
         raise ApiError("Ticket prices are not available right now. Try again later.", 503, code="unavailable")
     return answer
 
-
-# --- Price alerts ----------------------------------------------------------------------------------------------
 
 class WatchIn(Form):
     origin: str = Field(min_length=3, max_length=3)

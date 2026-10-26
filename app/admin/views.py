@@ -1,4 +1,3 @@
-"""The lists and forms of the admin panel. EDITOR_VIEWS says what editors may do in each; admins may do all."""
 from sqladmin import ModelView
 from wtforms import PasswordField
 from wtforms.validators import Optional
@@ -12,7 +11,7 @@ from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceRevie
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
-    "document-type": ("list", "details", "edit"),  # the site's pages depend on the types: editors only edit them
+    "document-type": ("list", "details", "edit"),
     "guide-step": ALL,
     "region": ALL,
     "law-news": ALL,
@@ -20,7 +19,7 @@ EDITOR_VIEWS = {
     "exam-question": ALL,
     "help-contact": ALL,
     "place": ALL,
-    "place-review": ("list", "details", "delete"),  # editors remove rude or fake reviews
+    "place-review": ("list", "details", "delete"),
     "airport": ALL,
 }
 
@@ -31,7 +30,6 @@ class Base(ModelView):
 
 
 class DeletesPrivateFiles:
-    """Deleting a user, a document or a payment here also deletes its private files (photos, receipts)."""
 
     async def on_model_delete(self, model, request):
         from sqlalchemy import select
@@ -56,8 +54,6 @@ class DeletesPrivateFiles:
         for name in getattr(request.state, "private_files", []):
             await delete_private(name)
 
-
-# --- Users -----------------------------------------------------------------------------------------------------
 
 class UserAdmin(DeletesPrivateFiles, Base, model=User):
     name, name_plural, icon, category = "Корбар", "Корбарон", "fa-solid fa-user", "Корбарон"
@@ -96,7 +92,6 @@ class NotificationAdmin(Base, model=Notification):
     form_choices = {"kind": [(k, k) for k in Notification.KINDS]}
 
     async def after_model_change(self, data, model, is_created, request):
-        # A notification written here also goes live to the user's open tabs (and by email).
         if is_created:
             from app.db.session import SessionLocal
             from app.services.emails import queue_email
@@ -118,8 +113,6 @@ class EmailCodeAdmin(Base, model=EmailCode):
     column_list = [EmailCode.email, EmailCode.purpose, EmailCode.sent_at, EmailCode.attempts]
     can_create = can_edit = False
 
-
-# --- Documents -------------------------------------------------------------------------------------------------
 
 class DocumentTypeAdmin(Base, model=DocumentType):
     name, name_plural, icon, category = "Навъи ҳуҷҷат", "Навъҳои ҳуҷҷат", "fa-solid fa-id-card", "Ҳуҷҷатҳо ва роҳнамо"
@@ -201,7 +194,6 @@ class PaymentAdmin(DeletesPrivateFiles, Base, model=Payment):
     name, name_plural, icon, category = "Пардохт", "Пардохтҳо", "fa-solid fa-receipt", "Ҳуҷҷатҳо ва роҳнамо"
     column_list = [Payment.document, Payment.user, Payment.months, Payment.amount, Payment.paid_at]
     column_default_sort = [(Payment.paid_at, True)]
-    # Receipts are private files; admins see only whether one was attached.
     column_details_exclude_list = [Payment.receipt]
     form_excluded_columns = [Payment.receipt, Payment.created_at]
 
@@ -212,8 +204,6 @@ class ReminderLogAdmin(Base, model=ReminderLog):
     column_default_sort = [(ReminderLog.sent_at, True)]
     can_create = can_edit = False
 
-
-# --- Jobs ------------------------------------------------------------------------------------------------------
 
 class EmployerAdmin(Base, model=Employer):
     name, name_plural, icon, category = "Корфармо", "Корфармоён", "fa-solid fa-industry", "Кор"
@@ -247,7 +237,6 @@ class BlacklistReportAdmin(Base, model=BlacklistReport):
     can_create = can_edit = False
 
     async def after_model_delete(self, model, request):
-        # keep Employer.reports_count right
         from sqlalchemy import func, select
 
         from app.db.session import SessionLocal
@@ -270,8 +259,6 @@ class SavedJobAdmin(Base, model=SavedJob):
     can_create = can_edit = False
 
 
-# --- Help ------------------------------------------------------------------------------------------------------
-
 class HelpContactAdmin(Base, model=HelpContact):
     name, name_plural, icon, category = "Сайти ёрӣ", "Сайтҳо ва тамосҳои ёрӣ", "fa-solid fa-life-ring", "Ёрӣ"
     column_list = [HelpContact.title, HelpContact.kind, HelpContact.website, HelpContact.order, HelpContact.is_active]
@@ -291,7 +278,6 @@ class LegalQuestionAdmin(Base, model=LegalQuestion):
     can_create = False
 
     async def on_model_change(self, data, model, is_created, request):
-        # Writing an answer here also marks it answered and notifies the worker (after saving).
         request.state.new_answer = (data.get("answer") or "").strip() and data.get("answer") != model.answer
         if request.state.new_answer:
             from app.db.types import utcnow
@@ -310,14 +296,12 @@ class LegalQuestionAdmin(Base, model=LegalQuestion):
                 await notify(db, user, "Ҷавоби ҳуқуқшинос", f"Ба саволи шумо ҷавоб доданд:\n\n{model.answer}", kind="system")
 
 
-# --- Places and tickets ----------------------------------------------------------------------------------------
-
 class PlaceAdmin(Base, model=Place):
     name, name_plural, icon, category = "Ҷой", "Ҷойҳои муфид (харита)", "fa-solid fa-location-dot", "Ҷойҳо ва чиптаҳо"
     column_list = [Place.name, Place.category, Place.region, Place.address, Place.source, Place.is_approved]
     column_searchable_list = [Place.name, Place.address, Place.city]
     column_sortable_list = [Place.name, Place.region, Place.created_at]
-    column_default_sort = [(Place.is_approved, False), (Place.created_at, True)]  # suggestions waiting first
+    column_default_sort = [(Place.is_approved, False), (Place.created_at, True)]
     form_columns = [Place.category, Place.name, Place.region, Place.city, Place.address, Place.lat, Place.lon,
                     Place.phone, Place.website, Place.opening_hours, Place.description, Place.is_approved]
     form_choices = {"category": [(c, c) for c in PLACE_CATEGORIES]}

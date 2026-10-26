@@ -1,5 +1,3 @@
-"""Private files: document photos and payment receipts. They are kept in PRIVATE_MEDIA_ROOT, which the web server
-never serves; the API hands a file only to its owner. Names are random, so the original file name does not leak."""
 import os
 import uuid
 
@@ -14,7 +12,6 @@ EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
 
 
 async def save_private(file: UploadFile, folder, field):
-    """Checks and saves an uploaded file; returns its name inside PRIVATE_MEDIA_ROOT, e.g. documents/ab12….jpg."""
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in EXTENSIONS:
         allowed = ", ".join(e.lstrip(".") for e in sorted(EXTENSIONS))
@@ -27,7 +24,7 @@ async def save_private(file: UploadFile, folder, field):
     name = f"{folder}/{uuid.uuid4().hex}{ext}"
     path = anyio.Path(PRIVATE_MEDIA_ROOT / name)
     await path.parent.mkdir(parents=True, exist_ok=True)
-    await path.write_bytes(data)  # in a worker thread, so a slow disk never blocks other requests
+    await path.write_bytes(data)
     return name
 
 
@@ -40,14 +37,11 @@ def private_path(name):
     return PRIVATE_MEDIA_ROOT / name if name else None
 
 
-# --- Profile photos: public (shown on the site), in MEDIA_ROOT/avatars. The site makes them small before upload.
-
 MAX_AVATAR_MB = 3
 IMAGE_TYPES = {b"\xff\xd8\xff": ".jpg", b"\x89PNG": ".png"}
 
 
 def image_ext(data):
-    """The real type of the picture from its first bytes (not from the file name); None if it is not one."""
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return ".webp"
     return next((ext for magic, ext in IMAGE_TYPES.items() if data.startswith(magic)), None)

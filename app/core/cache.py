@@ -1,5 +1,3 @@
-"""A small cache for answers of outside services (ticket prices): in Redis when REDIS_URL is set (shared by all
-server processes), otherwise in this process's memory."""
 import json
 import time
 

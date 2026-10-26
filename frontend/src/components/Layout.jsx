@@ -18,10 +18,6 @@ import Assistant from "./Assistant.jsx";
 import { PageTransition } from "./motion.jsx";
 import { Skeleton } from "./ui.jsx";
 
-// The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer.
-// Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section.
-
-// Every section. main: shown as a tab in the top bar; dock: on the phone dock (in this order).
 function sections(user) {
   const all = [
     { to: "/", icon: Home, label: t("Асосӣ"), end: true, main: true, dock: 1 },
@@ -45,11 +41,9 @@ function sections(user) {
 
 export const canEdit = (user) => user && (user.role === "editor" || user.role === "admin");
 
-// Counters: unread notifications and documents that need attention (ending soon or expired).
 function useCounters(user, onNew) {
   const [counts, setCounts] = useState({ unread: 0, docs: 0 });
   const { pathname } = useLocation();
-  // New notifications and read ones in other tabs arrive over the WebSocket, so the bell is always current.
   useLiveNotifications(user, (msg) => {
     if (typeof msg.unread === "number") setCounts((c) => ({ ...c, unread: msg.unread }));
     if (msg.type === "notification") onNew?.(msg.notification);
@@ -91,7 +85,6 @@ export function LangSwitch() {
   const choose = async (next) => {
     if (next === lang) return;
     setLang(next);
-    // Remember it in the profile too, so emails come in the same language (and the profile form shows it).
     if (user) {
       const data = await api("/auth/profile/", { method: "PATCH", body: { language: next } }).catch(() => null);
       if (data) setUser(data);
@@ -133,7 +126,6 @@ export function ThemeToggle() {
   );
 }
 
-// "More": the sections that are not tabs, in a panel under the button.
 function MoreMenu({ items, counts, user }) {
   const [open, setOpen] = useState(false);
   const box = useRef(null);
@@ -182,7 +174,6 @@ function MoreMenu({ items, counts, user }) {
   );
 }
 
-// Phones: every section as big tiles in a sheet from the bottom.
 function MenuSheet({ open, onClose, items, counts, user }) {
   return (
     <AnimatePresence>
@@ -245,7 +236,6 @@ export default function Layout() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Only the name is shown in the header, never the email (the screen may be seen by others).
   const firstName = user?.full_name?.trim().split(/\s+/)[0];
   const tabs = items.filter((i) => i.main);
   const more = items.filter((i) => !i.main && i.to !== "/login" && i.to !== "/profile" && i.to !== "/notifications");
@@ -253,8 +243,6 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
-      {/* The flag line of Tajikistan, thin: red, white, green. */}
-      {/* On iPhones with a notch the installed app draws under the status bar: that strip gets the page color. */}
       <div className="fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-background" aria-hidden />
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
@@ -294,7 +282,6 @@ export default function Layout() {
                   aria-label={t("Профил ва танзимот")}
                   className="group flex items-center gap-2.5 rounded-full p-0.5 transition-colors hover:bg-surface-container-low sm:pr-1 xl:bg-surface-container-lowest xl:pr-3.5 xl:ring-1 xl:ring-outline-variant xl:hover:ring-primary/30"
                 >
-                  {/* The avatar: a blue circle inside a thin ring in the colors of the flag, turning slowly on hover. */}
                   <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[3px] shadow-sm transition-transform duration-500 group-hover:rotate-[120deg]" aria-hidden>
                     {user?.avatar ? (
                       <img src={user.avatar} alt="" className="h-full w-full rounded-full border-2 border-background object-cover transition-transform duration-500 group-hover:-rotate-[120deg]" />
@@ -320,7 +307,6 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* The footer stays at the bottom even on short pages; on phones the page ends above the dock. */}
       <main className="flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]">
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {!online && (
@@ -329,7 +315,6 @@ export default function Layout() {
               {t("Интернет нест. Маълумоти охирини захирашуда нишон дода мешавад.")}
             </p>
           )}
-          {/* A page that is still downloading shows a placeholder; the bar stays. */}
           <Suspense fallback={<Skeleton className="h-64" />}>
             <PageTransition pageKey={pathname}>
               <Outlet />
@@ -339,7 +324,6 @@ export default function Layout() {
         <Footer />
       </main>
 
-      {/* Phones and tablets: the floating dock. */}
       <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-50 mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl bg-surface-container-lowest/90 p-1 shadow-[0_12px_32px_-12px_rgb(0_0_0/0.25)] ring-1 ring-outline-variant backdrop-blur-xl lg:hidden" aria-label={t("Менюи асосӣ")}>
         {dock.map((i) => (
           <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>

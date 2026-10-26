@@ -1,4 +1,3 @@
-"""After an import: one notification per alert with the new jobs that match it."""
 from sqlalchemy import func, select
 
 from app.models import Job, JobAlert, User
@@ -7,7 +6,6 @@ from app.services.notify import notify
 
 
 def alert_filters(alert):
-    """The alert as query parameters of the jobs list (?search=...&city=...)."""
     data = {"search": alert.search, "city": alert.city, "industry": alert.industry,
             "min_salary": str(alert.min_salary) if alert.min_salary else "",
             "housing_provided": "true" if alert.housing_provided else ""}
@@ -15,7 +13,6 @@ def alert_filters(alert):
 
 
 async def notify_alerts(db, since):
-    """Tells every alert about the jobs that appeared since this moment. Returns how many users were told."""
     new_jobs = open_jobs(select(Job).where(Job.created_at >= since))
     if not await db.scalar(select(func.count()).select_from(new_jobs.subquery())):
         return 0

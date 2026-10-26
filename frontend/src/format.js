@@ -1,6 +1,5 @@
 import { lang, t } from "./i18n.js";
 
-// 8500 -> "8 500"
 export function num(value) {
   if (value === null || value === undefined || value === "") return "";
   return Math.round(Number(value))
@@ -21,7 +20,6 @@ export function salary(job) {
   return `${range} ₽ / ${t(PERIOD[job.salary_period] || "моҳ")}`;
 }
 
-// "2026-10-28" or an ISO datetime -> "28.10.2026"
 export function date(value) {
   if (!value) return "";
   const d = new Date(value.length === 10 ? `${value}T00:00:00` : value);
@@ -43,7 +41,6 @@ export function daysText(days) {
   return t("{0} рӯз монд", days);
 }
 
-// Share of the document's life already used, 0-100 (for progress bars). Without an issue date: unknown.
 export function usedPercent(doc) {
   if (!doc.issued_at) return null;
   const start = new Date(`${doc.issued_at}T00:00:00`).getTime();
@@ -54,7 +51,6 @@ export function usedPercent(doc) {
 
 const MONTHS_TG = ["Январ", "Феврал", "Март", "Апрел", "Май", "Июн", "Июл", "Август", "Сентябр", "Октябр", "Ноябр", "Декабр"];
 
-// "2026-10" -> "Октябр 2026" (Tajik month names are not built into browsers, so they are listed here).
 export function monthTitle(yearMonth) {
   const [y, m] = yearMonth.split("-").map(Number);
   if (lang === "ru") return new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
@@ -63,7 +59,6 @@ export function monthTitle(yearMonth) {
 
 const WEEKDAYS_TG = ["Якшанбе", "Душанбе", "Сешанбе", "Чоршанбе", "Панҷшанбе", "Ҷумъа", "Шанбе"];
 
-// "Панҷшанбе, 1 октябр" — today's date for the greeting banner.
 export function todayTitle(now = new Date()) {
   if (lang === "ru") return now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
   return `${WEEKDAYS_TG[now.getDay()]}, ${now.getDate()} ${MONTHS_TG[now.getMonth()].toLowerCase()}`;

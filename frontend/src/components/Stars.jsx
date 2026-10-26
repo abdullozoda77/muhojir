@@ -16,7 +16,6 @@ export function Stars({ value, size = "h-4 w-4" }) {
   );
 }
 
-// Big stars to pick a rating in the review form.
 export function StarPicker({ value, onChange }) {
   return (
     <div className="flex gap-1" role="radiogroup" aria-label={t("Баҳо")}>

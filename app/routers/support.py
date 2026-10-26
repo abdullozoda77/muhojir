@@ -1,4 +1,3 @@
-"""/api/help/: official places to get help (editors keep the list) and questions to a lawyer (answered by admins)."""
 from typing import Literal
 
 from fastapi import APIRouter, Request, Response
@@ -63,15 +62,12 @@ add_content_routes(router, "contacts", model=HelpContact, to_json=contact_json, 
                    query=contacts_query, writer=editor_user, check=check_contact)
 
 
-# --- Questions to a lawyer -------------------------------------------------------------------------------------
-
 class QuestionIn(Form):
     document_type_id: int | None = Field(None, alias="document_type")
     question: str = Field(min_length=1)
 
 
 class AnswerIn(Form):
-    """For the lawyer (admin): the answer, or just a new status (e.g. closed)."""
 
     answer: str | None = None
     status: Literal["new", "answered", "closed"] | None = None
@@ -140,7 +136,6 @@ async def delete_question(question_id: int, db: DB, user: CurrentUser):
 
 
 async def save_answer(db, question, answer, lawyer):
-    """Saves the lawyer's answer and tells the worker about it."""
     question.answer, question.status = answer, "answered"
     question.answered_by_id, question.answered_at = lawyer.id, utcnow()
     await db.commit()

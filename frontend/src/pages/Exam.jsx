@@ -5,9 +5,6 @@ import { t } from "../i18n.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 
-// Practice for the exam in Russian language, history and law that is needed for the patent.
-// Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place.
-
 const SECTIONS = [
   { key: "mixed", icon: Shuffle, title: () => t("Санҷиши омехта"), text: () => t("15 саволи тасодуфӣ аз ҳамаи қисмҳо") },
   { key: "language", icon: BookOpenCheck, title: () => t("Забони русӣ"), text: () => t("Грамматика, хониш ва шунидан") },
@@ -15,7 +12,7 @@ const SECTIONS = [
   { key: "law", icon: Scale, title: () => t("Асосҳои қонун"), text: () => t("Конститутсия ва ҳуқуқу вазифаҳои муҳоҷир") },
 ];
 const MIXED_COUNT = 15;
-const PASS = 0.75; // our goal for practice: three answers out of four
+const PASS = 0.75;
 const BEST_KEY = "exam-best";
 
 const shuffle = (list) => {
@@ -27,7 +24,6 @@ const shuffle = (list) => {
   return copy;
 };
 
-// Each option keeps whether it is the right one, so the order can change freely.
 const prepare = (questions) =>
   questions.map((q) => ({ ...q, choices: shuffle(q.options.map((text, i) => ({ text, right: i === q.answer }))) }));
 
@@ -44,7 +40,6 @@ function saveBest(section, percent) {
     const best = readBest();
     if ((best[section] ?? -1) < percent) localStorage.setItem(BEST_KEY, JSON.stringify({ ...best, [section]: percent }));
   } catch {
-    // private mode: the best result is simply not kept
   }
 }
 
@@ -54,7 +49,7 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const phrase = new SpeechSynthesisUtterance(text);
   phrase.lang = "ru-RU";
-  phrase.rate = 0.85; // a little slower than normal speech, as for learners
+  phrase.rate = 0.85;
   const voice = window.speechSynthesis.getVoices().find((v) => v.lang?.toLowerCase().startsWith("ru"));
   if (voice) phrase.voice = voice;
   window.speechSynthesis.speak(phrase);
@@ -82,7 +77,7 @@ function Listen({ text }) {
 function Quiz({ section, questions, onExit }) {
   const [list, setList] = useState(() => prepare(questions));
   const [index, setIndex] = useState(0);
-  const [picked, setPicked] = useState(null); // the chosen option of the current question
+  const [picked, setPicked] = useState(null);
   const [wrong, setWrong] = useState([]);
   const done = index >= list.length;
   const q = list[index];

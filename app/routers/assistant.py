@@ -1,7 +1,3 @@
-"""AI assistant of the site: answers about migration and the site, and opens pages for the visitor.
-
-GET tells whether the assistant is set up; POST sends the conversation and returns
-{"reply", "navigate" (a page address to open, or null), "refused", "truncated"}."""
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Request
@@ -17,7 +13,7 @@ from app.schemas.common import Form
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
 LANGUAGE_NAMES = {"ru": "Russian", "tg": "Tajik"}
-MAX_HISTORY = 20  # messages sent back to the model; older ones are dropped
+MAX_HISTORY = 20
 
 
 class ChatMessage(Form):
@@ -27,7 +23,7 @@ class ChatMessage(Form):
 
 class Chat(Form):
     messages: list[ChatMessage] = Field(min_length=1)
-    page: str = Field("", max_length=200)  # where the visitor is now
+    page: str = Field("", max_length=200)
 
     @field_validator("messages")
     @classmethod

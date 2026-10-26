@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { LazyMotion, MotionConfig, animate, domAnimation, m, useReducedMotion } from "motion/react";
 
-// All animations of the site in one place. LazyMotion + "m" load only the small DOM animation part of the
-// library, and reducedMotion="user" turns movement off for people who asked their phone for less motion.
 export function MotionProvider({ children }) {
   return (
     <LazyMotion features={domAnimation} strict>
@@ -11,13 +9,10 @@ export function MotionProvider({ children }) {
   );
 }
 
-const EASE = [0.22, 1, 0.36, 1]; // fast start, soft landing
+const EASE = [0.22, 1, 0.36, 1];
 
-// Content must never depend on an animation to become visible: a tab opened in the background pauses animations,
-// so there everything starts in its final state (initial={false}) instead of transparent.
 export const startShown = () => typeof document !== "undefined" && document.visibilityState === "hidden";
 
-// A page appearing: fades in and rises a little. Keyed by the address, so it replays on every page change.
 export function PageTransition({ children, pageKey }) {
   return (
     <m.div key={pageKey} initial={startShown() ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
@@ -26,14 +21,12 @@ export function PageTransition({ children, pageKey }) {
   );
 }
 
-// A list whose items appear one after another (cards, rows, tiles).
 const listVariants = { hidden: {}, shown: { transition: { staggerChildren: 0.06 } } };
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
   shown: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
 };
 
-// inView: wait until the list scrolls into view (once) instead of starting at once.
 export function Stagger({ as = "div", className = "", inView = false, children, ...props }) {
   const Tag = m[as];
   const play = inView ? { whileInView: "shown", viewport: { once: true, amount: 0.15 } } : { animate: "shown" };
@@ -44,7 +37,6 @@ export function Stagger({ as = "div", className = "", inView = false, children, 
   );
 }
 
-// Like Stagger, but it starts when the group scrolls into view (once), e.g. the footer columns.
 const revealVariants = { hidden: {}, shown: { transition: { staggerChildren: 0.12 } } };
 
 export function RevealGroup({ as = "div", className = "", children, ...props }) {
@@ -65,7 +57,6 @@ export function StaggerItem({ as = "div", className = "", children, ...props }) 
   );
 }
 
-// A section that fades in and rises a little when it scrolls into view (once).
 export function Reveal({ as = "div", className = "", delay = 0, children, ...props }) {
   const Tag = m[as];
   return (
@@ -82,7 +73,6 @@ export function Reveal({ as = "div", className = "", delay = 0, children, ...pro
   );
 }
 
-// The opening of a page: its parts (label, headline, text, buttons) come in one after another.
 const introVariants = { hidden: {}, shown: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } };
 const introItemVariants = {
   hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
@@ -107,9 +97,6 @@ export function IntroItem({ as = "div", className = "", children, ...props }) {
   );
 }
 
-// A number counting up from 0 (days left on the deadline ring). In a tab that is not visible the browser
-// pauses animations, so there the real number is shown at once: "0 days" must never be left on screen.
-// format: how to show it (e.g. num, for "1 118").
 export function CountUp({ value, duration = 0.9, format = String }) {
   const reduce = useReducedMotion();
   const skip = reduce || startShown();

@@ -30,7 +30,7 @@ async def test_signup_login_and_tokens(client, outbox):
     r = await client.post("/api/auth/token/refresh/", json={"refresh": tokens["refresh"]})
     assert r.status_code == 200
     r = await client.post("/api/auth/token/refresh/", json={"refresh": tokens["refresh"]})
-    assert r.status_code == 401  # a refresh token works only once
+    assert r.status_code == 401
 
     r = await client.post("/api/auth/logout/", json={"refresh": "broken"})
     assert r.status_code == 400
@@ -56,7 +56,6 @@ async def test_forgot_and_reset_password(client, user, outbox):
     assert r.status_code == 200
     sent = len(outbox)
     r = await client.post("/api/auth/password/forgot/", json={"email": email})
-    # The same answer (nobody learns who has an account), but no second letter within a minute.
     assert r.status_code == 200 and len(outbox) == sent
     r = await client.post("/api/auth/password/reset/", json={"email": email, "code": last_code(email), "password": "New-strong-pass-1"})
     assert r.status_code == 200
@@ -95,6 +94,6 @@ async def test_avatar(client, user):
     first = files.MEDIA_ROOT / r.json()["avatar"].removeprefix("/media/")
     assert first.exists()
     r = await client.post("/api/auth/profile/avatar/", headers=headers, files={"avatar": ("y.webp", b"RIFF\0\0\0\0WEBPVP8 ", "image/webp")})
-    assert r.json()["avatar"].endswith(".webp") and not first.exists()  # the old photo is deleted
+    assert r.json()["avatar"].endswith(".webp") and not first.exists()
     r = await client.delete("/api/auth/profile/avatar/", headers=headers)
     assert r.json()["avatar"] is None

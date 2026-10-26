@@ -1,8 +1,3 @@
-"""The AI models behind the assistant (the same design as in the Django version, but async).
-
-Google Gemini is used when GEMINI_API_KEY is set (it has a free tier), otherwise Claude with ANTHROPIC_API_KEY.
-Both get the same instructions and can call the same tools (open a page, patent prices, guides, jobs, my documents).
-"""
 import json
 import logging
 import time
@@ -12,9 +7,9 @@ from app.assistant.tools import TOOLS, run_tool
 
 logger = logging.getLogger(__name__)
 
-MAX_TOOL_STEPS = 6  # model calls per answer (each tool round is one more call)
-GEMINI_TIMEOUT_MS = 15_000  # per call; a slow model is left for the next one
-RESTING = 300  # seconds an overloaded model is tried last, so visitors do not wait for it every time
+MAX_TOOL_STEPS = 6
+GEMINI_TIMEOUT_MS = 15_000
+RESTING = 300
 _resting: dict[str, float] = {}
 
 
@@ -41,7 +36,6 @@ def active_provider():
 
 
 class Run:
-    """One answer: the database, who is asking (for "my documents") and the page the assistant decided to open."""
 
     def __init__(self, db, user):
         self.db = db
@@ -56,8 +50,6 @@ class Run:
 
 
 async def ask(db, system_text, visitor_note, messages, user=None):
-    """messages: [{"role": "user" | "assistant", "content": text}], the last one from the user.
-    Returns {"reply": text, "navigate": path | None, "refused": bool, "truncated": bool}; raises AssistantError."""
     run = Run(db, user)
     if active_provider() == "gemini":
         answer = await _ask_gemini(system_text, visitor_note, messages, run)
@@ -65,8 +57,6 @@ async def ask(db, system_text, visitor_note, messages, user=None):
         answer = await _ask_claude(system_text, visitor_note, messages, run)
     return {**answer, "navigate": run.navigate}
 
-
-# --- Google Gemini ---------------------------------------------------------------------------------------------
 
 def _rest(model):
     _resting[model] = time.monotonic() + RESTING
@@ -81,7 +71,6 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
     from google import genai
     from google.genai import errors, types
 
-    # No retries inside the client (it would wait minutes on an overloaded model); the next model is tried instead.
     client = genai.Client(
         api_key=settings.gemini_api_key,
         http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT_MS, retry_options=types.HttpRetryOptions(attempts=1)),
@@ -97,17 +86,15 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
             for tool in TOOLS
         ])],
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-        thinking_config=types.ThinkingConfig(thinking_level="low"),  # short answers: long thinking only adds seconds
-        max_output_tokens=2048,  # answers are short
+        thinking_config=types.ThinkingConfig(thinking_level="low"),
+        max_output_tokens=2048,
     )
     question = [
         types.Content(role="user" if m["role"] == "user" else "model", parts=[types.Part.from_text(text=m["content"])])
         for m in messages
     ]
 
-    # Free models are often overloaded (503) or out of quota (429) for a while. Then the answer starts again
-    # on the next model: a model's tool-call turns carry its own thought signatures, so they are not mixed.
-    models = sorted(settings.gemini_models, key=_is_resting)  # overloaded ones last, order kept
+    models = sorted(settings.gemini_models, key=_is_resting)
     for i, model in enumerate(models):
         try:
             return await _gemini_answer(client, model, config, list(question), types, run)
@@ -130,20 +117,17 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
 
 
 async def _gemini_answer(client, model, config, contents, types, run):
-    """One model answers, calling tools as it needs; API errors are left to the caller."""
     for _ in range(MAX_TOOL_STEPS):
         response = await client.aio.models.generate_content(model=model, contents=contents, config=config)
         candidate = response.candidates[0] if response.candidates else None
         if candidate is None or candidate.content is None:
-            return {"reply": "", "refused": True, "truncated": False}  # the question itself was blocked
+            return {"reply": "", "refused": True, "truncated": False}
         calls = response.function_calls or []
         if calls:
-            # The model's turn goes back unchanged (it carries thought signatures), then the results.
             contents.append(candidate.content)
             parts = []
             for call in calls:
                 text, _ = await run.tool(call.name, dict(call.args or {}))
-                # The id ties the result to its call when the model asks for several at once.
                 parts.append(types.Part(function_response=types.FunctionResponse(id=call.id, name=call.name, response=json.loads(text) if text.startswith("{") else {"error": text})))
             contents.append(types.Content(role="user", parts=parts))
             continue
@@ -154,14 +138,11 @@ async def _gemini_answer(client, model, config, contents, types, run):
     raise AssistantError(*TOO_LONG)
 
 
-# --- Claude ----------------------------------------------------------------------------------------------------
-
 async def _ask_claude(system_text, visitor_note, messages, run):
     import anthropic
 
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=120, max_retries=2)
     system = [
-        # Instructions and the site guide: the same for everyone, so the API caches them.
         {"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}},
         {"type": "text", "text": visitor_note},
     ]
@@ -170,20 +151,18 @@ async def _ask_claude(system_text, visitor_note, messages, run):
         for _ in range(MAX_TOOL_STEPS):
             response = await client.beta.messages.create(
                 model=settings.assistant_model,
-                max_tokens=4000,  # answers are short
+                max_tokens=4000,
                 system=system,
                 tools=TOOLS,
                 messages=messages,
                 thinking={"type": "adaptive"},
                 output_config={"effort": settings.assistant_effort},
-                # If a safety classifier declines, the API answers with its recommended fallback model.
                 betas=["server-side-fallback-2026-07-01"],
                 fallbacks="default",
             )
             if response.stop_reason == "refusal":
                 return {"reply": "", "refused": True, "truncated": False}
             if response.stop_reason in ("tool_use", "pause_turn"):
-                # The whole content goes back (thinking and tool calls), then the tool results.
                 messages.append({"role": "assistant", "content": response.content})
                 results = []
                 for block in response.content:

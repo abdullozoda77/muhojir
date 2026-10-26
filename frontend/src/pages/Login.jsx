@@ -11,7 +11,6 @@ import Snowfall from "../components/Snowfall.jsx";
 
 const RESEND_SECONDS = 60;
 
-// A password box with a button to show what was typed (on a phone it is easy to mistype).
 function PasswordInput({ value, onChange, autoComplete, label, hint }) {
   const [shown, setShown] = useState(false);
   return (
@@ -33,14 +32,12 @@ function PasswordInput({ value, onChange, autoComplete, label, hint }) {
   );
 }
 
-// The screens of this page. "verify" and "reset" come after a code was emailed.
 const ICONS = { login: LogIn, register: UserPlus, verify: ShieldCheck, forgot: KeyRound, reset: KeyRound };
 
 function CodeBoxes({ value, onChange, disabled }) {
   const refs = useRef([]);
   const digits = value.padEnd(6, " ").slice(0, 6).split("");
 
-  // The value keeps a space for every empty box, so erasing a middle digit does not shift the others.
   const setAt = (i, d) => onChange(digits.map((x, j) => (j === i ? d : x)).join(""));
 
   return (
@@ -64,11 +61,9 @@ function CodeBoxes({ value, onChange, disabled }) {
           autoComplete={i === 0 ? "one-time-code" : "off"}
           aria-label={t("Рақами {0}", i + 1)}
           className="h-16 w-full max-w-[58px] rounded-2xl border-0 bg-surface-container-low text-center font-display text-[26px] font-semibold text-navy ring-1 ring-inset ring-outline-variant focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary dark:text-on-surface"
-          // Selecting the digit on focus lets a new one replace it instead of being blocked.
           onFocus={(e) => e.target.select()}
           onChange={(e) => {
             const typed = e.target.value.replace(/\D/g, "");
-            // The phone's "fill code from SMS/email" puts the whole code into one box.
             if (typed.length > 2) {
               onChange(typed.slice(0, 6).padEnd(6, " "));
               refs.current[Math.min(typed.length, 6) - 1]?.focus();
@@ -87,7 +82,6 @@ function CodeBoxes({ value, onChange, disabled }) {
   );
 }
 
-// The winter sky behind the page (pale blue by day, deep blue at night) with slowly falling snow.
 function WinterScene() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden>
@@ -126,7 +120,6 @@ export default function Login() {
     setCode("");
   };
 
-  // Every form: busy while waiting, errors shown under the fields.
   const run = (action) => async (e) => {
     e?.preventDefault();
     setBusy(true);
@@ -156,7 +149,6 @@ export default function Login() {
     try {
       enter(await api("/auth/login/", { method: "POST", body: { email, password } }));
     } catch (err) {
-      // Signed up but never confirmed the email: the server has just sent a new code.
       if (err.status === 403 && err.data?.code === "not_verified") return codeSent("verify");
       throw err;
     }
@@ -202,7 +194,6 @@ export default function Login() {
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
       <WinterScene />
 
-      {/* The welcome side: what the site does, over the winter sky. */}
       <aside className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
         <Link to="/" className="flex items-center gap-2.5 self-start">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm"><img src="/logo.png" alt="" className="h-full w-full" /></span>
@@ -231,7 +222,6 @@ export default function Login() {
         </p>
       </aside>
 
-      {/* The form side: a frosted glass card with a little snow on top. */}
       <div className="relative z-10 flex flex-col justify-center px-4 pb-10 pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-10">
         <div className="mx-auto w-full max-w-[440px]">
           <div className="mb-8 flex items-center justify-between gap-2">
@@ -249,7 +239,6 @@ export default function Login() {
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
           <div className="relative rounded-3xl bg-white/75 p-7 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-9 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
-            {/* Snow lying on the top edge of the card */}
             <svg className="pointer-events-none absolute -top-[13px] left-5 right-5 h-[22px] w-[calc(100%-2.5rem)] drop-shadow-[0_2px_2px_rgba(60,90,160,0.18)]" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden>
               <path className="fill-white dark:fill-[#e3ebfb]" d="M0 22 C10 22 12 12 26 11 C40 10 44 4 62 5 C80 6 84 13 102 12 C118 11 124 3 146 3 C168 3 172 12 192 12 C212 12 218 6 238 6 C256 6 262 14 282 13 C302 12 306 2 330 2 C352 2 356 12 372 13 C386 14 392 22 400 22Z" />
             </svg>

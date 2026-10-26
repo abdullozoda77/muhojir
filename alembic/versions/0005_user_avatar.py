@@ -1,10 +1,3 @@
-"""Profile photos: users.avatar.
-
-Revision ID: 0005
-Revises: 0004
-Create Date: 2026-10-26 13:00:00
-
-"""
 from typing import Sequence, Union
 
 import sqlalchemy as sa

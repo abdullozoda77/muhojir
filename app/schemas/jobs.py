@@ -32,18 +32,15 @@ def job_json(job, is_saved=False):
 
 
 def review_json(review, viewer=None):
-    # Only the first name: workers are afraid of employers finding out who complained.
     name = (review.author.full_name or "").split() if review.author else []
     return {
         "id": review.id, "employer": review.employer_id, "author_name": name[0] if name else "Корбар",
-        # Lets the site show edit/delete on the viewer's own review without revealing who wrote the others.
         "is_mine": bool(viewer and review.author_id == viewer.id), "rating": review.rating, "text": review.text,
         "salary_not_paid": review.salary_not_paid, "created_at": review.created_at,
     }
 
 
 def report_json(report, viewer=None):
-    # Only the first name, like the reviews.
     name = (report.author.full_name or "").split() if report.author else []
     return {
         "id": report.id, "employer": report.employer_id,

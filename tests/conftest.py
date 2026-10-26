@@ -1,5 +1,3 @@
-"""Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there:
-document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox."""
 import os
 import tempfile
 from pathlib import Path
@@ -12,22 +10,22 @@ os.environ.update({
     "GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "REDIS_URL": "", "CELERY_BROKER_URL": "", "EMAIL_HOST": "",
 })
 
-import pytest  # noqa: E402
-from alembic import command  # noqa: E402
-from alembic.config import Config  # noqa: E402
-from httpx import ASGITransport, AsyncClient  # noqa: E402
+import pytest
+from alembic import command
+from alembic.config import Config
+from httpx import ASGITransport, AsyncClient
 
-import app.core.config as config  # noqa: E402
+import app.core.config as config
 
 config.PRIVATE_MEDIA_ROOT = Path(_tmp) / "private_media"
-import app.core.files as files  # noqa: E402
+import app.core.files as files
 
 files.PRIVATE_MEDIA_ROOT = config.PRIVATE_MEDIA_ROOT
-files.MEDIA_ROOT = Path(_tmp) / "media"  # profile photos of the tests do not land in the real media folder
+files.MEDIA_ROOT = Path(_tmp) / "media"
 
-from app.core import throttle  # noqa: E402
-from app.main import app  # noqa: E402
-from app.services import emails  # noqa: E402
+from app.core import throttle
+from app.main import app
+from app.services import emails
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTBOX = []
@@ -42,7 +40,6 @@ def database():
 
 @pytest.fixture(autouse=True)
 def outbox(monkeypatch):
-    """Letters go here instead of SMTP; the throttle counters start empty for every test."""
     OUTBOX.clear()
     throttle._memory.clear()
     async def fake_send(subject, body, to):
@@ -72,7 +69,6 @@ _counter = [0]
 
 @pytest.fixture
 async def user(client):
-    """A new confirmed migrant; returns (headers, data)."""
     _counter[0] += 1
     email = f"user{_counter[0]}@example.com"
     r = await client.post("/api/auth/register/", json={"email": email, "password": "Strong-pass-2026", "full_name": "Али Валиев"})

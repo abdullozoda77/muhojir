@@ -1,5 +1,3 @@
-"""Tools the assistant can call: open a page of the site, and look up patent prices, guides, vacancies and the
-visitor's own documents. Every tool returns plain data; the model writes the answer."""
 import json
 from datetime import date
 from urllib.parse import urlencode
@@ -11,7 +9,6 @@ from app.services import flights
 from app.models.jobs import INDUSTRIES, Job
 from app.routers.jobs import open_jobs
 
-# The pages navigate may open, and their addresses in the React app.
 PAGES = {
     "home": "/",
     "documents": "/documents",
@@ -179,7 +176,6 @@ async def _patent_price(db, args):
         return {"error": "give a region name"}
     regions = (await db.scalars(select(Region).where(Region.name.ilike(f"%{name}%")).limit(5))).all()
     if not regions:
-        # Russian word endings change ("Свердловской области" / "Свердловская область"): match word stems.
         stems = [w[: max(3, len(w) - 3)] for w in name.replace("-", " ").split() if len(w) > 3]
         if stems:
             query = select(Region)
@@ -285,7 +281,6 @@ async def _my_documents(db, user):
 
 
 async def run_tool(db, name, tool_input, user=None):
-    """Runs a tool and returns (text for the model, is_error, path to open or None)."""
     tool_input = tool_input if isinstance(tool_input, dict) else {}
     if name == "navigate":
         result = await _navigate(db, tool_input)

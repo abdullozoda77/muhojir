@@ -12,7 +12,6 @@ const KIND_ICON = { reminder: BellRing, job: Briefcase, news: Newspaper, system:
 
 export default function Notifications() {
   const { data, loading, error, reload } = useApi("/auth/notifications/?page_size=100");
-  // A new notification or one read in another tab: the list updates by itself.
   useEffect(() => {
     window.addEventListener(LIVE_EVENT, reload);
     return () => window.removeEventListener(LIVE_EVENT, reload);
@@ -51,7 +50,6 @@ export default function Notifications() {
         <EmptyState icon={Bell} title={t("Огоҳӣ нест")} text={t("Ёдраскуниҳо дар бораи мӯҳлати ҳуҷҷатҳо дар ин ҷо пайдо мешаванд.")} />
       ) : (
         groups.map(([title, items]) => (
-          // One group (today, earlier): an inbox list; unread ones are tinted and have a blue dot.
           <Reveal as="section" key={title} className="flex flex-col gap-3">
             <h2 className="px-1 text-label-md text-on-surface-variant">{title}</h2>
             <div className="card flex flex-col divide-y divide-outline-variant overflow-hidden">

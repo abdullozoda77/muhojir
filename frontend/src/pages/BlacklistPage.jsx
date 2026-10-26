@@ -5,8 +5,6 @@ import { t } from "../i18n.js";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { BackLink, Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
-// Every company on the blacklist: the ones admins blacklisted first, then by the number of workers' reports,
-// each with its reasons. Anyone can read it; reports are added from the job ads.
 export default function BlacklistPage() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");

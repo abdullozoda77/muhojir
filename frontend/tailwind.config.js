@@ -1,16 +1,10 @@
 import forms from "@tailwindcss/forms";
 
-// Colors, sizes and type scale of the Muhojir design (Material 3 style token names).
-// Minimal: deep blue for main actions and dark blocks, one blue accent (primary), neutral greys for surfaces;
-// "warning" (amber) is only for deadlines that end soon, so they never look like "expired" (error red).
-// "navy"/"banner" are the deep blue of dark blocks; "ink" the main buttons (white in the night theme).
-/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
-      // Every color is a CSS variable from index.css, so dark mode (html.dark) only swaps the variables.
       colors: {
         banner: "rgb(var(--c-banner) / <alpha-value>)",
         navy: "rgb(var(--c-navy) / <alpha-value>)",
@@ -61,11 +55,7 @@ export default {
         "outline-variant": "rgb(var(--c-outline-variant) / <alpha-value>)",
       },
       fontFamily: {
-        // One family for everything: Onest has every Tajik letter (ӣ ӯ ҳ қ ғ ҷ), checked in the font files; many
-        // popular fonts (Unbounded, Manrope, Playfair, Jost...) lack them. To switch fonts, change these two lines
-        // and the Google Fonts link in index.html, and check the letters first.
         sans: ["Onest", "system-ui", "sans-serif"],
-        // Headings: the same family, semibold and a little tighter (h1/h2/h3 get it in index.css).
         display: ["Onest", "system-ui", "sans-serif"],
       },
       fontSize: {

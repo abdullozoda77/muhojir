@@ -1,5 +1,3 @@
-"""The routes of a simple list that everyone reads and staff change (guides, regions, news, exam questions...):
-GET list/ (paged, filtered), GET <id>/, and for staff POST list/, PUT/PATCH <id>/, DELETE <id>/."""
 from typing import Annotated
 
 from fastapi import Depends, Request, Response
@@ -10,9 +8,6 @@ from app.core.pagination import Paginate
 
 
 def add_content_routes(router, path, *, model, to_json, Create, Update, query, writer, check=None, before_save=None, tag=None):
-    """query(request, user) -> the select() of what this visitor may see, already filtered by the query string.
-    writer: a dependency that lets only staff in. check(db, obj, data): extra validation before saving (async).
-    before_save(obj, data, user, created): fills fields like published_at (sync)."""
     Writer = Annotated[object, Depends(writer)]
     name = model.__name__
 
@@ -71,7 +66,6 @@ def add_content_routes(router, path, *, model, to_json, Create, Update, query, w
 
 
 def apply_ordering(request, query, allowed, default):
-    """?ordering=expires_at or ?ordering=-created_at, like DRF's OrderingFilter."""
     value = request.query_params.get("ordering", "") if request else ""
     columns = []
     for part in [p.strip() for p in value.split(",") if p.strip()]:

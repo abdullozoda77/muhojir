@@ -1,6 +1,3 @@
-"""Real places from OpenStreetMap (© OpenStreetMap contributors, ODbL) through an Overpass server: for every
-region where most migrants live and every kind of place, one query; places are found again by their OSM id, so
-running the import again updates them. Places users suggested are never touched by the import."""
 import asyncio
 import logging
 import re
@@ -17,10 +14,8 @@ REGIONS = [
     "Москва", "Московская область", "Санкт-Петербург", "Свердловская область", "Новосибирская область",
     "Республика Татарстан", "Краснодарский край", "Самарская область",
 ]
-# Federal cities: the region is the city.
 CITY_REGIONS = {"Москва", "Санкт-Петербург"}
 
-# Overpass selectors for each category (inside the region area "a").
 SELECTORS = {
     "migration": [
         'nwr["office"="government"]["name"~"миграц|ММЦ",i](area.a);',
@@ -52,12 +47,10 @@ def query(region, category):
     return f'[out:json][timeout:90];area["name"="{region}"]["admin_level"="4"]->.a;({body});out center tags;'
 
 
-RETRY_WAITS = (10, 30, 60)  # seconds: public Overpass servers answer 429/504 when they are busy
+RETRY_WAITS = (10, 30, 60)
 
 
 async def fetch(client, region, category):
-    """Asks the Overpass servers in turn, waiting longer after each busy answer; returns the elements,
-    or raises the last error."""
     error = None
     urls = [u.strip() for u in settings.overpass_urls.split(",") if u.strip()]
     for wait in (0, *RETRY_WAITS):
@@ -108,7 +101,7 @@ async def save(db, element, region, category):
         await db.commit()
         return "created"
     if place.category != category:
-        fields.pop("category")  # a place that fits two kinds keeps the first one
+        fields.pop("category")
     for key, value in fields.items():
         setattr(place, key, value)
     await db.commit()
@@ -129,6 +122,6 @@ async def import_places(db, regions=None, categories=None, pause=5.0, log=print)
                     continue
                 for element in elements:
                     counts[await save(db, element, region, category)] += 1
-                await asyncio.sleep(pause)  # Overpass servers are shared: be polite
+                await asyncio.sleep(pause)
             log(f"{region}: done")
     return counts

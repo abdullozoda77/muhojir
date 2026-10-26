@@ -6,7 +6,6 @@ import { date } from "../format.js";
 import { BackLink, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 
-// One law news item, set like an article: the date, a big title, the summary as a lead, then the text.
 export default function NewsDetail() {
   const { id } = useParams();
   const { data, error, loading } = useApi(`/documents/news/${id}/`);

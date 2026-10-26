@@ -14,9 +14,6 @@ import { Stars, StarPicker } from "../components/Stars.jsx";
 import { EASE, Stagger, StaggerItem, m } from "../components/motion.jsx";
 import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton } from "../components/ui.jsx";
 
-// Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes,
-// halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones.
-
 export const PLACE_KINDS = [
   { value: "migration", label: () => t("Марказҳои муҳоҷират"), icon: Building2, color: "#1447a8" },
   { value: "medical", label: () => t("Ташхиси тиббӣ"), icon: HeartPulse, color: "#c2185b" },
@@ -31,7 +28,6 @@ export const PLACE_KINDS = [
 const kind = (value) => PLACE_KINDS.find((k) => k.value === value) || { label: () => value, icon: Store, color: "#455a64" };
 const COLORS = Object.fromEntries(PLACE_KINDS.map((k) => [k.value, k.color]));
 
-// Where the map opens for each region (latitude, longitude, zoom).
 const REGION_VIEW = {
   "Москва": [55.751, 37.618, 10],
   "Московская область": [55.75, 37.6, 8],
@@ -43,7 +39,6 @@ const REGION_VIEW = {
   "Самарская область": [53.195, 50.1, 9],
 };
 
-// Routes: the free OSRM servers of openstreetmap.de, on foot or by car. Coordinates are "lon,lat".
 const ROUTER = "https://routing.openstreetmap.de";
 
 export async function findRoute(from, to, mode) {
@@ -54,7 +49,6 @@ export async function findRoute(from, to, mode) {
   return { geometry: best.geometry, distance: best.distance, duration: best.duration, mode, from, to };
 }
 
-// The person's position, once (asks for permission the first time).
 function myPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error(t("Ҷойгиршавии шуморо муайян карда нашуд. Иҷозатро дар браузер санҷед.")));
@@ -66,7 +60,6 @@ function myPosition() {
   });
 }
 
-// "Route": from my position or from another place on the map to this place, on foot or by car.
 function RouteBuilder({ place, points, onRoute }) {
   const [from, setFrom] = useState("me");
   const [mode, setMode] = useState("foot");
@@ -113,7 +106,6 @@ function RouteBuilder({ place, points, onRoute }) {
   );
 }
 
-// True on wide screens (Tailwind's xl), where the list floats over the map instead of having its own tab.
 function useWide() {
   const query = "(min-width: 1280px)";
   const [wide, setWide] = useState(() => window.matchMedia(query).matches);
@@ -126,13 +118,12 @@ function useWide() {
   return wide;
 }
 
-const PANEL = 368; // width of the list over the map, px
+const PANEL = 368;
 
 function PlaceCard({ place, onOpen }) {
   const k = kind(place.category);
   return (
     <button type="button" onClick={() => onOpen(place.id)} className="group flex w-full items-start gap-4 rounded-xl p-3.5 text-left transition-colors hover:bg-surface-container-low">
-      {/* A quiet icon tile; the dot has the category's color, like its marker on the map. */}
       <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15 transition-transform duration-300 group-hover:scale-105">
         <k.icon className="h-[18px] w-[18px]" aria-hidden />
         <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface-container-lowest" style={{ backgroundColor: k.color }} />
@@ -320,9 +311,9 @@ export default function Places() {
   const [search, setSearch] = useState(params.get("search") || "");
   const [near, setNear] = useState(null);
   const [locating, setLocating] = useState(false);
-  const [view, setView] = useState("list"); // phones: list or map
+  const [view, setView] = useState("list");
   const wide = useWide();
-  const [panel, setPanel] = useState(true); // wide screens: the list over the map is open
+  const [panel, setPanel] = useState(true);
   const [openId, setOpenId] = useState(null);
   const [suggesting, setSuggesting] = useState(false);
   const [page, setPage] = useState({ results: [], count: 0, next: null });
@@ -411,7 +402,6 @@ export default function Places() {
     );
   };
 
-  // The found places (used in the panel over the map and in the phone list).
   const listBody = loading ? (
     <div className="flex flex-col gap-2 p-1">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
   ) : page.results.length === 0 ? (
@@ -475,7 +465,6 @@ export default function Places() {
         </div>
       </div>
 
-      {/* Phones and tablets: the list or the map. */}
       <div className="inline-flex self-start rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant xl:hidden" role="group">
         {[["list", List, t("Рӯйхат")], ["map", MapIcon, t("Харита")]].map(([value, Icon, label]) => (
           <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[40px] items-center gap-2 rounded-lg px-4 text-label-md transition-colors ${view === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
@@ -486,7 +475,6 @@ export default function Places() {
       </div>
 
       <ErrorBox error={error} />
-      {/* The map takes the whole width; on wide screens the list floats over its left side and can be folded away. */}
       <div className="flex flex-col gap-2">
         <div className="relative">
           <div className={!wide && view === "list" ? "hidden" : ""}>
@@ -537,7 +525,6 @@ export default function Places() {
         onClose={() => setOpenId(null)}
         points={points}
         onRoute={(r) => {
-          // Show the route: close the panel and, on phones, switch to the map.
           setRoute(r);
           setOpenId(null);
           setView("map");

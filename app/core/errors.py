@@ -1,5 +1,3 @@
-"""Errors in the same shape as the Django REST Framework version, which the site already understands:
-{"detail": "..."} (sometimes with "code"), or {"field": ["message", ...]} for wrong form fields."""
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -7,7 +5,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class ApiError(Exception):
-    """raise ApiError("Wrong code.") -> 400 {"detail": "Wrong code."}"""
 
     def __init__(self, detail, status_code=400, **extra):
         self.status_code = status_code
@@ -15,7 +12,6 @@ class ApiError(Exception):
 
 
 class FieldError(ApiError):
-    """raise FieldError("expires_at", "The end date must be after the issue date.") -> 400 {"expires_at": [...]}"""
 
     def __init__(self, field, message, status_code=400):
         super().__init__({field: [message]}, status_code)
@@ -32,7 +28,7 @@ DRF_MESSAGES = {
     "bool_parsing": "Должно быть булево значение.",
     "literal_error": "Значения нет среди допустимых вариантов.",
     "enum": "Значения нет среди допустимых вариантов.",
-    "value_error": None,  # our own validators: their message is used as it is
+    "value_error": None,
 }
 
 

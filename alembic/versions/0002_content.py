@@ -1,10 +1,3 @@
-"""The site's real content, so a new database is ready at once: the 5 document types with their step-by-step
-guides, the 2026 patent prices of every region, migration centers, law news, 100 exam questions and the official
-help sites. The data is in app/seed/*.json (exported from the Django version of Muhojir).
-
-Revision ID: 0002
-Revises: 0001
-"""
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -19,7 +12,6 @@ branch_labels = None
 depends_on = None
 
 SEED = Path(__file__).resolve().parents[2] / "app" / "seed"
-# Table, its seed file, and the columns that are dates or money.
 TABLES = [
     ("document_types", "document_types", ()),
     ("guide_steps", "guide_steps", ()),
@@ -60,7 +52,6 @@ def upgrade():
         op.bulk_insert(table, rows)
     op.bulk_insert(meta.tables["law_news_document_types"], links)
     if op.get_bind().dialect.name == "postgresql":
-        # The rows came with their ids; new ones must continue after them.
         for table_name, _, _ in TABLES:
             op.execute(f"SELECT setval(pg_get_serial_sequence('{table_name}', 'id'), COALESCE(MAX(id), 1)) FROM {table_name}")
 

@@ -13,7 +13,6 @@ NEXT_MONTH = f"{date(date.today().year + (date.today().month == 12), date.today(
 
 @pytest.fixture
 def aviasales(monkeypatch):
-    """A fake Aviasales API: three tickets DYU→MOW, two of them on the same day."""
     calls = []
 
     def answer(request):
@@ -68,10 +67,10 @@ async def test_prices_with_token(client, aviasales):
     first = data["results"][0]
     assert first["airline_name"] == "Somon Air" and first["destination_airport"] == "VKO"
     assert first["link"] == "https://www.aviasales.ru/search/DYU0511MOW1?t=1"
-    assert data["calendar"] == {f"{NEXT_MONTH}-05": 12900, f"{NEXT_MONTH}-09": 18000}  # the cheapest of each day
-    assert data["results"][2]["airline_name"] == "XX"  # unknown airlines keep their code
+    assert data["calendar"] == {f"{NEXT_MONTH}-05": 12900, f"{NEXT_MONTH}-09": 18000}
+    assert data["results"][2]["airline_name"] == "XX"
     await client.get("/api/flights/prices/", params={"origin": "DYU", "destination": "MOW", "month": NEXT_MONTH})
-    assert len(aviasales) == 1  # the second answer came from the cache
+    assert len(aviasales) == 1
 
 
 async def test_price_watch_tells_once(client, user, aviasales):
@@ -81,7 +80,7 @@ async def test_price_watch_tells_once(client, user, aviasales):
     assert r.status_code == 201 and r.json()["origin"] == "DYU"
     async with SessionLocal() as db:
         assert await flights.check_watches(db) >= 1
-        assert await flights.check_watches(db) == 0  # the same price is not told twice
+        assert await flights.check_watches(db) == 0
     r = await client.get("/api/auth/notifications/", headers=headers)
     assert "12 900 ₽" in r.json()["results"][0]["message"]
     r = await client.get("/api/flights/watches/", headers=headers)
@@ -107,7 +106,7 @@ async def test_places_filters_map_and_reviews(client, user):
     r = await client.get("/api/places/", params={"category": "food", "region": "Москва"})
     assert [p["name"] for p in r.json()["results"]] == ["Чайхана Душанбе"]
     r = await client.get("/api/places/", params={"search": "чайхана"})
-    assert r.json()["count"] >= 1  # case does not matter
+    assert r.json()["count"] >= 1
     r = await client.get("/api/places/", params={"near": "55.7792,37.6262", "category": "mosque,food", "region": "Москва"})
     results = r.json()["results"]
     assert results[0]["name"] == "Соборная мечеть" and results[0]["distance_km"] < 1
@@ -120,7 +119,7 @@ async def test_places_filters_map_and_reviews(client, user):
     r = await client.put(f"/api/places/{place_id}/reviews/mine/", headers=headers, json={"rating": 5, "text": "Хуб"})
     assert r.status_code == 200 and r.json()["is_mine"] is True
     r = await client.put(f"/api/places/{place_id}/reviews/mine/", headers=headers, json={"rating": 4})
-    assert r.json()["rating"] == 4  # the same review is changed, not a second one
+    assert r.json()["rating"] == 4
     r = await client.get(f"/api/places/{place_id}/", headers=headers)
     assert r.json()["rating"] == 4.0 and r.json()["reviews_count"] == 1 and r.json()["my_review"]["rating"] == 4
     r = await client.put(f"/api/places/{place_id}/reviews/mine/", json={"rating": 4})
@@ -133,8 +132,8 @@ async def test_suggested_place_waits_for_an_editor(client, user):
                                                                   "region": "Москва", "address": "улица Мира 5"})
     assert r.status_code == 201 and r.json()["is_approved"] is False
     place_id = r.json()["id"]
-    assert (await client.get(f"/api/places/{place_id}/")).status_code == 404  # guests do not see it yet
-    assert (await client.get(f"/api/places/{place_id}/", headers=headers)).status_code == 200  # its author does
+    assert (await client.get(f"/api/places/{place_id}/")).status_code == 404
+    assert (await client.get(f"/api/places/{place_id}/", headers=headers)).status_code == 200
 
 
 async def test_assistant_tools_for_travel():

@@ -12,7 +12,6 @@ const BUTTON = {
   soft: "bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed/70",
   plain: "bg-surface-container-lowest text-on-surface ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low",
   danger: "bg-error text-on-error hover:opacity-90",
-  // The one blue action of a page.
   accent: "bg-primary text-on-primary hover:bg-primary/90",
   light: "bg-surface-container-lowest text-on-surface ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low",
   ghost: "text-on-surface-variant hover:bg-surface-container-low",
@@ -32,7 +31,6 @@ export function Button({ variant = "primary", icon: Icon, loading, className = "
   );
 }
 
-// Document status: always color + icon + text, never color alone.
 export const STATUS = {
   expired: { box: "bg-error-container text-on-error-container", bar: "bg-error", icon: XCircle, accent: "text-error" },
   expiring: { box: "bg-warning-fixed text-on-warning-fixed", bar: "bg-warning-container", icon: Clock, accent: "text-warning" },
@@ -107,7 +105,6 @@ export function Field({ label, required, error, children, hint }) {
   );
 }
 
-// Side panel on desktop, full-height sheet on phones. Closes on Escape and on the dark backdrop.
 export function Drawer({ open, onClose, title, subtitle, icon: Icon, children }) {
   useEffect(() => {
     if (!open) return;
@@ -120,7 +117,6 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
     };
   }, [open, onClose]);
 
-  // The panel slides in from the right while the dark backdrop fades in; both animate out on close.
   return (
     <AnimatePresence>
       {open && (
@@ -151,8 +147,6 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
   );
 }
 
-// The top of every page: a small label, a headline, one line of text, and the page's main actions on the right.
-// Plain, on the page, with a hairline under it. children: buttons (any variant).
 export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
   return (
     <section className="mb-2 pt-2 md:pt-8">
@@ -180,13 +174,11 @@ export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
           </Intro>
         )}
       </div>
-      {/* The hairline under the header draws itself from the left. */}
       <m.div className="mt-8 h-px origin-left bg-outline-variant" initial={startShown() ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }} />
     </section>
   );
 }
 
-// "← Back" above a detail page: a quiet text link.
 export function BackLink({ to, children }) {
   return (
     <Link to={to} className="group inline-flex min-h-[40px] items-center gap-1.5 self-start text-label-md text-on-surface-variant transition-colors hover:text-on-surface">

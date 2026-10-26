@@ -28,7 +28,6 @@ const COLUMNS = [
   },
 ];
 
-// Official sites people need most; the full list is on the help page.
 const OFFICIAL = [
   [MVD, "МВД России"],
   ["https://www.gosuslugi.ru/", "Госуслуги"],
@@ -36,7 +35,6 @@ const OFFICIAL = [
   ["https://tajembassy.ru/", () => t("Сафорати ҶТ дар Русия")],
 ];
 
-// As in the first Muhojir: on hover a link slides a little to the right and a line grows under it from the left.
 const linkStyle = "group/link inline-flex min-h-[32px] items-center gap-1.5 self-start text-body-sm text-on-surface-variant transition-[color,transform] duration-300 hover:text-primary motion-safe:hover:translate-x-1";
 const underline = "bg-gradient-to-r from-current to-current bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-300 group-hover/link:bg-[length:100%_1.5px] group-focus-visible/link:bg-[length:100%_1.5px]";
 

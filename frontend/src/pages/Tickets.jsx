@@ -9,12 +9,8 @@ import { monthTitle, num, rub } from "../format.js";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
-// Air tickets between Tajikistan and Russia, both ways. Prices come from Aviasales (the cheapest found in the last
-// days); the ticket is bought on aviasales.ru or on the airlines' own sites (Somon Air, Tajik Air). Logged-in visitors can ask to be told when a route gets cheaper.
-
 const cityName = (a) => (lang === "ru" ? a.city : a.city_tg || a.city);
 
-// The next 12 months as "2026-11".
 function nextMonths() {
   const now = new Date();
   return Array.from({ length: 12 }, (_, i) => {
@@ -23,7 +19,6 @@ function nextMonths() {
   });
 }
 
-// Choices for one side: a city with several airports also gets "all airports" (its city code, e.g. MOW).
 function places(airports) {
   const out = [];
   const seen = new Set();
@@ -44,7 +39,6 @@ function time(iso) {
 
 const WEEKDAYS = { tg: ["Якш", "Душ", "Сеш", "Чор", "Пан", "Ҷум", "Шан"], ru: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"] };
 
-// "2026-11-05" -> "05.11"; with the weekday -> "05.11, Чор" ("05.11, Ср" in Russian).
 function dayLabel(day, withWeekday = false) {
   const d = new Date(`${day}T00:00:00`);
   const text = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -55,7 +49,6 @@ function weekday(day) {
   return WEEKDAYS[lang === "ru" ? "ru" : "tg"][new Date(`${day}T00:00:00`).getDay()];
 }
 
-// Every day of the month as "2026-11-05", from today on in the current month.
 function monthDays(month) {
   const [y, m] = month.split("-").map(Number);
   const now = new Date();
@@ -64,27 +57,23 @@ function monthDays(month) {
   return Array.from({ length: last }, (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`).filter((d) => d >= today);
 }
 
-// Passengers in an aviasales.ru link: adults, then children and infants when there are any ("2", "21", "201").
 function paxCode({ adults, children, infants }) {
   return `${adults}${children || infants ? children : ""}${infants ? infants : ""}`;
 }
 
-// The search on aviasales.ru for one day: /search/DYU0511MOW1.
 function aviasalesDay(origin, destination, day, pax) {
   return `https://www.aviasales.ru/search/${origin}${day.slice(8, 10)}${day.slice(5, 7)}${destination}${paxCode(pax)}`;
 }
 
-// Puts our passengers into a search link from Aviasales (they always give 1 passenger: /search/DYU3010SVO1?t=...).
 function withPax(url, pax) {
   return url ? url.replace(/(\/search\/[A-Z]{3}\d{4}[A-Z]{3})\d{1,3}/, `$1${paxCode(pax)}`) : url;
 }
 
-// The price for everyone: adults and children pay a full seat, an infant without a seat about a tenth.
 function totalPrice(price, { adults, children, infants }) {
   return price * (adults + children) + Math.round(price * 0.1) * infants;
 }
 
-const WEEK = [1, 2, 3, 4, 5, 6, 0]; // Monday first
+const WEEK = [1, 2, 3, 4, 5, 6, 0];
 const TIMES = [
   ["night", 0, 5, () => t("Шаб"), "00–05"],
   ["morning", 5, 12, () => t("Саҳар"), "05–12"],
@@ -105,7 +94,6 @@ function weekdayOf(ticket) {
   return new Date(`${ticket.departure_at.slice(0, 10)}T00:00:00`).getDay();
 }
 
-// "1,3" -> ["1", "3"]
 function list(value) {
   return value ? value.split(",").filter(Boolean) : [];
 }
@@ -119,7 +107,6 @@ function duration(minutes) {
   return t("{0} соат {1} дақ.", Math.floor(minutes / 60), minutes % 60);
 }
 
-// Every day of the month with its cheapest price; the cheapest day is marked. A day is picked to see its flights.
 function Calendar({ calendar, month, day, onPick, weekdays }) {
   const days = monthDays(month);
   const prices = Object.values(calendar);
@@ -203,7 +190,6 @@ function TicketRow({ ticket, pax }) {
   );
 }
 
-// Adults (12+), children (2–11) and infants (under 2, on a lap): at most 9 people, an infant for every adult.
 const PAX_ROWS = [
   ["adults", () => t("Калонсолон"), () => t("аз 12 сола"), 1],
   ["children", () => t("Кӯдакон"), () => t("2–11 сола"), 0],
@@ -290,8 +276,6 @@ function FilterRow({ label, children }) {
   );
 }
 
-// Stops, weekdays, departure time, airlines, the highest price and the order. Everything but "direct only" is
-// applied here to the month's tickets; "direct only" is asked from the server (it returns other tickets then).
 function Filters({ f, set, airlines, priceRange, active, onReset }) {
   const [lo, hi] = priceRange;
   return (
@@ -383,7 +367,6 @@ function Filters({ f, set, airlines, priceRange, active, onReset }) {
   );
 }
 
-// "Tell me when it is cheaper than ...": saved for the chosen route and month; checked every morning.
 function PriceAlert({ origin, destination, month, cheapest }) {
   const { user } = useAuth();
   const { data: watches, reload } = useApi(user ? "/flights/watches/" : null);
@@ -478,8 +461,6 @@ function PriceAlert({ origin, destination, month, cheapest }) {
   );
 }
 
-// The airlines' own booking pages: the user picks the route and buys there. Their booking engines take no route
-// in the link, so Somon Air and Tajik Air open on the search form; Aviasales opens with this route filled in.
 const AIRLINES = [
   { name: "Somon Air", url: "https://somonair.com/ru/booking", text: () => t("Ширкати ҳавопаймоии тоҷикӣ") },
   { name: "Tajik Air", url: "https://www.tajikair.tj/", text: () => t("Ширкати ҳавопаймоии давлатӣ") },
@@ -554,7 +535,6 @@ export default function Tickets() {
   const from = params.get("from") || "DYU";
   const to = params.get("to") || "MOW";
   const month = params.get("month") || months[0];
-  // "direct=true" is the old link for "direct only"
   const stops = params.get("stops") ?? (params.get("direct") === "true" ? "0" : "");
   const direct = stops === "0";
   const day = (params.get("day") || "").startsWith(month) ? params.get("day") : "";
@@ -614,11 +594,9 @@ export default function Tickets() {
   const cheapest = result?.results?.length ? Math.min(...result.results.map((r) => r.price)) : null;
   const all = result?.results || [];
 
-  // The airlines and the price range of this month (for the chips and the slider).
   const airlines = useMemo(() => [...new Map(all.map((r) => [r.airline, r.airline_name])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [all]);
   const priceRange = all.length ? [Math.floor(Math.min(...all.map((r) => r.price)) / 100) * 100, Math.ceil(Math.max(...all.map((r) => r.price)) / 100) * 100] : [0, 0];
 
-  // Every filter but the weekdays: the calendar shows its own days, the weekdays only grey them out.
   const fitting = all.filter(
     (r) =>
       (f.stops !== "1" || r.transfers <= 1) &&
@@ -636,7 +614,6 @@ export default function Tickets() {
     early: (a, b) => a.departure_at.localeCompare(b.departure_at),
     fast: (a, b) => (a.duration || 1e9) - (b.duration || 1e9) || a.price - b.price,
   };
-  // A picked day: all its flights (by time unless another order is chosen). Otherwise the whole month, filtered.
   const matching = fitting
     .filter((r) => (day ? r.departure_at.startsWith(day) : !f.weekdays.length || f.weekdays.includes(String(weekdayOf(r)))))
     .sort(day && f.sort === "price" ? order.early : order[f.sort] || order.price);

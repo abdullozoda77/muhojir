@@ -1,5 +1,3 @@
-"""/api/documents/: document types and their guides, patent prices by region, migration centers, law news and
-exam questions (everyone reads, editors change); and the user's own documents and payments (only their own)."""
 from datetime import date
 from decimal import Decimal
 from typing import Annotated
@@ -38,7 +36,6 @@ def int_param(request, name):
 
 
 def search(query, request, *columns):
-    """?search=words in any of these columns, case does not matter (Cyrillic too)."""
     words = param(request, "search")
     return query.where(or_(*(c.ilike(f"%{words}%") for c in columns))) if words else query
 
@@ -52,8 +49,6 @@ async def must_exist(db, model, value, field):
         raise FieldError(field, not_found(model.__name__, value))
 
 
-# --- Document types: admins change them (the site's pages depend on their slugs) ---------------------------------
-
 def document_types_query(request, user):
     query = select(DocumentType)
     if param(request, "slug"):
@@ -65,8 +60,6 @@ def document_types_query(request, user):
 add_content_routes(router, "document-types", model=DocumentType, to_json=s.document_type_json,
                    Create=s.DocumentTypeIn, Update=s.DocumentTypePatch, query=document_types_query, writer=admin_user)
 
-
-# --- Guide steps ----------------------------------------------------------------------------------------------
 
 def guide_steps_query(request, user):
     query = select(GuideStep)
@@ -84,8 +77,6 @@ add_content_routes(router, "guide-steps", model=GuideStep, to_json=s.guide_step_
                    Update=s.GuideStepPatch, query=guide_steps_query, writer=editor_user, check=check_step)
 
 
-# --- Regions (patent prices) -----------------------------------------------------------------------------------
-
 def regions_query(request, user):
     query = select(Region)
     if (year := int_param(request, "price_year")) is not None:
@@ -102,8 +93,6 @@ add_content_routes(router, "regions", model=Region, to_json=s.region_json, Creat
                    query=regions_query, writer=editor_user)
 
 
-# --- Migration centers -----------------------------------------------------------------------------------------
-
 def centers_query(request, user):
     query = select(MigrationCenter)
     if (region := int_param(request, "region")) is not None:
@@ -119,8 +108,6 @@ async def check_center(db, center, data):
 add_content_routes(router, "centers", model=MigrationCenter, to_json=s.center_json, Create=s.CenterIn,
                    Update=s.CenterPatch, query=centers_query, writer=editor_user, check=check_center)
 
-
-# --- Law news: guests see the published ones, editors all ------------------------------------------------------
 
 def news_query(request, user):
     query = select(LawNews)
@@ -157,8 +144,6 @@ add_content_routes(router, "news", model=LawNews, to_json=s.news_json, Create=s.
                    query=news_query, writer=editor_user, check=check_news, before_save=news_before_save)
 
 
-# --- Exam questions: guests see the active ones ----------------------------------------------------------------
-
 def exam_query(request, user):
     query = select(ExamQuestion)
     if not (user and user.is_editor):
@@ -182,14 +167,11 @@ add_content_routes(router, "exam-questions", model=ExamQuestion, to_json=s.exam_
                    check=check_question)
 
 
-# --- My documents ----------------------------------------------------------------------------------------------
-
 def my_documents(user):
     return select(UserDocument).where(UserDocument.user_id == user.id)
 
 
 async def my_document(db, user, document_id):
-    # populate_existing: always the saved row with its document type and region, also right after a change
     query = my_documents(user).where(UserDocument.id == document_id).execution_options(populate_existing=True)
     document = (await db.execute(query)).unique().scalar_one_or_none()
     if document is None:
@@ -211,7 +193,6 @@ async def list_my_documents(request: Request, user: CurrentUser, db: DB, page: P
         query = query.where(UserDocument.document_type_id == type_id)
     if (region := int_param(request, "region")) is not None:
         query = query.where(UserDocument.region_id == region)
-    # Documents that end in this period: ?expires_after=2026-10-01&expires_before=2026-10-31
     if param(request, "expires_after"):
         query = query.where(UserDocument.expires_at >= date.fromisoformat(param(request, "expires_after")))
     if param(request, "expires_before"):
@@ -275,7 +256,6 @@ async def delete_my_document(document_id: int, user: CurrentUser, db: DB):
 
 @router.get("/my-documents/{document_id}/photo/")
 async def document_photo(document_id: int, user: CurrentUser, db: DB):
-    """The photo of the document: only for its owner."""
     document = await my_document(db, user, document_id)
     path = private_path(document.photo)
     if path is None or not path.exists():
@@ -301,8 +281,6 @@ async def delete_document_photo(document_id: int, user: CurrentUser, db: DB):
     await delete_private(old)
     return Response(status_code=204)
 
-
-# --- Payments (the receipts archive) ---------------------------------------------------------------------------
 
 def my_payments(user):
     return select(Payment).where(Payment.user_id == user.id)
@@ -339,7 +317,6 @@ async def create_payment(
     note: Annotated[str, Form(max_length=255)] = "",
     receipt: Annotated[UploadFile | None, File()] = None,
 ):
-    """A payment for one of my documents. Its end date moves forward by the months paid."""
     target = await db.get(UserDocument, document)
     if target is None:
         raise FieldError("document", not_found("UserDocument", document))
@@ -361,7 +338,6 @@ async def get_payment(payment_id: int, user: CurrentUser, db: DB):
 
 @router.delete("/payments/{payment_id}/", status_code=204)
 async def delete_payment(payment_id: int, user: CurrentUser, db: DB):
-    """Deleting a payment does not move the document's end date back."""
     payment = await my_payment(db, user, payment_id)
     receipt = payment.receipt
     await db.delete(payment)

@@ -15,7 +15,7 @@ export default function Calculator() {
   const [regions, setRegions] = useState([]);
   const [patent, setPatent] = useState(null);
   const [steps, setSteps] = useState([]);
-  const [myPatent, setMyPatent] = useState(null); // the worker's own patent, to record a payment for it
+  const [myPatent, setMyPatent] = useState(null);
   const [regionId, setRegionId] = useState("");
   const [months, setMonths] = useState(3);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function Calculator() {
 
   const region = regions.find((r) => String(r.id) === regionId);
   const price = Number(region?.patent_monthly_price || 0);
-  const papers = useMemo(() => (steps.length ? papersOf(steps[0]) : []), [steps]); // what to bring when applying (step 1)
+  const papers = useMemo(() => (steps.length ? papersOf(steps[0]) : []), [steps]);
   const centers = useApi(regionId ? `/documents/centers/?region=${regionId}&page_size=50` : null);
   const payLink = myPatent ? `/documents?pay=${myPatent.id}` : user ? "/documents" : "/login";
 
@@ -85,7 +85,6 @@ export default function Calculator() {
                   <span className="rounded-lg bg-surface-container-high px-3 py-1 text-label-lg tabular-nums">{t("{0} моҳ", months)}</span>
                 </div>
                 <input id="months" type="range" min={1} max={12} value={months} onChange={(e) => setMonths(Number(e.target.value))} className="h-2 w-full cursor-pointer accent-primary" />
-                {/* Each label sits under its own spot on the slider (1..12 are not evenly spaced labels). */}
                 <div className="relative mx-2 mt-1 h-8 text-label-sm text-on-surface-variant">
                   {[1, 3, 6, 9, 12].map((m) => (
                     <button key={m} type="button" onClick={() => setMonths(m)} style={{ left: `${((m - 1) / 11) * 100}%` }} className={`absolute min-h-[32px] -translate-x-1/2 px-1.5 tabular-nums hover:text-on-surface ${months === m ? "font-semibold text-on-surface" : ""}`}>{m}</button>
@@ -93,7 +92,6 @@ export default function Calculator() {
                 </div>
               </div>
 
-              {/* The total: the page's one dark block, with the sum big in white. */}
               <div className="flex flex-col gap-4">
                 <div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl bg-navy p-6 text-white md:p-7">
                   <div className="relative">

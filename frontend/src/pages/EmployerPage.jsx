@@ -115,7 +115,6 @@ export default function EmployerPage() {
         </section>
       )}
 
-      {/* The company's header, plain on the page: icon, name, city and the rating. */}
       <Intro as="section" className="flex flex-col gap-5 md:flex-row md:items-center">
         <IntroItem className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-container-low ring-1 ring-outline-variant">
           <Building2 className="h-7 w-7" aria-hidden />

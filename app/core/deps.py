@@ -1,5 +1,3 @@
-"""Who is asking. Like the Django version: no Authorization header = a guest; a broken or expired token = 401,
-so the site refreshes its token and asks again."""
 from typing import Annotated
 
 from fastapi import Depends, Request

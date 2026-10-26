@@ -9,7 +9,6 @@ import { Chip } from "./ui.jsx";
 import { ReportButton, ReportsBadge } from "./Blacklist.jsx";
 import { industry } from "../constants.js";
 
-// Every job comes from «Работа России» (trudvsem.ru); people apply there, on the ad's official page.
 export const SOURCE_NAME = "Работа России";
 
 export function Perks({ job }) {
@@ -41,7 +40,6 @@ export function SourceBadge({ className = "" }) {
   );
 }
 
-// The link to the ad on the official site, where people read the contacts and apply.
 export function OfficialLink({ job, className = "" }) {
   if (!job.external_url) return null;
   return (
@@ -54,7 +52,6 @@ export function OfficialLink({ job, className = "" }) {
 
 export const placeOf = (job) => job.address || job.city;
 
-// Save a job for later (only for logged-in users). onChange tells the page, e.g. to drop it from the saved list.
 export function SaveButton({ job, onChange, className = "" }) {
   const { user } = useAuth();
   const [saved, setSaved] = useState(Boolean(job.is_saved));
@@ -67,7 +64,6 @@ export function SaveButton({ job, onChange, className = "" }) {
       setSaved(data.is_saved);
       onChange?.(data.is_saved);
     } catch {
-      // nothing changed; the button stays as it was
     } finally {
       setBusy(false);
     }
@@ -87,8 +83,6 @@ export function SaveButton({ job, onChange, className = "" }) {
   );
 }
 
-// The job's industry square: one quiet style for every industry, the icon tells them apart.
-
 function IndustryIcon({ job, size = "h-11 w-11" }) {
   const Icon = industry(job.industry).icon;
   return (
@@ -98,8 +92,6 @@ function IndustryIcon({ job, size = "h-11 w-11" }) {
   );
 }
 
-// compact (home page): a short row, the whole row a link to the job. Otherwise (jobs list): a card with the
-// company, address and perks, the salary, and buttons to the official ad and to save it.
 export function JobRow({ job, compact = false, onSaveChange }) {
   const [reports, setReports] = useState(job.employer.reports_count || 0);
   const recount = () => api(`/jobs/employers/${job.employer.id}/`).then((e) => setReports(e.reports_count)).catch(() => {});

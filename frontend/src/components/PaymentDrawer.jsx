@@ -5,11 +5,8 @@ import { t } from "../i18n.js";
 import { date, rub } from "../format.js";
 import { Button, Drawer, ErrorBox, Field } from "./ui.jsx";
 
-const today = () => new Date().toLocaleDateString("sv-SE"); // "2026-10-01" in the local time zone
+const today = () => new Date().toLocaleDateString("sv-SE");
 
-// Record a payment for a document (e.g. the monthly patent tax) with a photo of the receipt.
-// The server moves the document's end date forward by the months paid.
-// doc = null: closed. monthlyPrice: the patent price of the document's region, to fill in the amount.
 export default function PaymentDrawer({ doc, monthlyPrice, onClose, onSaved }) {
   const [months, setMonths] = useState(1);
   const [amount, setAmount] = useState("");

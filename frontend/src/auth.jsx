@@ -9,12 +9,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(Boolean(tokens.access));
 
   const logout = useCallback(async () => {
-    clearUserData(); // the copies of the user's data saved for offline use are forgotten
+    clearUserData();
     const refresh = tokens.refresh;
     tokens.clear();
     setUser(null);
     if (refresh) {
-      // Blocks the refresh token on the server; failing is fine, the tokens are gone from this device anyway.
       fetch("/api/auth/logout/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refresh }) }).catch(() => {});
     }
   }, []);
@@ -34,7 +33,7 @@ export function AuthProvider({ children }) {
   }, [reload]);
 
   const login = useCallback((data) => {
-    clearUserData(); // copies saved offline may belong to someone else who used this phone
+    clearUserData();
     tokens.save(data);
     setUser(data.user);
   }, []);

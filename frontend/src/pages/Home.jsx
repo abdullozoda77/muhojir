@@ -12,12 +12,6 @@ import { Emblem } from "../components/Pattern.jsx";
 import { STATUS, Skeleton, statusText } from "../components/ui.jsx";
 import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, startShown } from "../components/motion.jsx";
 
-// The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law
-// news. Logged in: a greeting with the nearest deadline, the documents, the services.
-
-// --- Pieces ---------------------------------------------------------------------------------------------------
-
-// The hero: plain, on the page. The text on the left, a quiet panel on the right (wide screens).
 function HeroStage({ children, aside }) {
   return (
     <section className="grid grid-cols-1 items-center gap-10 pt-6 md:pt-14 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] xl:gap-16">
@@ -38,9 +32,6 @@ function Eyebrow({ children }) {
   );
 }
 
-// value: a number; it counts up once it has loaded.
-// The three numbers in the colors of the flag of Tajikistan in the light theme: red, white (wider), green.
-// At night the rows stay dark and keep only a thin stripe of their color on the left.
 const STAT_TONES = {
   red: { row: "bg-[#cc1a22] text-white dark:bg-transparent dark:text-on-surface", label: "text-white/85 dark:text-on-surface-variant", bar: "dark:bg-[#e2343b]" },
   white: { row: "bg-white py-7 text-on-surface dark:bg-transparent dark:py-5", label: "text-on-surface-variant", bar: "dark:bg-white" },
@@ -69,7 +60,6 @@ const btnInk = "inline-flex min-h-[48px] items-center justify-center gap-2 round
 const btnPlain = "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-surface-container-lowest px-6 text-label-lg text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low";
 const tile = "group flex h-full flex-col justify-between gap-6 rounded-2xl bg-surface-container-lowest p-5 ring-1 ring-outline-variant transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] hover:ring-outline/50 md:p-6";
 
-// Every service as a tile, all alike; the calculator is twice as wide.
 const SERVICES = [
   { to: "/calculator", icon: Calculator, title: () => t("Нархи патент"), text: () => t("Барои ҳамаи 83 минтақаи Русия, соли 2026 — ва маблағ барои 1–12 моҳ."), big: true },
   { to: "/jobs", icon: Briefcase, title: () => t("Ҷойи кор"), text: () => t("Вакансияҳои воқеӣ аз «Работа России» бо суроға.") },
@@ -169,7 +159,6 @@ function HowItWorks() {
   );
 }
 
-// Newest jobs in the user's city (or anywhere, when there are none there).
 function JobsPanel({ city }) {
   const cityJobs = useApi(city ? `/jobs/jobs/?city=${encodeURIComponent(city)}&page_size=4` : null);
   const anyJobs = useApi(!city || (cityJobs.data && cityJobs.data.count === 0) ? "/jobs/jobs/?page_size=4" : null);
@@ -256,8 +245,6 @@ function DocTile({ doc }) {
   );
 }
 
-// --- Pages ----------------------------------------------------------------------------------------------------
-
 function GuestHome() {
   const jobs = useApi("/jobs/jobs/?page_size=1");
   const regions = useApi("/documents/regions/?page_size=1");
@@ -311,7 +298,6 @@ function GuestHome() {
   );
 }
 
-// Shown beside the greeting while there are no documents yet (the hero button already adds one).
 const QUICK = ["/calculator", "/checks", "/exam"];
 
 function MigrantHome({ user }) {
@@ -331,7 +317,6 @@ function MigrantHome({ user }) {
         ? t("Ҳамаи ҳуҷҷатҳо тартиб аст. Мо пеш аз мӯҳлат хабар медиҳем.")
         : t("Ҳуҷҷатҳои худро илова кунед — мо мӯҳлатҳоро назорат мекунем.");
 
-  // The nearest deadline, or quick links to the main services.
   const aside = loading ? (
     <Skeleton className="h-44" />
   ) : next ? (

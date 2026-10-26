@@ -3,7 +3,6 @@ import { CalendarClock, Check, ExternalLink, FileText, MapPin, Wallet } from "lu
 import { t } from "../i18n.js";
 import { Reveal } from "./motion.jsx";
 
-// The "what to bring" list of a step: one item per line in the admin panel. Ticks are only for the reader.
 export function Checklist({ items }) {
   const [done, setDone] = useState({});
   return (
@@ -18,7 +17,6 @@ export function Checklist({ items }) {
   );
 }
 
-// A filled-in sample of the form: "Field: value" per line, shown like a paper form. Read-only.
 export const exampleOf = (step) =>
   (step.example || "").split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
     const at = line.indexOf(":");

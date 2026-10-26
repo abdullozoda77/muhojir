@@ -5,9 +5,6 @@ import { Loader2, Send, Trash2, X } from "lucide-react";
 import { api } from "../api.js";
 import { lang, t } from "../i18n.js";
 
-// The AI assistant: a chat in the corner. It answers about migration and the site, and when you ask it
-// to open something ("кори курьер дар Маскав нишон деҳ") the server says which page, and we open it.
-// The conversation stays while the tab is open (sessionStorage), so it continues after changing pages.
 const STORE = "muhojir-assistant";
 const SUGGESTIONS = [
   () => t("Нархи патент дар Маскав чанд аст?"),
@@ -24,7 +21,6 @@ function load() {
   }
 }
 
-// **bold** and "- " lists from the model, drawn safely (no HTML from the answer is used).
 function Message({ text }) {
   return text.split("\n").map((line, i) => {
     const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
@@ -38,7 +34,6 @@ function Message({ text }) {
   });
 }
 
-// The assistant's own mark: a chat bubble with a four-pointed spark inside, drawn in the current text color.
 function AssistantMark({ className = "h-6 w-6" }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
@@ -69,7 +64,6 @@ export default function Assistant() {
     try {
       sessionStorage.setItem(STORE, JSON.stringify(messages.slice(-30)));
     } catch {
-      // private mode: the chat is simply not kept between pages
     }
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
@@ -98,7 +92,6 @@ export default function Assistant() {
 
   return (
     <>
-      {/* The way in: a blue pill (icon only on phones) with the colors of the flag running around its edge. */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

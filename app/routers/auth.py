@@ -1,9 +1,3 @@
-"""Sign-up and login with an email and a password:
-1. POST /api/auth/register/      {email, password, full_name} -> account made, a 6-digit code goes to the email
-2. POST /api/auth/verify-email/  {email, code}                -> email confirmed, JWT tokens given
-3. POST /api/auth/login/         {email, password}            -> JWT tokens (only once the email is confirmed)
-Forgot the password: POST password/forgot/ {email} sends a code, POST password/reset/ {email, code, password}.
-resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/, profile/, notifications/."""
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -50,24 +44,22 @@ def jsonable(data):
 
 
 async def email_code(db, email, purpose):
-    """Sends a code unless one was sent less than a minute ago. Raises ApiError (429 wait / 503 mail down)."""
     old = await db.scalar(select(EmailCode).where(EmailCode.email == email))
     if old and utcnow() - old.sent_at < RESEND_PAUSE:
         raise ApiError(WAIT, 429)
     try:
         await send_code(db, email, purpose)
-    except OSError:  # the mail server is down or refused us
+    except OSError:
         raise ApiError("The email could not be sent. Try again in a few minutes.", 503)
 
 
 async def use_code(db, email, code, purpose):
-    """Checks the code; a right code works only once. Raises ApiError when it is wrong or old."""
     entry = await db.scalar(select(EmailCode).where(EmailCode.email == email, EmailCode.purpose == purpose))
     if entry is None or utcnow() - entry.sent_at > LOGIN_CODE_LIFETIME:
         raise ApiError(EXPIRED)
     if entry.attempts >= LOGIN_CODE_MAX_ATTEMPTS:
         raise ApiError("Too many wrong tries. Ask for a new code.")
-    if not verify_password(code, entry.code_hash):  # only a hash of the code is stored
+    if not verify_password(code, entry.code_hash):
         await db.execute(update(EmailCode).where(EmailCode.id == entry.id).values(attempts=EmailCode.attempts + 1))
         await db.commit()
         raise ApiError("Wrong code.")
@@ -84,7 +76,6 @@ async def user_by_email(db, email, **filters):
 
 @router.post("/register/", status_code=201, dependencies=[Depends(throttle("login_code"))])
 async def register(data: RegisterIn, db: DB):
-    """Step 1 of sign-up: email, password and name. The account waits until the email is confirmed."""
     check_password_rules(data.password, data.email)
     user = await user_by_email(db, data.email)
     if user and user.email_verified:
@@ -94,21 +85,20 @@ async def register(data: RegisterIn, db: DB):
     if user is None:
         user = User(email=data.email, password_hash=hash_password(data.password), full_name=data.full_name)
         db.add(user)
-    else:  # signed up before but never confirmed: the new password and name count
+    else:
         user.password_hash = hash_password(data.password)
         user.full_name = data.full_name or user.full_name
     await db.commit()
     try:
         await email_code(db, user.email, "verify")
     except ApiError as error:
-        if error.status_code != 429:  # "wait a minute" is fine here: the earlier code still works
+        if error.status_code != 429:
             raise
     return {"detail": "Code sent.", "email": user.email}
 
 
 @router.post("/verify-email/", status_code=201)
 async def verify_email(data: CodeIn, db: DB):
-    """Step 2 of sign-up: the code from the email. Confirms the email and logs in."""
     user = await user_by_email(db, data.email)
     if user is None:
         raise ApiError(EXPIRED)
@@ -122,7 +112,6 @@ async def verify_email(data: CodeIn, db: DB):
 
 @router.post("/resend-code/", dependencies=[Depends(throttle("login_code"))])
 async def resend_code(data: EmailIn, db: DB):
-    """Sends the sign-up code again (only to accounts that are not confirmed yet)."""
     user = await user_by_email(db, data.email, email_verified=False)
     if user is None:
         raise ApiError("This email is already confirmed or not registered.")
@@ -132,7 +121,6 @@ async def resend_code(data: EmailIn, db: DB):
 
 @router.post("/login/", dependencies=[Depends(throttle("login"))])
 async def login(data: LoginIn, db: DB):
-    """Email + password. An account whose email is not confirmed yet gets a new code instead of tokens."""
     user = await user_by_email(db, data.email)
     if user is None or not verify_password(data.password, user.password_hash):
         raise ApiError("Wrong email or password.")
@@ -140,7 +128,7 @@ async def login(data: LoginIn, db: DB):
         raise ApiError(BLOCKED, 403)
     if not user.email_verified:
         try:
-            await email_code(db, user.email, "verify")  # a fresh code, unless one was sent a minute ago
+            await email_code(db, user.email, "verify")
         except ApiError:
             pass
         raise ApiError("Confirm your email first. We sent you a code.", 403, code="not_verified")
@@ -149,8 +137,6 @@ async def login(data: LoginIn, db: DB):
 
 @router.post("/password/forgot/", dependencies=[Depends(throttle("login_code"))])
 async def forgot_password(data: EmailIn, db: DB):
-    """Sends a code for a new password. Answers the same whether the email is registered or not,
-    so nobody can use it to find out who has an account."""
     user = await user_by_email(db, data.email, is_active=True)
     if user:
         try:
@@ -163,7 +149,6 @@ async def forgot_password(data: EmailIn, db: DB):
 
 @router.post("/password/reset/")
 async def reset_password(data: ResetPasswordIn, db: DB):
-    """The code from the email and a new password. Also confirms the email, and logs in."""
     check_password_rules(data.password, data.email)
     user = await user_by_email(db, data.email, is_active=True)
     if user is None:
@@ -176,18 +161,16 @@ async def reset_password(data: ResetPasswordIn, db: DB):
 
 
 async def revoke(db, payload):
-    """Blocks a refresh token. Returns False if it was blocked already."""
     if await db.get(RevokedToken, payload["jti"]):
         return False
     db.add(RevokedToken(jti=payload["jti"], expires_at=datetime.fromtimestamp(payload["exp"], timezone.utc)))
-    await db.execute(delete(RevokedToken).where(RevokedToken.expires_at < utcnow()))  # old ones are not needed
+    await db.execute(delete(RevokedToken).where(RevokedToken.expires_at < utcnow()))
     await db.commit()
     return True
 
 
 @router.post("/token/refresh/")
 async def refresh_token(data: RefreshIn, db: DB):
-    """A new access token and a new refresh token; the old refresh token stops working."""
     payload = read_token(data.refresh, "refresh")
     user = await db.get(User, payload["user_id"]) if payload else None
     if user is None or not user.is_active or not await revoke(db, payload):
@@ -197,7 +180,6 @@ async def refresh_token(data: RefreshIn, db: DB):
 
 @router.post("/logout/", status_code=204)
 async def logout(data: RefreshIn, db: DB):
-    """Log out: the refresh token goes on the blacklist, so it can not be used again."""
     payload = read_token(data.refresh, "refresh")
     if payload is None:
         raise ApiError("Invalid or expired token.")
@@ -212,7 +194,6 @@ async def profile(user: CurrentUser):
 
 @router.patch("/profile/")
 async def update_profile(data: ProfileIn, user: CurrentUser, db: DB):
-    """Change name, phone, city, language, email reminders."""
     changes = data.model_dump(exclude_unset=True)
     if "phone" in changes and changes["phone"]:
         taken = await db.scalar(select(User.id).where(User.phone == changes["phone"], User.id != user.id))
@@ -228,7 +209,6 @@ async def update_profile(data: ProfileIn, user: CurrentUser, db: DB):
 
 @router.post("/profile/avatar/")
 async def upload_avatar(user: CurrentUser, db: DB, avatar: Annotated[UploadFile, File()]):
-    """The profile photo (JPG, PNG or WEBP, up to 3 MB); it replaces the old one."""
     old, user.avatar = user.avatar, await save_avatar(avatar)
     await db.commit()
     await delete_avatar(old)
@@ -242,8 +222,6 @@ async def remove_avatar(user: CurrentUser, db: DB):
     await delete_avatar(old)
     return user_json(user)
 
-
-# --- Notifications ---------------------------------------------------------------------------------------------
 
 def my_notifications(user):
     return select(Notification).where(Notification.user_id == user.id)
@@ -275,7 +253,7 @@ async def read_all(user: CurrentUser, db: DB):
         update(Notification).where(Notification.user_id == user.id, Notification.is_read.is_(False)).values(is_read=True)
     )
     await db.commit()
-    await push_count(db, user.id)  # other open tabs update their bell too
+    await push_count(db, user.id)
     return {"updated": result.rowcount}
 
 

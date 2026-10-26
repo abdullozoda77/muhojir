@@ -1,5 +1,3 @@
-"""/api/jobs/: real vacancies (imported from «Работа России», read-only here), their companies, workers' reviews
-of companies, saved jobs and alerts about new jobs."""
 from fastapi import APIRouter, Request, Response
 from sqlalchemy import and_, exists, func, or_, select
 
@@ -25,13 +23,11 @@ def bool_param(request, name):
 
 
 def open_jobs(query):
-    """The jobs workers see: switched on, not expired, and not from a blacklisted company."""
     return query.where(Job.is_active.is_(True), Job.expires_at > utcnow(),
                        Job.employer_id.in_(select(Employer.id).where(Employer.is_blacklisted.is_(False))))
 
 
 def filter_jobs(query, params, user=None):
-    """The job filters, used by the list and by the alerts: search, city, industry, min_salary, housing..."""
     get = params.get
     if words := get("search"):
         query = query.where(or_(Job.title.ilike(f"%{words}%"), Job.description.ilike(f"%{words}%"),
@@ -74,8 +70,6 @@ def jobs_query(user):
 
 @router.get("/jobs/")
 async def list_jobs(request: Request, db: DB, user: OptionalUser, page: Paginate):
-    """Workers see only open jobs; admins see everything. Filters: search, city, industry, employer, min_salary,
-    salary_period, housing_provided, meals_provided, helps_with_documents, saved=true; ordering=-salary_from..."""
     query = filter_jobs(jobs_query(user), request.query_params, user)
     query = apply_ordering(request, query, {"created_at": Job.created_at, "salary_from": Job.salary_from,
                                             "salary_to": Job.salary_to}, [Job.created_at.desc(), Job.id.desc()])
@@ -100,7 +94,6 @@ def get_job_row(row):
 
 @router.post("/jobs/{job_id}/save/")
 async def save_job(job_id: int, db: DB, user: CurrentUser):
-    """Save the job for later."""
     job = get_job_row(await get_job(db, user, job_id))[0]
     if not await db.scalar(select(SavedJob.id).where(SavedJob.user_id == user.id, SavedJob.job_id == job.id)):
         db.add(SavedJob(user_id=user.id, job_id=job.id))
@@ -110,7 +103,6 @@ async def save_job(job_id: int, db: DB, user: CurrentUser):
 
 @router.delete("/jobs/{job_id}/save/")
 async def unsave_job(job_id: int, db: DB, user: CurrentUser):
-    """Remove the job from the saved ones."""
     job = get_job_row(await get_job(db, user, job_id))[0]
     saved = await db.scalar(select(SavedJob).where(SavedJob.user_id == user.id, SavedJob.job_id == job.id))
     if saved:
@@ -118,8 +110,6 @@ async def unsave_job(job_id: int, db: DB, user: CurrentUser):
         await db.commit()
     return {"is_saved": False}
 
-
-# --- The blacklist: companies blacklisted by admins and the ones workers reported, with the reasons ------------
 
 async def get_report(db, report_id):
     report = (await db.execute(select(BlacklistReport).where(BlacklistReport.id == report_id)
@@ -137,8 +127,6 @@ async def count_reports(db, employer_id):
 
 @router.post("/jobs/{job_id}/blacklist/", status_code=201)
 async def report_job(job_id: int, data: s.ReportIn, db: DB, user: CurrentUser):
-    """Put the job's company on the blacklist with a reason. One report per company per user: sending again
-    changes the reason."""
     job = get_job_row(await get_job(db, user, job_id))[0]
     reason = data.reason.strip()
     if len(reason) < 10:
@@ -158,8 +146,6 @@ async def report_job(job_id: int, data: s.ReportIn, db: DB, user: CurrentUser):
 
 @router.get("/blacklist/")
 async def blacklist(request: Request, db: DB, user: OptionalUser, page: Paginate):
-    """The companies on the blacklist: blacklisted by admins first, then by the number of reports. Every company
-    comes with its latest reports (?reports=3, up to 20); all of them are at /blacklist/reports/?employer=ID."""
     query = select(Employer).where(or_(Employer.is_blacklisted.is_(True), Employer.reports_count > 0))
     if words := param(request, "search"):
         query = query.where(or_(Employer.name.ilike(f"%{words}%"), Employer.inn.ilike(f"%{words}%")))
@@ -181,7 +167,6 @@ async def blacklist(request: Request, db: DB, user: OptionalUser, page: Paginate
 
 @router.get("/blacklist/reports/")
 async def list_reports(request: Request, db: DB, user: OptionalUser, page: Paginate):
-    """Everyone's reports, newest first. ?employer=ID, ?mine=true."""
     query = select(BlacklistReport)
     if (employer := int_param(request, "employer")) is not None:
         query = query.where(BlacklistReport.employer_id == employer)
@@ -193,7 +178,6 @@ async def list_reports(request: Request, db: DB, user: OptionalUser, page: Pagin
 
 @router.delete("/blacklist/reports/{report_id}/", status_code=204)
 async def delete_report(report_id: int, db: DB, user: CurrentUser):
-    """The author takes the report back (or an admin removes a false one)."""
     report = await get_report(db, report_id)
     if report.author_id != user.id and not user.is_admin:
         raise ApiError("У вас недостаточно прав для выполнения данного действия.", 403)
@@ -204,8 +188,6 @@ async def delete_report(report_id: int, db: DB, user: CurrentUser):
     await db.commit()
     return Response(status_code=204)
 
-
-# --- Employers -------------------------------------------------------------------------------------------------
 
 @router.get("/employers/")
 async def list_employers(request: Request, db: DB, page: Paginate):
@@ -229,8 +211,6 @@ async def employer_detail(employer_id: int, db: DB):
         raise ApiError("No Employer matches the given query.", 404)
     return s.employer_json(employer)
 
-
-# --- Reviews of employers --------------------------------------------------------------------------------------
 
 @router.get("/reviews/")
 async def list_reviews(request: Request, db: DB, user: OptionalUser, page: Paginate):
@@ -311,8 +291,6 @@ async def delete_review(review_id: int, db: DB, user: CurrentUser):
     await db.commit()
     return Response(status_code=204)
 
-
-# --- Job alerts: the user's own, at most 10, not paged ----------------------------------------------------------
 
 MAX_ALERTS = 10
 ALERT_FIELDS = ("search", "city", "industry", "min_salary", "housing_provided")

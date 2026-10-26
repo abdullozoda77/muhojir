@@ -1,7 +1,6 @@
 import { Building, Car, ChefHat, Factory, HardHat, Package, ShoppingCart, Sparkles, Sprout, Truck, Wrench } from "lucide-react";
 import { t } from "./i18n.js";
 
-// Same keys as INDUSTRIES in jobs/models.py.
 export const INDUSTRIES = [
   { value: "construction", get label() { return t("Сохтмон"); }, icon: HardHat },
   { value: "warehouse", get label() { return t("Анбор"); }, icon: Package },

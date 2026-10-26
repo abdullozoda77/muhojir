@@ -16,14 +16,12 @@ import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 
 const ROLE_NAMES = { editor: () => t("Муҳаррир"), admin: () => t("Админ") };
 
-// "marufromin2007@gmail.com" -> "ma••••••07@gmail.com": the address stays recognisable but is not readable over a shoulder.
 function maskEmail(email) {
   const [name, domain] = email.split("@");
   if (name.length <= 4) return `${name[0]}•••@${domain}`;
   return `${name.slice(0, 2)}${"•".repeat(Math.min(name.length - 4, 8))}${name.slice(-2)}@${domain}`;
 }
 
-// The avatar: the photo, or the first letter in a blue circle, inside a ring in the colors of the flag.
 function Avatar({ name, photo, size = "h-20 w-20 text-[30px]" }) {
   return (
     <span className={`relative flex shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[4px] shadow-lg ${size}`} aria-hidden>
@@ -38,7 +36,6 @@ function Avatar({ name, photo, size = "h-20 w-20 text-[30px]" }) {
   );
 }
 
-// A photo from the phone is often 5–10 MB: cut the middle square and make it 512×512 WEBP (about 50 KB) here.
 async function squarePhoto(file, side = 512) {
   const image = await createImageBitmap(file);
   const crop = Math.min(image.width, image.height);
@@ -49,7 +46,6 @@ async function squarePhoto(file, side = 512) {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
 }
 
-// The avatar with a camera button: pick a photo to upload it; the trash button removes it.
 function AvatarPicker({ user, name, setUser }) {
   const input = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -102,7 +98,6 @@ function AvatarPicker({ user, name, setUser }) {
   );
 }
 
-// Two or three choices side by side, like iOS settings.
 function Segmented({ value, onChange, options, label }) {
   return (
     <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl bg-surface-container-low p-1 ring-1 ring-inset ring-outline-variant">
@@ -149,7 +144,6 @@ function Section({ title, children }) {
   );
 }
 
-// An input with an icon inside it on the left.
 function IconInput({ icon: Icon, ...props }) {
   return (
     <span className="relative block">
@@ -210,7 +204,6 @@ export default function Profile() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      {/* Who is signed in: a blue card with the avatar, the name and a hidden email. */}
       <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 text-white shadow-[0_24px_60px_-28px_rgba(29,78,216,0.7)] md:p-8 dark:from-[#0f1d4a] dark:via-[#132a66] dark:to-[#1a3a8a] dark:shadow-none dark:ring-1 dark:ring-white/10">
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-sky-300/20 blur-2xl" aria-hidden />
@@ -235,7 +228,6 @@ export default function Profile() {
         </div>
       </Reveal>
 
-      {/* Quick ways to the user's own things, with how many there are. */}
       <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {shortcuts.map(({ to, icon: Icon, label, count }) => (
           <StaggerItem key={to}>

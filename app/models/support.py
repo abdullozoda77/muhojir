@@ -8,8 +8,6 @@ from app.db.types import UTCDateTime, utcnow
 
 
 class HelpContact(Base):
-    """Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer,
-    or the official MVD check page. Editors add them (with real, checked links)."""
 
     __tablename__ = "help_contacts"
 
@@ -32,7 +30,6 @@ class HelpContact(Base):
 
 
 class LegalQuestion(Base):
-    """A worker's question to a lawyer. An admin writes the answer; the worker gets a notification."""
 
     __tablename__ = "legal_questions"
 

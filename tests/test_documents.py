@@ -8,7 +8,7 @@ async def test_public_content_is_seeded(client):
     assert r.json()["count"] == 5
     r = await client.get("/api/documents/regions/", params={"search": "москва", "page_size": 100})
     names = [x["name"] for x in r.json()["results"]]
-    assert "Москва" in names  # search ignores case for Cyrillic on SQLite too
+    assert "Москва" in names
     moscow = next(x for x in r.json()["results"] if x["name"] == "Москва")
     assert moscow["patent_monthly_price"] == "10000.00" and moscow["price_year"] == 2026
     r = await client.get("/api/documents/exam-questions/", params={"page_size": 100})
@@ -42,13 +42,13 @@ async def test_my_documents_photos_and_payments(client, user):
     r = await client.post("/api/documents/payments/", headers=headers,
                           data={"document": doc["id"], "months": "1", "amount": "10000", "paid_at": "2026-01-20"})
     assert r.status_code == 201
-    assert r.json()["document_expires_at"] == "2026-02-28"  # 31 January + 1 month = the last day of February
+    assert r.json()["document_expires_at"] == "2026-02-28"
     r = await client.post("/api/documents/payments/", headers=headers, data={"document": doc["id"], "months": "13", "amount": "1"})
     assert r.status_code == 400 and "months" in r.json()
 
     other, _ = await other_user(client)
     r = await client.get(f"/api/documents/my-documents/{doc['id']}/", headers=other)
-    assert r.status_code == 404  # nobody sees another person's documents
+    assert r.status_code == 404
     r = await client.post("/api/documents/payments/", headers=other, data={"document": doc["id"], "amount": "1"})
     assert r.json() == {"document": ["This is not your document."]}
 
@@ -83,7 +83,7 @@ async def test_editors_change_content(client, user):
                           json={"section": "law", "question": "?", "options": ["а"], "answer": 0})
     assert r.json() == {"options": ["Give at least two answers."]}
     r = await client.post("/api/documents/document-types/", headers=headers, json={"slug": "x", "title": "X"})
-    assert r.status_code == 403  # only admins add document types
+    assert r.status_code == 403
 
 
 async def test_reminders_are_sent_once(client, user, outbox):
@@ -99,7 +99,7 @@ async def test_reminders_are_sent_once(client, user, outbox):
     assert r.status_code == 201
     async with SessionLocal() as db:
         assert await send_due_reminders(db) >= 1
-        assert await send_due_reminders(db) == 0  # the same reminder never twice
+        assert await send_due_reminders(db) == 0
     r = await client.get("/api/auth/notifications/", headers=headers, params={"kind": "reminder"})
     assert r.json()["count"] == 1 and "пас аз 3 рӯз" in r.json()["results"][0]["message"]
-    assert any(letter["to"] == data["user"]["email"] for letter in outbox)  # and by email
+    assert any(letter["to"] == data["user"]["email"] for letter in outbox)

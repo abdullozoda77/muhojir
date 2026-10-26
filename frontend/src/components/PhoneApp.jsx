@@ -3,8 +3,6 @@ import { t } from "../i18n.js";
 import { isIOS, useInstall } from "../pwa.js";
 import { Button } from "./ui.jsx";
 
-// "The site on your phone": install it on the home screen, like an app.
-// Shown only where it can really be installed: one tap on Android/desktop Chrome, the Share steps on iPhone.
 export default function PhoneApp() {
   const { installed, canInstall, install } = useInstall();
   if (!installed && !canInstall && !isIOS()) return null;

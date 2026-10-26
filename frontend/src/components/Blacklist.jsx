@@ -8,9 +8,6 @@ import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import { Button, Drawer, ErrorBox } from "./ui.jsx";
 
-// The workers' blacklist: anyone logged in puts a job's company on it with a reason, and everyone sees the
-// reports at once (the job stays on the site with a warning; admins check the reports and may hide the company).
-
 const QUICK = [
   () => t("Маош надоданд"),
   () => t("Ҳуҷҷатҳоро (шиноснома) гирифтанд ва барнагардонданд"),
@@ -19,7 +16,6 @@ const QUICK = [
   () => t("Бе бақайдгирӣ ва шартнома кор фармуданд"),
 ];
 
-// "3 шикоят" on a red pill.
 export function ReportsBadge({ count, className = "" }) {
   if (!count) return null;
   return (
@@ -30,7 +26,6 @@ export function ReportsBadge({ count, className = "" }) {
   );
 }
 
-// One report: the reason, who (first name only) and when, the job it was about. The author may take it back.
 export function ReportItem({ report, onRemove }) {
   const remove = async () => {
     if (!window.confirm(t("Шикоятро нест кунем?"))) return;
@@ -55,7 +50,6 @@ export function ReportItem({ report, onRemove }) {
   );
 }
 
-// The form in a side panel: quick reasons to tap, then the reason in the worker's own words.
 function ReportForm({ job, onDone }) {
   const { user } = useAuth();
   const [reason, setReason] = useState("");
@@ -111,7 +105,6 @@ function ReportForm({ job, onDone }) {
   );
 }
 
-// Every report about one company, newest first.
 export function ReportsList({ employerId, tick = 0, onChange }) {
   const { data, reload } = useApi(`/jobs/blacklist/reports/?employer=${employerId}&page_size=100&_=${tick}`);
   if (!data?.results?.length) return null;
@@ -124,8 +117,6 @@ export function ReportsList({ employerId, tick = 0, onChange }) {
   );
 }
 
-// The "add to blacklist" button with its side panel; the panel also shows what others wrote.
-// compact: an icon-only square for the job cards. onChange: a report was added or removed.
 export function ReportButton({ job, compact = false, onChange, className = "" }) {
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(0);
@@ -163,7 +154,6 @@ export function ReportButton({ job, compact = false, onChange, className = "" })
   );
 }
 
-// A company on the blacklist with its latest reports: the jobs page's side card and the /blacklist page.
 export function BlacklistCompany({ e, onChange }) {
   return (
     <div className="flex flex-col gap-2.5 rounded-xl p-4 ring-1 ring-outline-variant">

@@ -61,7 +61,6 @@ export default function Help() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader eyebrow={t("Кӯмак ва бехатарӣ")} title={t("Маркази ёрии ҳуқуқӣ")} text={t("Сайтҳои расмӣ дар бораи патент ва қонунҳои Русия.")} icon={Scale} />
-      {/* The way to the self-checks: a card that leads on. */}
       <Link to="/checks" className="card group flex items-center justify-between gap-4 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] hover:ring-outline/50 md:p-6">
         <span className="flex items-center gap-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink text-on-ink">

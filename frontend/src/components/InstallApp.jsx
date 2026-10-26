@@ -5,8 +5,6 @@ import { t, useLang } from "../i18n.js";
 import { isIOS, useInstall } from "../pwa.js";
 import { Drawer } from "./ui.jsx";
 
-// "Install as an app" everywhere on the site: a banner on phones, a button in the menus.
-// Android/desktop Chrome install with one tap; on iPhone Apple allows only Share -> "Add to Home Screen", so we show how.
 const InstallContext = createContext(null);
 
 const DISMISS_KEY = "installBannerHidden";
@@ -22,7 +20,7 @@ function bannerDismissed() {
 }
 
 export function InstallProvider({ children }) {
-  useLang(); // it sits outside App, so it follows a language change itself
+  useLang();
   const { installed, canInstall, install } = useInstall();
   const [guide, setGuide] = useState(false);
   const available = !installed && (canInstall || isIOS());
@@ -52,7 +50,6 @@ export function InstallProvider({ children }) {
 
 export const useInstallApp = () => useContext(InstallContext);
 
-// A wide button for the phone menu.
 export function InstallMenuButton({ onDone }) {
   const { available, start } = useInstallApp();
   if (!available) return null;
@@ -75,7 +72,6 @@ export function InstallMenuButton({ onDone }) {
   );
 }
 
-// A small button for the header on big screens.
 export function InstallHeaderButton() {
   const { available, start } = useInstallApp();
   if (!available) return null;
@@ -87,7 +83,6 @@ export function InstallHeaderButton() {
   );
 }
 
-// On phones: a card that slides in under the header a few seconds after the site opens.
 export function InstallBanner() {
   const { available, start } = useInstallApp();
   const [show, setShow] = useState(false);
@@ -103,7 +98,6 @@ export function InstallBanner() {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
     } catch {
-      // private mode: it will show again next time
     }
   };
 

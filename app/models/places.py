@@ -6,30 +6,27 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.types import UTCDateTime, utcnow
 
-# Kinds of places a migrant looks for (the Tajik names are on the site).
 PLACE_CATEGORIES = (
-    "migration",    # migration centers (ММЦ, МВД)
-    "medical",      # clinics for the migrants' medical exam
-    "notary",       # notaries (translations of the passport are certified there)
-    "translation",  # translation bureaus
-    "embassy",      # the embassy and consulates of Tajikistan
+    "migration",
+    "medical",
+    "notary",
+    "translation",
+    "embassy",
     "mosque",
-    "food",         # Tajik / Uzbek / Central Asian cafes, choyxona
-    "halal",        # halal shops
-    "money",        # money transfers and exchange
+    "food",
+    "halal",
+    "money",
 )
 
 
 class Place(Base):
-    """A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import);
-    users may suggest new ones (source "user"), which appear after an editor approves them."""
 
     __tablename__ = "places"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     category: Mapped[str] = mapped_column(String(20), index=True)
     name: Mapped[str] = mapped_column(String(200))
-    region: Mapped[str] = mapped_column(String(100), index=True)  # region of Russia, e.g. Москва, Московская область
+    region: Mapped[str] = mapped_column(String(100), index=True)
     city: Mapped[str] = mapped_column(String(100), default="", index=True)
     address: Mapped[str] = mapped_column(String(255), default="")
     lat: Mapped[float | None] = mapped_column(Float)
@@ -38,8 +35,8 @@ class Place(Base):
     website: Mapped[str] = mapped_column(String(300), default="")
     opening_hours: Mapped[str] = mapped_column(String(200), default="")
     description: Mapped[str] = mapped_column(Text, default="")
-    source: Mapped[str] = mapped_column(String(10), default="osm")  # osm, user, editor
-    external_id: Mapped[str | None] = mapped_column(String(40), unique=True)  # e.g. osm:node/123
+    source: Mapped[str] = mapped_column(String(10), default="osm")
+    external_id: Mapped[str | None] = mapped_column(String(40), unique=True)
     is_approved: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
@@ -50,7 +47,6 @@ class Place(Base):
 
 
 class PlaceReview(Base):
-    """A visitor's rating (1-5) and words about a place; one per person per place."""
 
     __tablename__ = "place_reviews"
     __table_args__ = (UniqueConstraint("place_id", "author_id", name="one_review_per_place"),)

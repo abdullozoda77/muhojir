@@ -1,8 +1,3 @@
-"""Muhojir on FastAPI: a platform for Tajik migrants in Russia (documents and deadlines, patent prices, guides,
-real jobs, exam practice, an AI assistant). The React site in frontend/ talks to this API.
-
-Run for development:  uvicorn app.main:app --reload --port 8002   (or `npm run dev` in frontend/, which starts both)
-API docs:             /swagger/  and  /redoc/"""
 import asyncio
 from contextlib import asynccontextmanager
 
@@ -21,7 +16,6 @@ from app.services.live import hub
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # With several processes, live notifications from the others (and from the Celery worker) come through Redis.
     listener = asyncio.create_task(hub.listen()) if settings.redis_url else None
     yield
     if listener:

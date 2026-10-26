@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react";
 import { t } from "../i18n.js";
 import { Intro, IntroItem } from "../components/motion.jsx";
 
-// A page that does not exist: a big quiet 404 and the way home.
 export default function NotFound() {
   return (
     <Intro className="flex flex-col items-center gap-4 py-20 text-center md:py-28">

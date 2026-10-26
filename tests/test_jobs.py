@@ -29,7 +29,7 @@ async def test_jobs_filters_saved_reviews_alerts(client, user):
     headers, data = user
     r = await client.get("/api/jobs/jobs/", params={"page_size": 100})
     titles = [j["title"] for j in r.json()["results"]]
-    assert "Курьер" in titles and "Курьер обман" not in titles and "Старое" not in titles  # blacklisted and expired hidden
+    assert "Курьер" in titles and "Курьер обман" not in titles and "Старое" not in titles
     r = await client.get("/api/jobs/jobs/", params={"search": "курьер", "city": "москва", "housing_provided": "true"})
     assert [j["title"] for j in r.json()["results"]] == ["Курьер"]
     job = r.json()["results"][0]
@@ -78,11 +78,9 @@ async def test_blacklist_reports(client, user):
     assert r.status_code == 400 and "reason" in r.json()
     r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "Не заплатили за месяц работы"})
     assert r.status_code == 201 and r.json()["is_mine"] and r.json()["job"]["title"] == "Разнорабочий"
-    # Sending again changes the reason instead of adding a second report.
     r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "Не заплатили за два месяца"})
     report_id = r.json()["id"]
 
-    # Everyone sees it: the job stays open with the count, the list has the company with the reason.
     job_json = (await client.get(f"/api/jobs/jobs/{job_id}/")).json()
     assert job_json["employer"]["reports_count"] == 1
     r = await client.get("/api/jobs/blacklist/")

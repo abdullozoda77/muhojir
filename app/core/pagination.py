@@ -1,5 +1,3 @@
-"""Lists come in pages, like the Django version: {"count", "next", "previous", "results"}.
-?page=2&page_size=50 (10 by default, 100 at most)."""
 from typing import Annotated
 
 from fastapi import Depends, Query, Request
@@ -24,7 +22,6 @@ class Page:
         return str(url if page == 1 else url.include_query_params(page=page))
 
     async def respond(self, db, query, to_dict):
-        """query: a select(...) of the rows; to_dict(row) -> the JSON of one row."""
         count = await db.scalar(select(func.count()).select_from(query.order_by(None).subquery()))
         pages = max(1, -(-count // self.size))
         if self.page > pages:

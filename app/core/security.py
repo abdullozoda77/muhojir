@@ -1,7 +1,3 @@
-"""Passwords, email codes and JWT tokens.
-
-Tokens work like the Django version (SimpleJWT): an access token for 60 minutes and a refresh token for 30 days.
-Each refresh gives a new pair and blocks the old refresh token, and logout blocks it too (RevokedToken)."""
 import gzip
 import re
 import uuid
@@ -15,7 +11,7 @@ from pwdlib import PasswordHash
 from app.core.config import BASE_DIR, settings
 from app.db.types import utcnow
 
-password_hash = PasswordHash.recommended()  # Argon2
+password_hash = PasswordHash.recommended()
 ALGORITHM = "HS256"
 
 
@@ -25,14 +21,12 @@ def hash_password(password):
 
 def verify_password(password, hashed):
     if not hashed:
-        return False  # no password set: this account can not log in with one
+        return False
     try:
         return password_hash.verify(password, hashed)
     except Exception:
         return False
 
-
-# --- Password rules: the same four as Django's, with Django's own Russian messages ------------------------
 
 @lru_cache
 def _common_passwords():
@@ -65,8 +59,6 @@ def password_problems(password, email=""):
     return problems
 
 
-# --- JWT ---------------------------------------------------------------------------------------------------
-
 def _token(user_id, kind, lifetime):
     now = utcnow()
     payload = {"token_type": kind, "user_id": user_id, "jti": uuid.uuid4().hex, "iat": now, "exp": now + lifetime}
@@ -81,7 +73,6 @@ def make_tokens(user_id):
 
 
 def read_token(token, kind):
-    """The token's payload, or None when it is broken, expired or of the other kind."""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     except jwt.PyJWTError:

@@ -7,16 +7,14 @@ import { Button, Drawer, ErrorBox, Field } from "./ui.jsx";
 const EMPTY = { document_type: "", region: "", number: "", issued_at: "", expires_at: "", note: "", remind_days_before: 7 };
 const REMIND_OPTIONS = [30, 14, 7, 3, 1];
 
-// Pure date math in UTC: local midnight in Moscow (UTC+3) would turn into the previous day in toISOString().
 function addDays(isoDate, days) {
   const [y, m, d] = isoDate.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
-// Add or edit one of the user's documents. doc = null: closed, {}: new, a document: edit it.
 export default function DocForm({ doc, types, regions, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY);
-  const [photo, setPhoto] = useState(null); // a newly chosen file, uploaded on save
+  const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +30,6 @@ export default function DocForm({ doc, types, regions, onClose, onSaved }) {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  // A new registration is usually 90 days and so on: suggest the end date from the issue date when it is empty.
   const type = types.find((x) => String(x.id) === String(form.document_type));
   const suggest = type?.default_validity_days && form.issued_at && !form.expires_at ? addDays(form.issued_at, type.default_validity_days) : null;
 

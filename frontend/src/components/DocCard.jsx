@@ -5,7 +5,6 @@ import { t } from "../i18n.js";
 import { date, usedPercent } from "../format.js";
 import { StatusBadge } from "./ui.jsx";
 
-// Icons by the document type's slug (set by admins); unknown slugs get a plain document icon.
 const ICONS = [
   [/patent/, IdCard],
   [/regist/, House],
@@ -27,10 +26,8 @@ function Meta({ label, value, className = "" }) {
   );
 }
 
-// Color of the thin progress line: red when over, amber when ending soon, green when fine.
 const BAR_TONE = { expired: "bg-error", expiring: "bg-warning-container", valid: "bg-tertiary-container" };
 
-// One document: its name and status, the days left, a thin line of time used, the details below, and the actions.
 export default function DocCard({ doc, slug, onEdit, onPay }) {
   const Icon = docIcon(slug);
   const pct = usedPercent(doc);

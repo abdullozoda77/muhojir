@@ -1,5 +1,3 @@
-"""Limits on how often one visitor may do something (sending email codes, password tries, AI questions).
-The counter is kept in Redis when REDIS_URL is set (shared by all server processes), otherwise in memory."""
 import time
 from collections import defaultdict
 
@@ -9,9 +7,9 @@ from app.core.config import settings
 from app.core.errors import ApiError
 
 RATES = {
-    "login_code": (5, 3600),  # emails with codes
-    "login": (20, 3600),  # password tries: enough for typos, too few for guessing
-    "assistant": (40, 3600),  # questions to the AI assistant (each one costs a model call)
+    "login_code": (5, 3600),
+    "login": (20, 3600),
+    "assistant": (40, 3600),
 }
 
 _memory = defaultdict(list)
@@ -36,7 +34,6 @@ def visitor(request: Request):
 
 
 async def _hit(key, limit, window):
-    """Counts this request; returns how many seconds to wait, or 0 when it is allowed."""
     now = time.time()
     client = _redis_client()
     if client is not None:
@@ -52,7 +49,7 @@ async def _hit(key, limit, window):
             await client.expire(key, window)
             return 0
         except Exception:
-            pass  # Redis is down: fall back to memory, never block the site because of the counter
+            pass
     hits = [t for t in _memory[key] if t > now - window]
     if len(hits) >= limit:
         _memory[key] = hits
@@ -63,7 +60,6 @@ async def _hit(key, limit, window):
 
 
 def throttle(scope):
-    """Depends(throttle("login")) on a route: 429 when the visitor did it too often."""
 
     async def check(request: Request):
         limit, window = RATES[scope]
