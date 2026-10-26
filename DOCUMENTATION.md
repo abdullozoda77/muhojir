@@ -59,19 +59,19 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - `app/models/` — database tables (SQLAlchemy) — 7 files
 - `app/schemas/` — request bodies and JSON answers — 4 files
 - `app/routers/` — the API endpoints — 8 files
-- `app/services/` — business logic used by routers and background tasks — 8 files
+- `app/services/` — business logic used by routers and background tasks — 9 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
 - `alembic/versions/` — the migrations, in order — 5 files
-- `tests/` — automated tests (pytest) — 6 files
+- `tests/` — automated tests (pytest) — 7 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 13 files
-- `frontend/src/components/` — reusable parts of pages — 19 files
+- `frontend/src/components/` — reusable parts of pages — 20 files
 - `frontend/src/pages/` — one file per page of the site — 20 files
 
 
@@ -167,7 +167,7 @@ A generic, single database configuration.
 
 ### `app/core/config.py`
 
-**What it is for:** All settings come from .env (or the environment). Without a .env everything works on a laptop: SQLite database, emails printed in the console, tasks run at once, live notifications inside one process.
+**What it is for:** All settings come from .env (or the environment). Without a .env everything works on a laptop: SQLite database, emails printed in the console, tasks run at once, live notifications inside one process. GOOGLE_CLIENT_ID (OAuth client ID of type "Web application") turns on sign in with Google; while it is empty the button is hidden.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -391,6 +391,7 @@ A generic, single database configuration.
 | `CodeIn` | class | — |
 | &nbsp;&nbsp;↳ `six_digits(value)` | method | — |
 | `ResetPasswordIn` | class | — |
+| `GoogleIn` | class | Google's ID token from the sign-in button. |
 | `RefreshIn` | class | — |
 | `ProfileIn` | class | — |
 | &nbsp;&nbsp;↳ `phone_format(value)` | method | — |
@@ -476,7 +477,7 @@ A generic, single database configuration.
 
 ### `app/routers/auth.py`
 
-**What it is for:** Sign-up and login with an email and a password: 1. POST /api/auth/register/ {email, password, full_name} -> account made, a 6-digit code goes to the email 2. POST /api/auth/verify-email/ {email, code} -> email confirmed, JWT tokens given 3. POST /api/auth/login/ {email, password} -> JWT tokens (only once the email is confirmed) Forgot the password: POST password/forgot/ {email} sends a code, POST password/reset/ {email, code, password}. resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/, profile/, notifications/.
+**What it is for:** Sign-up and login with an email and a password: 1. POST /api/auth/register/ {email, password, full_name} -> account made, a 6-digit code goes to the email 2. POST /api/auth/verify-email/ {email, code} -> email confirmed, JWT tokens given 3. POST /api/auth/login/ {email, password} -> JWT tokens (only once the email is confirmed) Forgot the password: POST password/forgot/ {email} sends a code, POST password/reset/ {email, code, password}. resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/, profile/, notifications/. Sign in with Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT tokens.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -490,6 +491,8 @@ A generic, single database configuration.
 | `verify_email(data, db)` | async function · `POST /api/auth/verify-email/` | Step 2 of sign-up: the code from the email. Confirms the email and logs in. |
 | `resend_code(data, db)` | async function · `POST /api/auth/resend-code/` | Sends the sign-up code again (only to accounts that are not confirmed yet). |
 | `login(data, db)` | async function · `POST /api/auth/login/` | Email + password. An account whose email is not confirmed yet gets a new code instead of tokens. |
+| `google_settings()` | async function · `GET /api/auth/google/` | The client ID for Google's button; an empty string means sign in with Google is off. |
+| `google_login(data, db)` | async function · `POST /api/auth/google/` | Sign in with Google: checks the ID token, then logs in the account with that email or makes a new one without a password (201). An account whose email was never confirmed loses its old password, because whoever set it did not own the address. Blocked = 403, bad token = 400, no GOOGLE_CLIENT_ID = 503. |
 | `forgot_password(data, db)` | async function · `POST /api/auth/password/forgot/` | Sends a code for a new password. Answers the same whether the email is registered or not, so nobody can use it to find out who has an account. |
 | `reset_password(data, db)` | async function · `POST /api/auth/password/reset/` | The code from the email and a new password. Also confirms the email, and logs in. |
 | `revoke(db, payload)` | async function | Blocks a refresh token. Returns False if it was blocked already. |
@@ -706,6 +709,14 @@ A generic, single database configuration.
 | `_ticket(item)` | function | — |
 | `prices(origin, destination, month, direct)` | async function | The one-way tickets of the month (or the nearest ones), cheapest first (up to 200, so every day has its flights), and the cheapest price of every day. |
 | `check_watches(db, today)` | async function | Every day: tells users whose watched route got cheaper than their price. Returns how many were told. |
+
+### `app/services/google.py`
+
+**What it is for:** Checks Google's ID token (signature with Google's cached public keys, audience = GOOGLE_CLIENT_ID, issuer, email confirmed by Google).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `verify_google_token(credential)` | function | Returns the token's claims (email, name...) or None. Synchronous: the router calls it in a thread. |
 
 ### `app/services/live.py`
 
@@ -1001,6 +1012,20 @@ A generic, single database configuration.
 | `test_profile(client, user)` | async function | — |
 | `test_login_is_throttled(client)` | async function | — |
 | `test_avatar(client, user)` | async function | — |
+
+### `tests/test_google.py`
+
+**What it is for:** Tests of sign in with Google (Google's check is replaced by a fake).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_client_id_is_public(client, google)` | async function | GET google/ returns the client ID. |
+| `test_new_user_is_created(client, google)` | async function | A new email makes an account without a password; the second sign-in finds the same account. |
+| `test_unconfirmed_account_is_taken_over_without_old_password(client, google)` | async function | An unconfirmed account gets confirmed and its old password stops working. |
+| `test_confirmed_account_keeps_its_password(client, google)` | async function | A confirmed account still logs in with its password. |
+| `test_bad_token(client, google)` | async function | A token Google does not accept = 400. |
+| `test_not_set_up(client, monkeypatch)` | async function | Without GOOGLE_CLIENT_ID = 503. |
+| `test_verify_rejects_unverified_email(monkeypatch)` | function | An email Google has not confirmed is refused; the audience is GOOGLE_CLIENT_ID. |
 
 ### `tests/test_documents.py`
 
@@ -1325,6 +1350,15 @@ A generic, single database configuration.
 | `linkStyle` | const | As in the first Muhojir: on hover a link slides a little to the right and a line grows under it from the left. |
 | `Footer` | export function | — |
 
+### `frontend/src/components/GoogleButton.jsx`
+
+**What it is for:** The "Sign in with Google" button (Google Identity Services) with an "or" line above it. Hidden while the server has no GOOGLE_CLIENT_ID.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `loadGoogle` | function | Once per page: gets the client ID from GET /api/auth/google/, loads Google's script and calls initialize. |
+| `GoogleButton` | export function | Draws Google's button (outline by day, dark at night, rounded); text = "continue_with" or "signup_with". onCredential gets the ID token. |
+
 ### `frontend/src/components/GuideSteps.jsx`
 
 **What it is for:** The step-by-step guide for a document type: steps, what to bring, sample filled forms.
@@ -1632,7 +1666,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Login.jsx`
 
-**What it is for:** /login — sign up, log in, confirm the email with a code, reset the password.
+**What it is for:** /login — sign up, log in, confirm the email with a code, reset the password. Both the login and sign-up screens have the Google button (POST /api/auth/google/).
 
 | Name | Kind | What it does |
 |---|---|---|

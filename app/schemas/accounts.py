@@ -37,6 +37,10 @@ class ResetPasswordIn(CodeIn):
     password: str = Field(max_length=128)
 
 
+class GoogleIn(Form):
+    credential: str = Field(max_length=4096)
+
+
 class RefreshIn(Form):
     refresh: str
 

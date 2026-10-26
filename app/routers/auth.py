@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, or_, select, update
 
-from app.core.config import LOGIN_CODE_LIFETIME, LOGIN_CODE_MAX_ATTEMPTS, RESEND_PAUSE
+from app.core.config import LOGIN_CODE_LIFETIME, LOGIN_CODE_MAX_ATTEMPTS, RESEND_PAUSE, settings
 from app.core.deps import DB, CurrentUser
 from app.core.errors import ApiError, FieldError
 from app.core.files import delete_avatar, save_avatar
@@ -15,9 +16,10 @@ from app.core.throttle import throttle
 from app.db.types import utcnow
 from app.models import EmailCode, Notification, RevokedToken, User
 from app.schemas.accounts import (
-    CodeIn, EmailIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
+    CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
 )
 from app.services.emails import send_code
+from app.services.google import verify_google_token
 from app.services.live import notification_json, push_count
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -133,6 +135,33 @@ async def login(data: LoginIn, db: DB):
             pass
         raise ApiError("Confirm your email first. We sent you a code.", 403, code="not_verified")
     return logged_in(user)
+
+
+@router.get("/google/")
+async def google_settings():
+    return {"client_id": settings.google_client_id}
+
+
+@router.post("/google/", dependencies=[Depends(throttle("login"))])
+async def google_login(data: GoogleIn, db: DB):
+    if not settings.google_client_id:
+        raise ApiError("Google login is not set up.", 503)
+    claims = await run_in_threadpool(verify_google_token, data.credential)
+    if claims is None:
+        raise ApiError("Could not sign in with Google. Try again.")
+    email = claims["email"].strip().lower()
+    user = await user_by_email(db, email)
+    created = user is None
+    if created:
+        user = User(email=email, full_name=claims.get("name", "")[:150], email_verified=True)
+        db.add(user)
+    elif not user.is_active:
+        raise ApiError(BLOCKED, 403)
+    elif not user.email_verified:
+        user.password_hash = ""
+        user.email_verified = True
+    await db.commit()
+    return logged_in(user, 201 if created else 200)
 
 
 @router.post("/password/forgot/", dependencies=[Depends(throttle("login_code"))])

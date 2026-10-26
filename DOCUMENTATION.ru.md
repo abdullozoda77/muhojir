@@ -59,19 +59,19 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 - `app/models/` — таблицы базы данных (SQLAlchemy) — 7 файлов
 - `app/schemas/` — тела запросов и JSON-ответы — 4 файла
 - `app/routers/` — эндпоинты API — 8 файлов
-- `app/services/` — бизнес-логика для роутеров и фоновых задач — 8 файлов
+- `app/services/` — бизнес-логика для роутеров и фоновых задач — 9 файлов
 - `app/assistant/` — AI-помощник — 3 файла
 - `app/admin/` — админ-панель (SQLAdmin, `/admin/`) — 2 файла
 - `app/admin/templates/` — страницы админ-панели — 1 файл
 - `alembic/` — миграции базы данных — 1 файл
 - `alembic/versions/` — миграции по порядку — 5 файлов
-- `tests/` — автоматические тесты (pytest) — 6 файлов
+- `tests/` — автоматические тесты (pytest) — 7 файлов
 - `deploy/` — выкладка сайта на сервер — 6 файлов
 - Фронтенд — сайт на React (`frontend/`) — 4 файла
 - `frontend/scripts/` — 1 файл
 - `frontend/public/` — файлы, которые отдаются как есть — 4 файла
 - `frontend/src/` — основа приложения: маршруты, API, вход, языки, помощники — 13 файлов
-- `frontend/src/components/` — переиспользуемые части страниц — 19 файлов
+- `frontend/src/components/` — переиспользуемые части страниц — 20 файлов
 - `frontend/src/pages/` — один файл на каждую страницу сайта — 20 файлов
 
 
@@ -163,7 +163,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/core/config.py`
 
-**Для чего:** Все настройки берутся из .env (или окружения). Без .env всё работает на ноутбуке: база SQLite, письма печатаются в консоль, задачи выполняются сразу, уведомления в реальном времени внутри одного процесса.
+**Для чего:** Все настройки берутся из .env (или окружения). Без .env всё работает на ноутбуке: база SQLite, письма печатаются в консоль, задачи выполняются сразу, уведомления в реальном времени внутри одного процесса. GOOGLE_CLIENT_ID (OAuth client ID типа «Веб-приложение») включает вход через Google; пока он пуст, кнопка скрыта.
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -387,6 +387,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `CodeIn` | класс | Почта и 6-значный код. |
 | &nbsp;&nbsp;↳ `six_digits(value)` | метод | Проверяет, что код — ровно 6 цифр. |
 | `ResetPasswordIn` | класс | Почта, код и новый пароль. |
+| `GoogleIn` | класс | ID-токен Google от кнопки входа. |
 | `RefreshIn` | класс | Refresh-токен. |
 | `ProfileIn` | класс | Изменения профиля: имя, телефон, город, язык, напоминания на почту. |
 | &nbsp;&nbsp;↳ `phone_format(value)` | метод | Приводит номер телефона к единому виду. |
@@ -463,7 +464,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/routers/auth.py`
 
-**Для чего:** Регистрация и вход по почте и паролю: 1. POST /api/auth/register/ {email, password, full_name} -> аккаунт создан, 6-значный код уходит на почту; 2. POST /api/auth/verify-email/ {email, code} -> почта подтверждена, выдаются JWT-токены; 3. POST /api/auth/login/ {email, password} -> JWT-токены (только после подтверждения почты). Забыли пароль: POST password/forgot/ {email} отправляет код, POST password/reset/ {email, code, password}. resend-code/ {email} снова отправляет код регистрации. Дальше: token/refresh/, logout/, profile/, notifications/.
+**Для чего:** Регистрация и вход по почте и паролю: 1. POST /api/auth/register/ {email, password, full_name} -> аккаунт создан, 6-значный код уходит на почту; 2. POST /api/auth/verify-email/ {email, code} -> почта подтверждена, выдаются JWT-токены; 3. POST /api/auth/login/ {email, password} -> JWT-токены (только после подтверждения почты). Забыли пароль: POST password/forgot/ {email} отправляет код, POST password/reset/ {email, code, password}. resend-code/ {email} снова отправляет код регистрации. Дальше: token/refresh/, logout/, profile/, notifications/. Вход через Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT-токены.
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -477,6 +478,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `verify_email(data, db)` | async-функция · `POST /api/auth/verify-email/` | Шаг 2 регистрации: код из письма. Подтверждает почту и выполняет вход. |
 | `resend_code(data, db)` | async-функция · `POST /api/auth/resend-code/` | Снова отправляет код регистрации (только неподтверждённым аккаунтам). |
 | `login(data, db)` | async-функция · `POST /api/auth/login/` | Почта + пароль. Аккаунт с неподтверждённой почтой вместо токенов получает новый код. |
+| `google_settings()` | async-функция · `GET /api/auth/google/` | Client ID для кнопки Google; пустая строка — вход через Google выключен. |
+| `google_login(data, db)` | async-функция · `POST /api/auth/google/` | Вход через Google: проверяет ID-токен, затем входит в аккаунт с этой почтой или создаёт новый без пароля (201). У аккаунта, чья почта не была подтверждена, старый пароль стирается: его задал не владелец адреса. Заблокирован — 403, плохой токен — 400, нет GOOGLE_CLIENT_ID — 503. |
 | `forgot_password(data, db)` | async-функция · `POST /api/auth/password/forgot/` | Отправляет код для нового пароля. Отвечает одинаково, зарегистрирована почта или нет, чтобы никто не мог так узнать, у кого есть аккаунт. |
 | `reset_password(data, db)` | async-функция · `POST /api/auth/password/reset/` | Код из письма и новый пароль. Также подтверждает почту и выполняет вход. |
 | `revoke(db, payload)` | async-функция | Блокирует refresh-токен. Возвращает False, если он уже был заблокирован. |
@@ -692,6 +695,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `_ticket(item)` | функция | Приводит один билет из ответа API к нашему виду. |
 | `prices(origin, destination, month, direct)` | async-функция | Билеты в одну сторону за месяц (или ближайшие), сначала самые дешёвые (до 200, чтобы у каждого дня были свои рейсы), и самая низкая цена каждого дня. |
 | `check_watches(db, today)` | async-функция | Каждый день: сообщает пользователям, чей маршрут стал дешевле их цены. Возвращает, скольким сообщили. |
+
+### `app/services/google.py`
+
+**Для чего:** Проверяет ID-токен Google (подпись по закэшированным публичным ключам Google, audience = GOOGLE_CLIENT_ID, издатель, почта подтверждена Google).
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `verify_google_token(credential)` | функция | Возвращает данные токена (email, name...) или None. Синхронная: роутер вызывает её в потоке. |
 
 ### `app/services/live.py`
 
@@ -987,6 +998,20 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `test_profile(client, user)` | async-функция | Чтение и изменение профиля. |
 | `test_login_is_throttled(client)` | async-функция | Много попыток входа ограничиваются. |
 | `test_avatar(client, user)` | async-функция | Загрузка, замена и удаление фото профиля. |
+
+### `tests/test_google.py`
+
+**Для чего:** Тесты входа через Google (проверка Google заменена подделкой).
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `test_client_id_is_public(client, google)` | async-функция | GET google/ возвращает client ID. |
+| `test_new_user_is_created(client, google)` | async-функция | Новая почта создаёт аккаунт без пароля; второй вход находит тот же аккаунт. |
+| `test_unconfirmed_account_is_taken_over_without_old_password(client, google)` | async-функция | Неподтверждённый аккаунт подтверждается, старый пароль больше не работает. |
+| `test_confirmed_account_keeps_its_password(client, google)` | async-функция | Подтверждённый аккаунт по-прежнему входит по паролю. |
+| `test_bad_token(client, google)` | async-функция | Токен, который Google не принимает, — 400. |
+| `test_not_set_up(client, monkeypatch)` | async-функция | Без GOOGLE_CLIENT_ID — 503. |
+| `test_verify_rejects_unverified_email(monkeypatch)` | функция | Почта, не подтверждённая Google, отклоняется; audience — GOOGLE_CLIENT_ID. |
 
 ### `tests/test_documents.py`
 
@@ -1311,6 +1336,15 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `linkStyle` | const | Как в первом Muhojir: при наведении ссылка чуть сдвигается вправо и под ней слева вырастает линия. |
 | `Footer` | экспортируемая функция | Подвал сайта. |
 
+### `frontend/src/components/GoogleButton.jsx`
+
+**Для чего:** Кнопка «Войти через Google» (Google Identity Services) с линией «или» над ней. Скрыта, пока на сервере нет GOOGLE_CLIENT_ID.
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `loadGoogle` | функция | Один раз на страницу: берёт client ID из GET /api/auth/google/, загружает скрипт Google и вызывает initialize. |
+| `GoogleButton` | экспортируемая функция | Рисует кнопку Google (светлая днём, тёмная ночью, скруглённая); text = "continue_with" или "signup_with". onCredential получает ID-токен. |
+
 ### `frontend/src/components/GuideSteps.jsx`
 
 **Для чего:** Пошаговая инструкция для типа документа: шаги, что принести, образцы заполненных бланков.
@@ -1618,7 +1652,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/pages/Login.jsx`
 
-**Для чего:** /login — регистрация, вход, подтверждение почты кодом, восстановление пароля.
+**Для чего:** /login — регистрация, вход, подтверждение почты кодом, восстановление пароля. На экранах входа и регистрации есть кнопка Google (POST /api/auth/google/).
 
 | Имя | Вид | Что делает |
 |---|---|---|

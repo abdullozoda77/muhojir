@@ -8,6 +8,7 @@ import { Button, ErrorBox } from "../components/ui.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { LangSwitch, ThemeToggle } from "../components/Layout.jsx";
 import Snowfall from "../components/Snowfall.jsx";
+import GoogleButton from "../components/GoogleButton.jsx";
 
 const RESEND_SECONDS = 60;
 
@@ -179,6 +180,15 @@ export default function Login() {
     enter(await api("/auth/password/reset/", { method: "POST", body: { email, code: code.replace(/\s/g, ""), password } }));
   });
 
+  const google = (credential) =>
+    run(async () => {
+      try {
+        enter(await api("/auth/google/", { method: "POST", body: { credential } }));
+      } catch (err) {
+        throw err.status === 403 ? err : new Error(t("Бо Google ворид шудан нашуд. Боз кӯшиш кунед."));
+      }
+    })();
+
   const Icon = ICONS[mode];
   const codeReady = code.replace(/\s/g, "").length === 6;
   const emailInput = (
@@ -262,6 +272,7 @@ export default function Login() {
                 <button type="button" onClick={() => go("forgot")} className={linkButton}>{t("Паролро фаромӯш кардед?")}</button>
                 <button type="button" onClick={() => go("register")} className={linkButton}>{t("Ҳисоб надоред? Сабти ном")}</button>
               </div>
+              <GoogleButton onCredential={google} />
             </form>
           )}
 
@@ -280,6 +291,7 @@ export default function Login() {
               <ErrorBox error={error} />
               <Button type="submit" loading={busy} className="w-full">{t("Сабти ном ва гирифтани рамз")}</Button>
               <button type="button" onClick={() => go("login")} className={linkButton}>{t("Ҳисоб доред? Ворид шавед")}</button>
+              <GoogleButton onCredential={google} text="signup_with" />
             </form>
           )}
 
