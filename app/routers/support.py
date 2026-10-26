@@ -14,9 +14,7 @@ from app.models import DocumentType, HelpContact, LegalQuestion, Region
 from app.routers.documents import int_param, must_exist, param
 from app.schemas.common import Form
 from app.services.notify import notify
-
 router = APIRouter(prefix="/api/help", tags=["help"])
-
 Kind = Literal["info", "embassy", "hotline", "lawyer", "mvd_check", "other"]
 
 

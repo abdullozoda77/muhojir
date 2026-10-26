@@ -81,3 +81,20 @@ async def test_login_is_throttled(client):
         await client.post("/api/auth/login/", json={"email": "x@example.com", "password": "x"})
     r = await client.post("/api/auth/login/", json={"email": "x@example.com", "password": "x"})
     assert r.status_code == 429
+
+
+async def test_avatar(client, user):
+    from app.core import files
+
+    headers, _ = user
+    r = await client.post("/api/auth/profile/avatar/", headers=headers, files={"avatar": ("a.jpg", b"not a picture", "image/jpeg")})
+    assert r.status_code == 400 and "avatar" in r.json()
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    r = await client.post("/api/auth/profile/avatar/", headers=headers, files={"avatar": ("x.bin", png, "image/png")})
+    assert r.status_code == 200 and r.json()["avatar"].startswith("/media/avatars/") and r.json()["avatar"].endswith(".png")
+    first = files.MEDIA_ROOT / r.json()["avatar"].removeprefix("/media/")
+    assert first.exists()
+    r = await client.post("/api/auth/profile/avatar/", headers=headers, files={"avatar": ("y.webp", b"RIFF\0\0\0\0WEBPVP8 ", "image/webp")})
+    assert r.json()["avatar"].endswith(".webp") and not first.exists()  # the old photo is deleted
+    r = await client.delete("/api/auth/profile/avatar/", headers=headers)
+    assert r.json()["avatar"] is None

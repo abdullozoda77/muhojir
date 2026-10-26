@@ -27,6 +27,7 @@ class User(Base):
     language: Mapped[str] = mapped_column(String(2), default="tg")
     # City in Russia where the person lives now; jobs and news are shown for it first.
     city: Mapped[str] = mapped_column(String(100), default="")
+    avatar: Mapped[str] = mapped_column(String(100), default="", server_default="")  # e.g. avatars/ab12….webp in MEDIA_ROOT
     email_reminders: Mapped[bool] = mapped_column(Boolean, default=True)
     # Sign-up is finished only when the code sent to the email is entered; until then login is refused.
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)

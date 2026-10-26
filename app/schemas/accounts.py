@@ -62,5 +62,5 @@ def user_json(user):
     return {
         "id": user.id, "email": user.email, "phone": user.phone, "full_name": user.full_name, "role": user.role,
         "language": user.language, "city": user.city, "email_reminders": user.email_reminders,
-        "date_joined": user.date_joined,
+        "avatar": f"/media/{user.avatar}" if user.avatar else None, "date_joined": user.date_joined,
     }

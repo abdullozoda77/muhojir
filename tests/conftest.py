@@ -23,6 +23,7 @@ config.PRIVATE_MEDIA_ROOT = Path(_tmp) / "private_media"
 import app.core.files as files  # noqa: E402
 
 files.PRIVATE_MEDIA_ROOT = config.PRIVATE_MEDIA_ROOT
+files.MEDIA_ROOT = Path(_tmp) / "media"  # profile photos of the tests do not land in the real media folder
 
 from app.core import throttle  # noqa: E402
 from app.main import app  # noqa: E402

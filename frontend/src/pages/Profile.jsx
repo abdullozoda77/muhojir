@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowRight, Bell, Bookmark, Building2, ChevronRight, Eye, EyeOff, FileText, Languages, LogOut, Mail, Moon, PenSquare, Phone,
+  ArrowRight, Bell, Bookmark, Building2, Camera, ChevronRight, Loader2, Trash2, Eye, EyeOff, FileText, Languages, LogOut, Mail, Moon, PenSquare, Phone,
   ReceiptText, Save, Sun, UserRound,
 } from "lucide-react";
 import { api } from "../api.js";
@@ -23,14 +23,82 @@ function maskEmail(email) {
   return `${name.slice(0, 2)}${"•".repeat(Math.min(name.length - 4, 8))}${name.slice(-2)}@${domain}`;
 }
 
-// The avatar: the first letter in a blue circle, inside a ring in the colors of the flag.
-function Avatar({ name, size = "h-20 w-20 text-[30px]" }) {
+// The avatar: the photo, or the first letter in a blue circle, inside a ring in the colors of the flag.
+function Avatar({ name, photo, size = "h-20 w-20 text-[30px]" }) {
   return (
     <span className={`relative flex shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[4px] shadow-lg ${size}`} aria-hidden>
-      <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] border-[3px] border-white font-semibold text-white dark:border-[#0b1533] dark:from-[#1e3a8a] dark:to-[#2b59d9]">
-        {name ? name[0].toUpperCase() : <UserRound className="h-1/2 w-1/2" />}
-      </span>
+      {photo ? (
+        <img src={photo} alt="" className="h-full w-full rounded-full border-[3px] border-white object-cover dark:border-[#0b1533]" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] border-[3px] border-white font-semibold text-white dark:border-[#0b1533] dark:from-[#1e3a8a] dark:to-[#2b59d9]">
+          {name ? name[0].toUpperCase() : <UserRound className="h-1/2 w-1/2" />}
+        </span>
+      )}
     </span>
+  );
+}
+
+// A photo from the phone is often 5–10 MB: cut the middle square and make it 512×512 WEBP (about 50 KB) here.
+async function squarePhoto(file, side = 512) {
+  const image = await createImageBitmap(file);
+  const crop = Math.min(image.width, image.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = side;
+  canvas.getContext("2d").drawImage(image, (image.width - crop) / 2, (image.height - crop) / 2, crop, crop, 0, 0, side, side);
+  image.close?.();
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
+}
+
+// The avatar with a camera button: pick a photo to upload it; the trash button removes it.
+function AvatarPicker({ user, name, setUser }) {
+  const input = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const upload = async (file) => {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const blob = (await squarePhoto(file).catch(() => null)) || file;
+      const body = new FormData();
+      body.append("avatar", blob, "avatar.webp");
+      setUser(await api("/auth/profile/avatar/", { method: "POST", body }));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = "";
+    }
+  };
+  const remove = async () => {
+    if (!window.confirm(t("Аксро нест кунем?"))) return;
+    setBusy(true);
+    try {
+      setUser(await api("/auth/profile/avatar/", { method: "DELETE" }));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1.5">
+      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={user.avatar ? t("Иваз кардани акс") : t("Илова кардани акс")} title={user.avatar ? t("Иваз кардани акс") : t("Илова кардани акс")} className="group relative rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+        <Avatar name={name} photo={user.avatar} />
+        <span className="absolute inset-[4px] flex items-center justify-center rounded-full bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+          <Camera className="h-6 w-6 text-white" aria-hidden />
+        </span>
+        <span className="absolute -bottom-0.5 -right-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1d4ed8] shadow-md ring-2 ring-[#1d4ed8]/20">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
+        </span>
+      </button>
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+      {user.avatar && !busy && (
+        <button type="button" onClick={remove} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-sm text-white/80 hover:bg-white/10 hover:text-white">
+          <Trash2 className="h-3 w-3" aria-hidden />
+          {t("Нест кардан")}
+        </button>
+      )}
+      {error && <span className="max-w-[120px] text-center text-label-sm text-white">{error.data?.avatar?.[0] || t("Акс бор нашуд")}</span>}
+    </div>
   );
 }
 
@@ -147,7 +215,7 @@ export default function Profile() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-sky-300/20 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-5">
-          <Avatar name={name} />
+          <AvatarPicker user={user} name={name} setUser={setUser} />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight md:text-[30px]">{name || t("Номи худро нависед")}</h1>
             <div className="mt-1.5 flex min-w-0 items-center gap-2 text-body-md text-white/85">

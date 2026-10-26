@@ -7,13 +7,14 @@ resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, or_, select, update
 
 from app.core.config import LOGIN_CODE_LIFETIME, LOGIN_CODE_MAX_ATTEMPTS, RESEND_PAUSE
 from app.core.deps import DB, CurrentUser
 from app.core.errors import ApiError, FieldError
+from app.core.files import delete_avatar, save_avatar
 from app.core.pagination import Paginate
 from app.core.security import hash_password, make_tokens, password_problems, read_token, verify_password
 from app.core.throttle import throttle
@@ -222,6 +223,23 @@ async def update_profile(data: ProfileIn, user: CurrentUser, db: DB):
             continue
         setattr(user, name, value)
     await db.commit()
+    return user_json(user)
+
+
+@router.post("/profile/avatar/")
+async def upload_avatar(user: CurrentUser, db: DB, avatar: Annotated[UploadFile, File()]):
+    """The profile photo (JPG, PNG or WEBP, up to 3 MB); it replaces the old one."""
+    old, user.avatar = user.avatar, await save_avatar(avatar)
+    await db.commit()
+    await delete_avatar(old)
+    return user_json(user)
+
+
+@router.delete("/profile/avatar/")
+async def remove_avatar(user: CurrentUser, db: DB):
+    old, user.avatar = user.avatar, ""
+    await db.commit()
+    await delete_avatar(old)
     return user_json(user)
 
 

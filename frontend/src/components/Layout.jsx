@@ -296,9 +296,13 @@ export default function Layout() {
                 >
                   {/* The avatar: a blue circle inside a thin ring in the colors of the flag, turning slowly on hover. */}
                   <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[3px] shadow-sm transition-transform duration-500 group-hover:rotate-[120deg]" aria-hidden>
-                    <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] border-2 border-background text-[14px] font-semibold text-white transition-transform duration-500 group-hover:-rotate-[120deg] dark:from-[#1e3a8a] dark:to-[#2b59d9]">
-                      {firstName ? firstName[0].toUpperCase() : <UserRound className="h-4 w-4" />}
-                    </span>
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt="" className="h-full w-full rounded-full border-2 border-background object-cover transition-transform duration-500 group-hover:-rotate-[120deg]" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] border-2 border-background text-[14px] font-semibold text-white transition-transform duration-500 group-hover:-rotate-[120deg] dark:from-[#1e3a8a] dark:to-[#2b59d9]">
+                        {firstName ? firstName[0].toUpperCase() : <UserRound className="h-4 w-4" />}
+                      </span>
+                    )}
                   </span>
                   <span className="hidden min-w-0 flex-col leading-tight xl:flex">
                     <span className="max-w-[130px] truncate text-label-md text-on-surface">{firstName || t("Профил")}</span>
