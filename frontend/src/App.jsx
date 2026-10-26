@@ -9,6 +9,7 @@ import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 // Every other page is downloaded only when it is opened, so the first visit on a slow phone is lighter.
+const BlacklistPage = lazy(() => import("./pages/BlacklistPage.jsx"));
 const Calculator = lazy(() => import("./pages/Calculator.jsx"));
 const Checks = lazy(() => import("./pages/Checks.jsx"));
 const Exam = lazy(() => import("./pages/Exam.jsx"));
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="jobs" element={<Jobs />} />
         <Route path="jobs/:id" element={<JobDetail />} />
         <Route path="employers/:id" element={<EmployerPage />} />
+        <Route path="blacklist" element={<BlacklistPage />} />
         <Route path="calculator" element={<Calculator />} />
         <Route path="guides" element={<Guides />} />
         <Route path="news/:id" element={<NewsDetail />} />

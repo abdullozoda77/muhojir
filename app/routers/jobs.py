@@ -8,7 +8,7 @@ from app.core.deps import DB, CurrentUser, OptionalUser
 from app.core.errors import ApiError, FieldError
 from app.core.pagination import Paginate
 from app.db.types import utcnow
-from app.models import Employer, EmployerReview, Job, JobAlert, SavedJob
+from app.models import BlacklistReport, Employer, EmployerReview, Job, JobAlert, SavedJob
 from app.models.jobs import INDUSTRIES
 from app.routers.documents import int_param, param
 from app.schemas import jobs as s
@@ -54,7 +54,6 @@ def filter_jobs(query, params, user=None):
         elif value in FALSE:
             query = query.where(getattr(Job, flag).is_(False))
     if get("min_salary"):
-        # The top of the range counts; a job with only "from" is compared by that.
         value = int(get("min_salary"))
         query = query.where(or_(Job.salary_to >= value, and_(Job.salary_to.is_(None), Job.salary_from >= value)))
     if get("saved") in TRUE:
@@ -118,6 +117,92 @@ async def unsave_job(job_id: int, db: DB, user: CurrentUser):
         await db.delete(saved)
         await db.commit()
     return {"is_saved": False}
+
+
+# --- The blacklist: companies blacklisted by admins and the ones workers reported, with the reasons ------------
+
+async def get_report(db, report_id):
+    report = (await db.execute(select(BlacklistReport).where(BlacklistReport.id == report_id)
+                               .execution_options(populate_existing=True))).unique().scalar_one_or_none()
+    if report is None:
+        raise ApiError("No BlacklistReport matches the given query.", 404)
+    return report
+
+
+async def count_reports(db, employer_id):
+    employer = await db.get(Employer, employer_id)
+    if employer is not None:
+        employer.reports_count = await db.scalar(select(func.count()).where(BlacklistReport.employer_id == employer_id))
+
+
+@router.post("/jobs/{job_id}/blacklist/", status_code=201)
+async def report_job(job_id: int, data: s.ReportIn, db: DB, user: CurrentUser):
+    """Put the job's company on the blacklist with a reason. One report per company per user: sending again
+    changes the reason."""
+    job = get_job_row(await get_job(db, user, job_id))[0]
+    reason = data.reason.strip()
+    if len(reason) < 10:
+        raise FieldError("reason", "Write the reason in a few words (at least 10 letters).")
+    report = await db.scalar(select(BlacklistReport).where(BlacklistReport.employer_id == job.employer_id,
+                                                          BlacklistReport.author_id == user.id))
+    if report is None:
+        report = BlacklistReport(employer_id=job.employer_id, author_id=user.id, job_id=job.id, reason=reason)
+        db.add(report)
+        await db.flush()
+        await count_reports(db, job.employer_id)
+    else:
+        report.reason, report.job_id, report.created_at = reason, job.id, utcnow()
+    await db.commit()
+    return s.report_json(await get_report(db, report.id), user)
+
+
+@router.get("/blacklist/")
+async def blacklist(request: Request, db: DB, user: OptionalUser, page: Paginate):
+    """The companies on the blacklist: blacklisted by admins first, then by the number of reports. Every company
+    comes with its latest reports (?reports=3, up to 20); all of them are at /blacklist/reports/?employer=ID."""
+    query = select(Employer).where(or_(Employer.is_blacklisted.is_(True), Employer.reports_count > 0))
+    if words := param(request, "search"):
+        query = query.where(or_(Employer.name.ilike(f"%{words}%"), Employer.inn.ilike(f"%{words}%")))
+    query = query.order_by(Employer.is_blacklisted.desc(), Employer.reports_count.desc(), Employer.name)
+    answer = await page.respond(db, query, s.employer_json)
+    ids = [e["id"] for e in answer["results"]]
+    latest = min(max(int_param(request, "reports") or 3, 0), 20)
+    by_employer = {i: [] for i in ids}
+    if ids and latest:
+        reports = await db.scalars(select(BlacklistReport).where(BlacklistReport.employer_id.in_(ids))
+                                   .order_by(BlacklistReport.created_at.desc(), BlacklistReport.id.desc()))
+        for report in reports.unique():
+            if len(by_employer[report.employer_id]) < latest:
+                by_employer[report.employer_id].append(s.report_json(report, user))
+    for e in answer["results"]:
+        e["reports"] = by_employer[e["id"]]
+    return answer
+
+
+@router.get("/blacklist/reports/")
+async def list_reports(request: Request, db: DB, user: OptionalUser, page: Paginate):
+    """Everyone's reports, newest first. ?employer=ID, ?mine=true."""
+    query = select(BlacklistReport)
+    if (employer := int_param(request, "employer")) is not None:
+        query = query.where(BlacklistReport.employer_id == employer)
+    if bool_param(request, "mine"):
+        query = query.where(BlacklistReport.author_id == (user.id if user else -1))
+    query = query.order_by(BlacklistReport.created_at.desc(), BlacklistReport.id.desc())
+    return await page.respond(db, query, lambda report: s.report_json(report, user))
+
+
+@router.delete("/blacklist/reports/{report_id}/", status_code=204)
+async def delete_report(report_id: int, db: DB, user: CurrentUser):
+    """The author takes the report back (or an admin removes a false one)."""
+    report = await get_report(db, report_id)
+    if report.author_id != user.id and not user.is_admin:
+        raise ApiError("У вас недостаточно прав для выполнения данного действия.", 403)
+    employer_id = report.employer_id
+    await db.delete(report)
+    await db.flush()
+    await count_reports(db, employer_id)
+    await db.commit()
+    return Response(status_code=204)
 
 
 # --- Employers -------------------------------------------------------------------------------------------------

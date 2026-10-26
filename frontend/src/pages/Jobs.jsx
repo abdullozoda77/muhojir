@@ -7,6 +7,7 @@ import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { INDUSTRIES } from "../constants.js";
 import { JobRow } from "../components/JobCard.jsx";
+import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
@@ -17,38 +18,29 @@ const TOGGLES = [
 ];
 
 function Blacklist() {
-  const { data } = useApi("/jobs/employers/?is_blacklisted=true&page_size=5");
+  const { data, reload } = useApi("/jobs/blacklist/?page_size=4&reports=2");
   return (
     <div className="card flex scroll-mt-28 flex-col gap-4 border-l-[3px] border-error p-5" id="blacklist">
       <div className="flex items-center gap-3">
         <ShieldAlert className="h-5 w-5 shrink-0 text-error" aria-hidden />
         <div>
           <h2 className="text-[16px] font-semibold">{t("Рӯйхати сиёҳи корфармоён")}</h2>
-          <p className="text-body-sm text-on-surface-variant">{t("Ширкатҳое, ки админ аз рӯи шикоятҳо санҷидааст")}</p>
+          <p className="text-body-sm text-on-surface-variant">{t("Шикоятҳои коргарон ва ширкатҳое, ки админ санҷидааст")}</p>
         </div>
       </div>
       {data?.results?.length ? (
-        data.results.map((e) => (
-          <Link key={e.id} to={`/employers/${e.id}`} className="flex flex-col gap-1.5 rounded-xl p-4 ring-1 ring-outline-variant transition-colors hover:bg-surface-container-low">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-label-lg font-semibold text-error">{e.name}</span>
-              <span className="rounded-md bg-error-container px-2 py-0.5 text-label-sm text-on-error-container">{t("ХАТАР")}</span>
-            </div>
-            <span className="font-mono text-body-sm text-on-surface-variant">
-              {[e.inn && `ИНН: ${e.inn}`, e.city].filter(Boolean).join(" • ")}
-            </span>
-            {e.blacklist_reason && (
-              <p className="rounded bg-surface-container-low p-2 text-body-sm text-on-surface-variant">
-                <strong>{t("Сабаб")}:</strong> {e.blacklist_reason}
-              </p>
-            )}
-          </Link>
-        ))
+        data.results.map((e) => <BlacklistCompany key={e.id} e={e} onChange={reload} />)
       ) : (
         <p className="rounded-xl bg-surface-container-low p-4 text-body-sm text-on-surface-variant">{t("Ҳоло дар рӯйхати сиёҳ ширкат нест.")}</p>
       )}
+      {data?.count > 0 && (
+        <Link to="/blacklist" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-label-md text-error ring-1 ring-inset ring-outline-variant transition-colors hover:bg-error-container">
+          {t("Ҳамаи рӯйхат ({0})", data.count)}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      )}
       <p className="text-body-sm text-on-surface-variant">
-        {t("Агар корфармо маош надода бошад, дар саҳифаи ӯ шарҳ нависед ва «Маош надоданд»-ро қайд кунед. Админ шикоятҳоро месанҷад.")}
+        {t("Корфармо маош надод ё фиреб дод? Дар эълони кор тугмаи {0}-ро пахш кунед ва сабабро нависед — ҳама онро мебинанд.", "⊘")}
       </p>
     </div>
   );
@@ -196,10 +188,10 @@ export default function Jobs() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader eyebrow={t("Аз сайти давлатии «Работа России»")} title={t("Ҷойи кор")} text={t("Ҷойҳои кори воқеӣ бо суроға. Ариза дар эълони расмӣ дода мешавад.")} icon={Briefcase}>
-        <a href="#blacklist" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-label-md text-error ring-1 ring-inset ring-outline-variant transition-colors hover:bg-error-container">
+        <Link to="/blacklist" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-label-md text-error ring-1 ring-inset ring-outline-variant transition-colors hover:bg-error-container">
           <ShieldAlert className="h-4 w-4" aria-hidden />
           {t("Рӯйхати сиёҳ")}
-        </a>
+        </Link>
       </PageHeader>
 
       {/* One big search bar: the job and the city, like a travel site. */}

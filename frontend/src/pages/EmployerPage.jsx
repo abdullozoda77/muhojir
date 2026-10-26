@@ -10,6 +10,7 @@ import { JobRow, SourceBadge, VerifiedBadge } from "../components/JobCard.jsx";
 import { StarPicker, Stars, average } from "../components/Stars.jsx";
 import { BackLink, Button, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
+import { ReportsList } from "../components/Blacklist.jsx";
 
 function ReviewForm({ employerId, review, onDone, onCancel }) {
   const [rating, setRating] = useState(review?.rating || 0);
@@ -102,6 +103,16 @@ export default function EmployerPage() {
             <p className="mt-1 text-body-sm">{t("Ба ин ширкат кор накунед.")}</p>
           </div>
         </div>
+      )}
+
+      {e.reports_count > 0 && (
+        <section className="card flex flex-col gap-4 border-l-[3px] border-error p-5">
+          <p className="flex items-center gap-2 font-semibold text-error">
+            <ShieldAlert className="h-5 w-5 shrink-0" aria-hidden />
+            {t("Коргарон ин корфарморо ба рӯйхати сиёҳ илова кардаанд: {0}", e.reports_count)}
+          </p>
+          <ReportsList employerId={e.id} />
+        </section>
       )}
 
       {/* The company's header, plain on the page: icon, name, city and the rating. */}

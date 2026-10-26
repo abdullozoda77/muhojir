@@ -10,13 +10,13 @@ Industry = Literal[tuple(INDUSTRIES)]
 
 def employer_short_json(e):
     return {"id": e.id, "name": e.name, "city": e.city, "website": e.website, "is_verified": e.is_verified,
-            "is_blacklisted": e.is_blacklisted, "source": e.source}
+            "is_blacklisted": e.is_blacklisted, "reports_count": e.reports_count, "source": e.source}
 
 
 def employer_json(e):
     return {"id": e.id, "name": e.name, "inn": e.inn, "city": e.city, "description": e.description, "website": e.website,
             "source": e.source, "is_verified": e.is_verified, "verified_at": e.verified_at,
-            "is_blacklisted": e.is_blacklisted, "blacklist_reason": e.blacklist_reason, "created_at": e.created_at}
+            "is_blacklisted": e.is_blacklisted, "blacklist_reason": e.blacklist_reason, "reports_count": e.reports_count, "created_at": e.created_at}
 
 
 def job_json(job, is_saved=False):
@@ -40,6 +40,21 @@ def review_json(review, viewer=None):
         "is_mine": bool(viewer and review.author_id == viewer.id), "rating": review.rating, "text": review.text,
         "salary_not_paid": review.salary_not_paid, "created_at": review.created_at,
     }
+
+
+def report_json(report, viewer=None):
+    # Only the first name, like the reviews.
+    name = (report.author.full_name or "").split() if report.author else []
+    return {
+        "id": report.id, "employer": report.employer_id,
+        "job": {"id": report.job.id, "title": report.job.title} if report.job else None,
+        "author_name": name[0] if name else "Корбар", "is_mine": bool(viewer and report.author_id == viewer.id),
+        "reason": report.reason, "created_at": report.created_at,
+    }
+
+
+class ReportIn(Form):
+    reason: str = Field(min_length=10, max_length=1000)
 
 
 class ReviewIn(Form):

@@ -60,3 +60,39 @@ async def test_jobs_filters_saved_reviews_alerts(client, user):
         assert "Курьер" in note.message
     r = await client.get("/api/auth/notifications/unread-count/", headers=headers)
     assert r.json()["count"] >= 1
+
+
+async def test_blacklist_reports(client, user):
+    async with SessionLocal() as db:
+        employer = Employer(name="Плохой работодатель", city="Москва", external_id="b-1")
+        db.add(employer)
+        await db.flush()
+        job = Job(employer_id=employer.id, title="Разнорабочий", description="", industry="other", city="Москва", external_id="bj-1")
+        db.add(job)
+        await db.commit()
+        job_id, employer_id = job.id, employer.id
+    headers, _ = user
+
+    assert (await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", json={"reason": "Не заплатили за месяц работы"})).status_code == 401
+    r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "коротко"})
+    assert r.status_code == 400 and "reason" in r.json()
+    r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "Не заплатили за месяц работы"})
+    assert r.status_code == 201 and r.json()["is_mine"] and r.json()["job"]["title"] == "Разнорабочий"
+    # Sending again changes the reason instead of adding a second report.
+    r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "Не заплатили за два месяца"})
+    report_id = r.json()["id"]
+
+    # Everyone sees it: the job stays open with the count, the list has the company with the reason.
+    job_json = (await client.get(f"/api/jobs/jobs/{job_id}/")).json()
+    assert job_json["employer"]["reports_count"] == 1
+    r = await client.get("/api/jobs/blacklist/")
+    company = next(e for e in r.json()["results"] if e["id"] == employer_id)
+    assert company["reports_count"] == 1 and company["reports"][0]["reason"] == "Не заплатили за два месяца"
+    assert company["reports"][0]["is_mine"] is False and company["reports"][0]["author_name"] == "Али"
+    r = await client.get("/api/jobs/blacklist/reports/", params={"employer": employer_id})
+    assert r.json()["count"] == 1
+
+    assert (await client.delete(f"/api/jobs/blacklist/reports/{report_id}/", headers=headers)).status_code == 204
+    assert (await client.get(f"/api/jobs/jobs/{job_id}/")).json()["employer"]["reports_count"] == 0
+    r = await client.get("/api/jobs/blacklist/", params={"page_size": 100})
+    assert employer_id not in [e["id"] for e in r.json()["results"]]

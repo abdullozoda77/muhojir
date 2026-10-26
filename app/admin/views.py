@@ -5,7 +5,7 @@ from wtforms.validators import Optional
 
 from app.core.security import hash_password, password_problems
 from app.models import (
-    DocumentType, EmailCode, Employer, EmployerReview, ExamQuestion, GuideStep, HelpContact, Job, JobAlert, LawNews,
+    BlacklistReport, DocumentType, EmailCode, Employer, EmployerReview, ExamQuestion, GuideStep, HelpContact, Job, JobAlert, LawNews,
     LegalQuestion, MigrationCenter, Notification, Payment, Region, ReminderLog, SavedJob, User, UserDocument,
 )
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
@@ -217,10 +217,10 @@ class ReminderLogAdmin(Base, model=ReminderLog):
 
 class EmployerAdmin(Base, model=Employer):
     name, name_plural, icon, category = "Корфармо", "Корфармоён", "fa-solid fa-industry", "Кор"
-    column_list = [Employer.name, Employer.city, Employer.is_verified, Employer.is_blacklisted, Employer.created_at]
+    column_list = [Employer.name, Employer.city, Employer.is_verified, Employer.is_blacklisted, Employer.reports_count, Employer.created_at]
     column_searchable_list = [Employer.name, Employer.inn]
     column_sortable_list = [Employer.name, Employer.created_at]
-    form_excluded_columns = [Employer.created_at]
+    form_excluded_columns = [Employer.created_at, Employer.reports_count]
 
 
 class JobAdmin(Base, model=Job):
@@ -237,6 +237,25 @@ class EmployerReviewAdmin(Base, model=EmployerReview):
     column_list = [EmployerReview.employer, EmployerReview.author, EmployerReview.rating, EmployerReview.salary_not_paid, EmployerReview.created_at]
     column_default_sort = [(EmployerReview.created_at, True)]
     form_excluded_columns = [EmployerReview.created_at]
+
+
+class BlacklistReportAdmin(Base, model=BlacklistReport):
+    name, name_plural, icon, category = "Шикоят", "Шикоятҳо (рӯйхати сиёҳ)", "fa-solid fa-ban", "Кор"
+    column_list = [BlacklistReport.employer, BlacklistReport.job, BlacklistReport.author, BlacklistReport.reason, BlacklistReport.created_at]
+    column_searchable_list = [BlacklistReport.reason]
+    column_default_sort = [(BlacklistReport.created_at, True)]
+    can_create = can_edit = False
+
+    async def after_model_delete(self, model, request):
+        # keep Employer.reports_count right
+        from sqlalchemy import func, select
+
+        from app.db.session import SessionLocal
+        async with SessionLocal() as db:
+            employer = await db.get(Employer, model.employer_id)
+            if employer is not None:
+                employer.reports_count = await db.scalar(select(func.count()).where(BlacklistReport.employer_id == employer.id))
+                await db.commit()
 
 
 class JobAlertAdmin(Base, model=JobAlert):
@@ -330,7 +349,7 @@ VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
     UserDocumentAdmin, PaymentAdmin, ReminderLogAdmin,
-    EmployerAdmin, JobAdmin, EmployerReviewAdmin, JobAlertAdmin, SavedJobAdmin,
+    EmployerAdmin, JobAdmin, EmployerReviewAdmin, BlacklistReportAdmin, JobAlertAdmin, SavedJobAdmin,
     HelpContactAdmin, LegalQuestionAdmin,
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
 ]

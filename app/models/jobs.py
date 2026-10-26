@@ -46,6 +46,8 @@ class Employer(Base):
     verified_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     is_blacklisted: Mapped[bool] = mapped_column(Boolean, default=False)
     blacklist_reason: Mapped[str] = mapped_column(Text, default="")
+    # How many workers put the company on the blacklist themselves (BlacklistReport), kept here for the job lists.
+    reports_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     def __str__(self):
@@ -107,6 +109,29 @@ class EmployerReview(Base):
 
     employer: Mapped[Employer] = relationship()
     author = relationship("User", lazy="joined")
+
+
+class BlacklistReport(Base):
+    """A worker puts a job's company on the blacklist, with the reason. Everyone sees the reports at once; the jobs
+    stay visible with a warning. Admins check them and may blacklist the company for real (Employer.is_blacklisted
+    hides its jobs) or delete a false report."""
+
+    __tablename__ = "blacklist_reports"
+    __table_args__ = (UniqueConstraint("employer_id", "author_id", name="one_report_per_employer"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    employer_id: Mapped[int] = mapped_column(ForeignKey("employers.id", ondelete="CASCADE"), index=True)
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+
+    employer: Mapped[Employer] = relationship()
+    job: Mapped[Job | None] = relationship(lazy="joined")
+    author = relationship("User", lazy="joined")
+
+    def __str__(self):
+        return self.reason[:60]
 
 
 class SavedJob(Base):

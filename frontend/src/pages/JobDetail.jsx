@@ -7,6 +7,7 @@ import { industry } from "../constants.js";
 import { OfficialLink, Perks, SOURCE_NAME, SaveButton, SourceBadge, VerifiedBadge, placeOf } from "../components/JobCard.jsx";
 import { Stars, average } from "../components/Stars.jsx";
 import { BackLink, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
+import { ReportButton, ReportsList } from "../components/Blacklist.jsx";
 import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 
 // One job: the title and salary on the page, the address, perks and description in a card; the employer, the
@@ -14,7 +15,7 @@ import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 
 export default function JobDetail() {
   const { id } = useParams();
-  const { data: job, error, loading } = useApi(`/jobs/jobs/${id}/`);
+  const { data: job, error, loading, reload } = useApi(`/jobs/jobs/${id}/`);
   const reviews = useApi(job ? `/jobs/reviews/?employer=${job.employer.id}&page_size=100` : null);
 
   if (loading) return <Skeleton className="h-96" />;
@@ -33,6 +34,18 @@ export default function JobDetail() {
           <ShieldAlert className="h-5 w-5 shrink-0 text-error" aria-hidden />
           <p className="font-semibold">{t("Ин корфармо дар рӯйхати сиёҳ аст. Эҳтиёт шавед!")}</p>
         </div>
+      )}
+      {job.employer.reports_count > 0 && (
+        <section role="alert" className="card flex flex-col gap-4 border-l-[3px] border-error p-5">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 shrink-0 text-error" aria-hidden />
+            <div>
+              <p className="font-semibold text-error">{t("Коргарон ин корфарморо ба рӯйхати сиёҳ илова кардаанд: {0}", job.employer.reports_count)}</p>
+              <p className="text-body-sm text-on-surface-variant">{t("Сабабҳоро хонед ва пеш аз сафар шартҳоро санҷед.")}</p>
+            </div>
+          </div>
+          <ReportsList employerId={job.employer.id} tick={job.employer.reports_count} onChange={reload} />
+        </section>
       )}
 
       <div className="grid items-start gap-8 lg:grid-cols-12">
@@ -100,6 +113,7 @@ export default function JobDetail() {
               <SaveButton job={job} className="min-h-[48px] bg-surface-container-lowest shadow-lg lg:shadow-none" />
             </div>
           )}
+          <ReportButton job={job} onChange={reload} />
           {job.employer.website && (
             <a href={job.employer.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-5 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
               <Globe className="h-4 w-4" aria-hidden />

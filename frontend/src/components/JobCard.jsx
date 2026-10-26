@@ -6,6 +6,7 @@ import { useAuth } from "../auth.jsx";
 import { t } from "../i18n.js";
 import { salary } from "../format.js";
 import { Chip } from "./ui.jsx";
+import { ReportButton, ReportsBadge } from "./Blacklist.jsx";
 import { industry } from "../constants.js";
 
 // Every job comes from «Работа России» (trudvsem.ru); people apply there, on the ad's official page.
@@ -100,6 +101,8 @@ function IndustryIcon({ job, size = "h-11 w-11" }) {
 // compact (home page): a short row, the whole row a link to the job. Otherwise (jobs list): a card with the
 // company, address and perks, the salary, and buttons to the official ad and to save it.
 export function JobRow({ job, compact = false, onSaveChange }) {
+  const [reports, setReports] = useState(job.employer.reports_count || 0);
+  const recount = () => api(`/jobs/employers/${job.employer.id}/`).then((e) => setReports(e.reports_count)).catch(() => {});
   if (compact) {
     return (
       <Link to={`/jobs/${job.id}`} className="flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors hover:bg-surface-container-low">
@@ -120,8 +123,12 @@ export function JobRow({ job, compact = false, onSaveChange }) {
     <article className="flex h-full w-full min-w-0 flex-col gap-4 rounded-2xl bg-surface-container-lowest p-5 ring-1 ring-outline-variant transition-colors hover:ring-outline/50 md:p-6">
       <div className="flex items-start justify-between gap-3">
         <IndustryIcon job={job} />
-        <SaveButton job={job} onChange={onSaveChange} />
+        <span className="flex gap-2">
+          <ReportButton job={job} compact onChange={recount} />
+          <SaveButton job={job} onChange={onSaveChange} />
+        </span>
       </div>
+      {reports > 0 && <ReportsBadge count={reports} className="self-start" />}
       <div className="flex flex-col gap-1.5">
         <Link to={`/jobs/${job.id}`} className="font-display text-[19px] font-semibold leading-snug hover:text-primary">{job.title}</Link>
         <span className="flex min-w-0 items-center gap-1.5 text-body-sm text-on-surface-variant">
