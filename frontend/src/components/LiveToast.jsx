@@ -14,7 +14,7 @@ export default function LiveToast({ notification, onClose }) {
   }, [notification, onClose]);
 
   return (
-    <div className="pointer-events-none fixed bottom-24 left-4 right-4 z-[70] flex justify-end lg:bottom-6 lg:left-auto lg:right-6" aria-live="polite">
+    <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] left-4 right-4 z-[70] flex justify-end lg:bottom-6 lg:left-auto lg:right-6" aria-live="polite">
       <AnimatePresence>
         {notification && (
           <m.div

@@ -41,7 +41,7 @@ const underline = "bg-gradient-to-r from-current to-current bg-[length:0%_1.5px]
 
 export default function Footer() {
   return (
-    <footer className="flag-border-t mb-24 lg:mb-0">
+    <footer className="flag-border-t mb-[calc(env(safe-area-inset-bottom)+10rem)] lg:mb-0">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-10 px-4 pb-8 pt-12 md:px-6 md:pt-16">
         <RevealGroup className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
           <StaggerItem className="col-span-2 flex flex-col gap-3 lg:col-span-1">

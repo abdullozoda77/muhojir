@@ -97,7 +97,7 @@ export default function Assistant() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? t("Пӯшидани Брат") : t("Брат")}
         aria-expanded={open}
-        className="group fixed bottom-24 right-4 z-[65] overflow-hidden rounded-full p-[2px] shadow-[0_14px_34px_-12px_rgb(29_78_216/0.75)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.97] lg:bottom-6 lg:right-6"
+        className="group fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] right-4 z-[65] overflow-hidden rounded-full p-[2px] shadow-[0_14px_34px_-12px_rgb(29_78_216/0.75)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.97] lg:bottom-6 lg:right-6"
       >
         <span aria-hidden className="assistant-edge absolute inset-[-150%] bg-[conic-gradient(from_0deg,#cc1a22_0deg,#cc1a22_100deg,#ffffff_120deg,#ffffff_220deg,#167a32_240deg,#167a32_340deg,#cc1a22_360deg)]" />
         <span className="relative flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#172f73] to-[#1d4ed8] text-white sm:px-4">
@@ -124,7 +124,7 @@ export default function Assistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 34 }}
-            className="fixed bottom-40 left-4 right-4 z-[65] flex max-h-[min(70vh,620px)] flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant sm:left-auto sm:w-[400px] lg:bottom-24 lg:right-6"
+            className="fixed bottom-[calc(env(safe-area-inset-bottom)+10rem)] left-4 right-4 z-[65] flex max-h-[min(70vh,620px)] flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant sm:left-auto sm:w-[400px] lg:bottom-24 lg:right-6"
             aria-label={t("Брат")}
           >
             <header className="flex items-center gap-3 border-b border-outline-variant px-4 py-3">
