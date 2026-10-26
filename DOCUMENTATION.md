@@ -1343,7 +1343,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/FlagRibbons.jsx`
 
-**What it is for:** A Tajik flag made of three waving silk ribbons (red, white, green in the flag's 2:3:2 proportions) with a soft blue glow and moving folds. On the home page it fills the empty space under the jobs card; in a box lower than 90px it is hidden (.ribbons-box). Stops moving when the visitor asked for less motion.
+**What it is for:** A Tajik flag made of three waving silk ribbons (red, white, green in the flag's 2:3:2 proportions) with a soft blue glow and moving folds. In the footer it fills the empty space under the site description, 40% opaque; in a box lower than 90px it is hidden (.ribbons-box). Stops moving when the visitor asked for less motion.
 
 | Name | Kind | What it does |
 |---|---|---|

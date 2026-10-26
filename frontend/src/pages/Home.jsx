@@ -9,7 +9,6 @@ import { t } from "../i18n.js";
 import { date, num, todayTitle, usedPercent } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
 import { Emblem } from "../components/Pattern.jsx";
-import FlagRibbons from "../components/FlagRibbons.jsx";
 import { STATUS, Skeleton, statusText } from "../components/ui.jsx";
 import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, startShown } from "../components/motion.jsx";
 
@@ -182,9 +181,6 @@ function JobsPanel({ city }) {
           <p className="px-4 py-8 text-body-md text-on-surface-variant">{t("Ҳоло эълони кор нест. Ба наздикӣ илова мешавад.")}</p>
         )}
       </div>
-      <div className="ribbons-box min-h-0 flex-1">
-        <FlagRibbons className="h-full w-full" />
-      </div>
     </Reveal>
   );
 }
@@ -294,7 +290,7 @@ function GuestHome() {
 
       <ServicesGrid />
       <HowItWorks />
-      <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <JobsPanel />
         <NewsPanel />
       </div>
@@ -395,7 +391,7 @@ function MigrantHome({ user }) {
       )}
 
       <ServicesGrid />
-      <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <JobsPanel city={user.city} />
         <NewsPanel />
       </div>

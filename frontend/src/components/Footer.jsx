@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { t } from "../i18n.js";
 import { RevealGroup, StaggerItem } from "./motion.jsx";
+import FlagRibbons from "./FlagRibbons.jsx";
 
 const MVD = "https://xn--b1aew.xn--p1ai/mvd/structure1/Glavnie_upravlenija/guvm/inostrannim_grazhdanam";
 
@@ -51,6 +52,9 @@ export default function Footer() {
               <span className="text-[17px] font-semibold tracking-tight">Muhojir</span>
             </Link>
             <p className="max-w-xs text-body-sm text-on-surface-variant">{t("Ҳуҷҷатҳо сари вақт, кори боэътимод — барои муҳоҷирони тоҷик дар Русия. Ройгон ва бо забони тоҷикӣ.")}</p>
+            <div className="ribbons-box -ml-4 min-h-0 flex-1 opacity-40 md:-ml-6">
+              <FlagRibbons className="h-full w-full" />
+            </div>
           </StaggerItem>
 
           {COLUMNS.map((col) => (
