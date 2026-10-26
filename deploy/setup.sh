@@ -80,9 +80,6 @@ TRAVELPAYOUTS_TOKEN=
 
 # Sign in with Google: OAuth client ID (Web application) from https://console.cloud.google.com/auth/clients.
 GOOGLE_CLIENT_ID=
-
-# Sign in with Apple: the Services ID from https://developer.apple.com/account/resources/identifiers (return URL https://$DOMAIN/login).
-APPLE_CLIENT_ID=
 ENV
   echo "Created $APP/.env: add the email address, app password and AI key later (see the end of this script)."
 fi
@@ -90,7 +87,6 @@ add_env_if_missing GEMINI_API_KEY
 add_env_if_missing ANTHROPIC_API_KEY
 add_env_if_missing TRAVELPAYOUTS_TOKEN
 add_env_if_missing GOOGLE_CLIENT_ID
-add_env_if_missing APPLE_CLIENT_ID
 set_env DEBUG False
 set_env REDIS_URL "redis://127.0.0.1:6379/$REDIS_DB"
 set_env CELERY_BROKER_URL "redis://127.0.0.1:6379/$REDIS_DB"
@@ -246,5 +242,5 @@ fi
 echo
 echo "Muhojir (FastAPI): $SITE_URL/  (also http://$SERVER_IP:$PUBLIC_PORT/)"
 echo "Admin account:     cd $APP && sudo -u $APP_USER .venv/bin/python -m app.cli createsuperuser"
-echo "Email, AI, tickets: nano $APP/.env   (EMAIL_*, GEMINI_API_KEY, TRAVELPAYOUTS_TOKEN, GOOGLE_CLIENT_ID, APPLE_CLIENT_ID)   then   systemctl restart muhojir-api muhojir-api-celery"
+echo "Email, AI, tickets: nano $APP/.env   (EMAIL_*, GEMINI_API_KEY, TRAVELPAYOUTS_TOKEN, GOOGLE_CLIENT_ID)   then   systemctl restart muhojir-api muhojir-api-celery"
 echo "Logs:              journalctl -u muhojir-api -u muhojir-api-celery -u muhojir-api-celerybeat -f"

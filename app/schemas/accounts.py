@@ -41,11 +41,6 @@ class GoogleIn(Form):
     credential: str = Field(max_length=4096)
 
 
-class AppleIn(Form):
-    id_token: str = Field(max_length=4096)
-    full_name: str = Field("", max_length=150)
-
-
 class RefreshIn(Form):
     refresh: str
 

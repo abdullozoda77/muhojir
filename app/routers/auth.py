@@ -16,10 +16,9 @@ from app.core.throttle import throttle
 from app.db.types import utcnow
 from app.models import EmailCode, Notification, RevokedToken, User
 from app.schemas.accounts import (
-    AppleIn, CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
+    CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
 )
 from app.services.emails import send_code
-from app.services.apple import verify_apple_token
 from app.services.google import verify_google_token
 from app.services.live import notification_json, push_count
 
@@ -167,21 +166,6 @@ async def google_login(data: GoogleIn, db: DB):
     if claims is None:
         raise ApiError("Could not sign in with Google. Try again.")
     return await social_login(db, claims["email"], claims.get("name", ""))
-
-
-@router.get("/apple/")
-async def apple_settings():
-    return {"client_id": settings.apple_client_id}
-
-
-@router.post("/apple/", dependencies=[Depends(throttle("login"))])
-async def apple_login(data: AppleIn, db: DB):
-    if not settings.apple_client_id:
-        raise ApiError("Apple login is not set up.", 503)
-    claims = await run_in_threadpool(verify_apple_token, data.id_token)
-    if claims is None:
-        raise ApiError("Could not sign in with Apple. Try again.")
-    return await social_login(db, claims["email"], data.full_name)
 
 
 @router.post("/password/forgot/", dependencies=[Depends(throttle("login_code"))])

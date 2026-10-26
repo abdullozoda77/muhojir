@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     travelpayouts_token: str = ""
     google_client_id: str = ""
-    apple_client_id: str = ""
     overpass_urls: str = "https://maps.mail.ru/osm/tools/overpass/api/interpreter,https://overpass-api.de/api/interpreter"
     assistant_model: str = "claude-opus-5"
     assistant_effort: str = "low"

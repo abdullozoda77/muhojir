@@ -180,17 +180,14 @@ export default function Login() {
     enter(await api("/auth/password/reset/", { method: "POST", body: { email, code: code.replace(/\s/g, ""), password } }));
   });
 
-  const social = (path, body, failed) =>
+  const google = (credential) =>
     run(async () => {
-      if (!body) throw new Error(failed);
       try {
-        enter(await api(path, { method: "POST", body }));
+        enter(await api("/auth/google/", { method: "POST", body: { credential } }));
       } catch (err) {
-        throw err.status === 403 ? err : new Error(failed);
+        throw err.status === 403 ? err : new Error(t("Бо Google ворид шудан нашуд. Боз кӯшиш кунед."));
       }
     })();
-  const google = (credential) => social("/auth/google/", { credential }, t("Бо Google ворид шудан нашуд. Боз кӯшиш кунед."));
-  const apple = (body) => social("/auth/apple/", body, t("Бо Apple ворид шудан нашуд. Боз кӯшиш кунед."));
 
   const Icon = ICONS[mode];
   const codeReady = code.replace(/\s/g, "").length === 6;
@@ -275,7 +272,7 @@ export default function Login() {
                 <button type="button" onClick={() => go("forgot")} className={linkButton}>{t("Паролро фаромӯш кардед?")}</button>
                 <button type="button" onClick={() => go("register")} className={linkButton}>{t("Ҳисоб надоред? Сабти ном")}</button>
               </div>
-              <SocialLogin onGoogle={google} onApple={apple} />
+              <SocialLogin onGoogle={google} />
             </form>
           )}
 
@@ -294,7 +291,7 @@ export default function Login() {
               <ErrorBox error={error} />
               <Button type="submit" loading={busy} className="w-full">{t("Сабти ном ва гирифтани рамз")}</Button>
               <button type="button" onClick={() => go("login")} className={linkButton}>{t("Ҳисоб доред? Ворид шавед")}</button>
-              <SocialLogin onGoogle={google} onApple={apple} />
+              <SocialLogin onGoogle={google} />
             </form>
           )}
 

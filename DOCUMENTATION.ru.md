@@ -59,13 +59,13 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 - `app/models/` — таблицы базы данных (SQLAlchemy) — 7 файлов
 - `app/schemas/` — тела запросов и JSON-ответы — 4 файла
 - `app/routers/` — эндпоинты API — 8 файлов
-- `app/services/` — бизнес-логика для роутеров и фоновых задач — 10 файлов
+- `app/services/` — бизнес-логика для роутеров и фоновых задач — 9 файлов
 - `app/assistant/` — AI-помощник — 3 файла
 - `app/admin/` — админ-панель (SQLAdmin, `/admin/`) — 2 файла
 - `app/admin/templates/` — страницы админ-панели — 1 файл
 - `alembic/` — миграции базы данных — 1 файл
 - `alembic/versions/` — миграции по порядку — 5 файлов
-- `tests/` — автоматические тесты (pytest) — 8 файлов
+- `tests/` — автоматические тесты (pytest) — 7 файлов
 - `deploy/` — выкладка сайта на сервер — 6 файлов
 - Фронтенд — сайт на React (`frontend/`) — 4 файла
 - `frontend/scripts/` — 1 файл
@@ -163,7 +163,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/core/config.py`
 
-**Для чего:** Все настройки берутся из .env (или окружения). Без .env всё работает на ноутбуке: база SQLite, письма печатаются в консоль, задачи выполняются сразу, уведомления в реальном времени внутри одного процесса. GOOGLE_CLIENT_ID (OAuth client ID типа «Веб-приложение») включает вход через Google; пока он пуст, кнопка скрыта. APPLE_CLIENT_ID (Services ID из аккаунта Apple Developer) так же включает вход через Apple.
+**Для чего:** Все настройки берутся из .env (или окружения). Без .env всё работает на ноутбуке: база SQLite, письма печатаются в консоль, задачи выполняются сразу, уведомления в реальном времени внутри одного процесса. GOOGLE_CLIENT_ID (OAuth client ID типа «Веб-приложение») включает вход через Google; пока он пуст, кнопка скрыта.
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -388,7 +388,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | &nbsp;&nbsp;↳ `six_digits(value)` | метод | Проверяет, что код — ровно 6 цифр. |
 | `ResetPasswordIn` | класс | Почта, код и новый пароль. |
 | `GoogleIn` | класс | ID-токен Google от кнопки входа. |
-| `AppleIn` | класс | ID-токен Apple и имя, которое Apple передал сайту (только при первом входе). |
 | `RefreshIn` | класс | Refresh-токен. |
 | `ProfileIn` | класс | Изменения профиля: имя, телефон, город, язык, напоминания на почту. |
 | &nbsp;&nbsp;↳ `phone_format(value)` | метод | Приводит номер телефона к единому виду. |
@@ -465,7 +464,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/routers/auth.py`
 
-**Для чего:** Регистрация и вход по почте и паролю: 1. POST /api/auth/register/ {email, password, full_name} -> аккаунт создан, 6-значный код уходит на почту; 2. POST /api/auth/verify-email/ {email, code} -> почта подтверждена, выдаются JWT-токены; 3. POST /api/auth/login/ {email, password} -> JWT-токены (только после подтверждения почты). Забыли пароль: POST password/forgot/ {email} отправляет код, POST password/reset/ {email, code, password}. resend-code/ {email} снова отправляет код регистрации. Дальше: token/refresh/, logout/, profile/, notifications/. Вход через Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT-токены. Вход через Apple: GET apple/ -> {client_id}, POST apple/ {id_token, full_name} -> JWT-токены.
+**Для чего:** Регистрация и вход по почте и паролю: 1. POST /api/auth/register/ {email, password, full_name} -> аккаунт создан, 6-значный код уходит на почту; 2. POST /api/auth/verify-email/ {email, code} -> почта подтверждена, выдаются JWT-токены; 3. POST /api/auth/login/ {email, password} -> JWT-токены (только после подтверждения почты). Забыли пароль: POST password/forgot/ {email} отправляет код, POST password/reset/ {email, code, password}. resend-code/ {email} снова отправляет код регистрации. Дальше: token/refresh/, logout/, profile/, notifications/. Вход через Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT-токены.
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -479,11 +478,9 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `verify_email(data, db)` | async-функция · `POST /api/auth/verify-email/` | Шаг 2 регистрации: код из письма. Подтверждает почту и выполняет вход. |
 | `resend_code(data, db)` | async-функция · `POST /api/auth/resend-code/` | Снова отправляет код регистрации (только неподтверждённым аккаунтам). |
 | `login(data, db)` | async-функция · `POST /api/auth/login/` | Почта + пароль. Аккаунт с неподтверждённой почтой вместо токенов получает новый код. |
-| `social_login(db, email, full_name)` | async-функция | Общая для Google и Apple: входит в аккаунт с этой почтой или создаёт новый без пароля (201). У аккаунта, чья почта не была подтверждена, старый пароль стирается: его задал не владелец адреса. Заблокирован — 403. |
+| `social_login(db, email, full_name)` | async-функция | Входит в аккаунт с этой почтой или создаёт новый без пароля (201). У аккаунта, чья почта не была подтверждена, старый пароль стирается: его задал не владелец адреса. Заблокирован — 403. |
 | `google_settings()` | async-функция · `GET /api/auth/google/` | Client ID для кнопки Google; пустая строка — вход через Google выключен. |
 | `google_login(data, db)` | async-функция · `POST /api/auth/google/` | Вход через Google: проверяет ID-токен, затем social_login. Нет GOOGLE_CLIENT_ID — 503, плохой токен — 400. |
-| `apple_settings()` | async-функция · `GET /api/auth/apple/` | Services ID для скрипта Apple; пустая строка — вход через Apple выключен. |
-| `apple_login(data, db)` | async-функция · `POST /api/auth/apple/` | Вход через Apple: проверяет ID-токен, затем social_login. Имя Apple даёт только при первом входе, поэтому сайт присылает его в full_name. Нет APPLE_CLIENT_ID — 503, плохой токен — 400. |
 | `forgot_password(data, db)` | async-функция · `POST /api/auth/password/forgot/` | Отправляет код для нового пароля. Отвечает одинаково, зарегистрирована почта или нет, чтобы никто не мог так узнать, у кого есть аккаунт. |
 | `reset_password(data, db)` | async-функция · `POST /api/auth/password/reset/` | Код из письма и новый пароль. Также подтверждает почту и выполняет вход. |
 | `revoke(db, payload)` | async-функция | Блокирует refresh-токен. Возвращает False, если он уже был заблокирован. |
@@ -675,14 +672,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 |---|---|---|
 | `alert_filters(alert)` | функция | Оповещение в виде параметров списка вакансий (?search=...&city=...). |
 | `notify_alerts(db, since)` | async-функция | Сообщает каждому оповещению о вакансиях, появившихся с этого момента. Возвращает, скольким пользователям сообщили. |
-
-### `app/services/apple.py`
-
-**Для чего:** Проверяет ID-токен Apple: подпись RS256 публичными ключами Apple (https://appleid.apple.com/auth/keys, хранятся сутки), audience = APPLE_CLIENT_ID, издатель appleid.apple.com, срок не истёк, почта подтверждена.
-
-| Имя | Вид | Что делает |
-|---|---|---|
-| `verify_apple_token(token)` | функция | Возвращает данные токена (email, sub...) или None. Синхронная: роутер вызывает её в потоке. |
 
 ### `app/services/emails.py`
 
@@ -986,19 +975,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `last_code(email)` | функция | Последний код, отправленный на эту почту. |
 | `user(client)` | async-функция | Новый подтверждённый мигрант; возвращает (headers, data). |
 | `set_role(user_id, role)` | async-функция | Меняет роль пользователя (editor, admin). |
-
-### `tests/test_apple.py`
-
-**Для чего:** Тесты входа через Apple: токены подписываются тестовым RSA-ключом вместо ключа Apple.
-
-| Имя | Вид | Что делает |
-|---|---|---|
-| `apple_token(email, **extra)` | функция | Делает подписанный токен как у Apple; extra меняет поля. |
-| `test_client_id_is_public(client)` | async-функция | GET apple/ возвращает Services ID. |
-| `test_new_user_then_same_user(client)` | async-функция | Первый вход создаёт аккаунт с именем; второй находит тот же аккаунт. |
-| `test_bad_tokens(client, extra)` | async-функция | Чужой audience, чужой издатель, истёкший срок, неподтверждённая почта — 400. |
-| `test_forged_signature(client)` | async-функция | Токен, подписанный другим ключом, — 400. |
-| `test_not_set_up(client, monkeypatch)` | async-функция | Без APPLE_CLIENT_ID — 503. |
 
 ### `tests/test_assistant.py`
 
@@ -1495,17 +1471,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/components/SocialLogin.jsx`
 
-**Для чего:** «Продолжить с Google» и «Продолжить с Apple» под формами входа и регистрации, с линией «или» над ними. Каждая кнопка видна, только если на сервере есть её client ID. Если есть обе, они стоят рядом с короткими подписями (Google / Apple).
+**Для чего:** «Продолжить с Google» под формами входа и регистрации, с линией «или» над кнопкой. Видна, только если на сервере есть GOOGLE_CLIENT_ID.
 
 | Имя | Вид | Что делает |
 |---|---|---|
-| `loadScript(src)` | функция | Один раз добавляет внешний скрипт и ждёт его загрузки. |
+| `loadScript(src)` | функция | Добавляет скрипт Google и ждёт его загрузки. |
 | `setupGoogle()` | функция | Один раз на страницу: client ID из GET /api/auth/google/, скрипт Google, initialize. Даёт true, когда вход через Google включён. |
-| `setupApple()` | функция | Один раз на страницу: Services ID из GET /api/auth/apple/, скрипт Apple, AppleID.auth.init (всплывающее окно, адрес возврата <сайт>/login). |
-| `GoogleLogo / AppleLogo` | функция | Логотипы в SVG. |
-| `GoogleChoice` | функция | Своя кнопка в стиле сайта; настоящая кнопка Google лежит поверх неё невидимой, поэтому нажатие получает Google. onCredential получает ID-токен. |
-| `AppleChoice` | функция | Открывает окно Apple и передаёт {id_token, full_name} в onSignIn; null, если Apple вернул ошибку (закрытие окна не считается). |
-| `SocialLogin` | экспортируемая функция | Линия «или» и включённые кнопки. |
+| `GoogleLogo` | функция | Логотип Google в SVG. |
+| `SocialLogin` | экспортируемая функция | Своя кнопка в стиле сайта (с переводом); настоящая кнопка Google лежит поверх неё невидимой, поэтому нажатие получает Google. onGoogle получает ID-токен. |
 
 ### `frontend/src/components/Stars.jsx`
 
@@ -1682,7 +1655,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/pages/Login.jsx`
 
-**Для чего:** /login — регистрация, вход, подтверждение почты кодом, восстановление пароля. Под формами: SocialLogin (Google и Apple). Карточка широкая и компактная, поэтому кнопки видны без прокрутки.
+**Для чего:** /login — регистрация, вход, подтверждение почты кодом, восстановление пароля. Под формами: SocialLogin (Google). Карточка широкая и компактная, поэтому кнопки видны без прокрутки.
 
 | Имя | Вид | Что делает |
 |---|---|---|
