@@ -62,13 +62,13 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 - `app/models/` — ҷадвалҳои пойгоҳи додаҳо (SQLAlchemy) — 7 файл
 - `app/schemas/` — ҷисми дархостҳо ва ҷавобҳои JSON — 4 файл
 - `app/routers/` — endpoint-ҳои API — 8 файл
-- `app/services/` — мантиқи корӣ барои роутерҳо ва корҳои пасзамина — 9 файл
+- `app/services/` — мантиқи корӣ барои роутерҳо ва корҳои пасзамина — 10 файл
 - `app/assistant/` — ёрдамчии AI — 3 файл
 - `app/admin/` — панели админ (SQLAdmin, `/admin/`) — 2 файл
 - `app/admin/templates/` — саҳифаҳои панели админ — 1 файл
 - `alembic/` — миграцияҳои пойгоҳи додаҳо — 1 файл
 - `alembic/versions/` — миграцияҳо, бо тартиб — 5 файл
-- `tests/` — санҷишҳои худкор (pytest) — 7 файл
+- `tests/` — санҷишҳои худкор (pytest) — 8 файл
 - `deploy/` — гузоштани сайт ба сервер — 6 файл
 - Фронтенд — сайти React (`frontend/`) — 4 файл
 - `frontend/scripts/` — 1 файл
@@ -166,7 +166,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/core/config.py`
 
-**Барои чӣ:** Ҳамаи танзимот аз .env (ё муҳит) меоянд. Бе .env ҳама чиз дар ноутбук кор мекунад: пойгоҳи SQLite, мактубҳо дар консол чоп мешаванд, вазифаҳо дарҳол иҷро мешаванд, огоҳиҳои зинда дар дохили як раванд. GOOGLE_CLIENT_ID (OAuth client ID-и навъи «Web application») воридшавӣ бо Google-ро фаъол мекунад; то холӣ аст, тугма пинҳон аст.
+**Барои чӣ:** Ҳамаи танзимот аз .env (ё муҳит) меоянд. Бе .env ҳама чиз дар ноутбук кор мекунад: пойгоҳи SQLite, мактубҳо дар консол чоп мешаванд, вазифаҳо дарҳол иҷро мешаванд, огоҳиҳои зинда дар дохили як раванд. GOOGLE_CLIENT_ID (OAuth client ID-и навъи «Web application») воридшавӣ бо Google-ро фаъол мекунад; то холӣ аст, тугма пинҳон аст. APPLE_CLIENT_ID (Services ID аз ҳисоби Apple Developer) ҳамин тавр воридшавӣ бо Apple-ро фаъол мекунад.
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
@@ -391,6 +391,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | &nbsp;&nbsp;↳ `six_digits(value)` | метод | Месанҷад, ки код маҳз 6 рақам аст. |
 | `ResetPasswordIn` | класс | Почта, код ва пароли нав. |
 | `GoogleIn` | класс | ID-токени Google аз тугмаи воридшавӣ. |
+| `AppleIn` | класс | ID-токени Apple ва номе, ки Apple ба сайт дод (танҳо дар воридшавии аввал). |
 | `RefreshIn` | класс | Токени refresh. |
 | `ProfileIn` | класс | Тағйироти профил: ном, телефон, шаҳр, забон, ёдраскуниҳои почта. |
 | &nbsp;&nbsp;↳ `phone_format(value)` | метод | Рақами телефонро ба шакли ягона меорад. |
@@ -467,7 +468,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/routers/auth.py`
 
-**Барои чӣ:** Бақайдгирӣ ва воридшавӣ бо почта ва парол: 1. POST /api/auth/register/ {email, password, full_name} -> ҳисоб сохта шуд, коди 6-рақама ба почта меравад; 2. POST /api/auth/verify-email/ {email, code} -> почта тасдиқ шуд, токенҳои JWT дода мешаванд; 3. POST /api/auth/login/ {email, password} -> токенҳои JWT (танҳо баъди тасдиқи почта). Паролро фаромӯш кардед: POST password/forgot/ {email} код мефиристад, POST password/reset/ {email, code, password}. resend-code/ {email} коди бақайдгириро боз мефиристад. Баъд: token/refresh/, logout/, profile/, notifications/. Воридшавӣ бо Google: GET google/ -> {client_id}, POST google/ {credential} -> токенҳои JWT.
+**Барои чӣ:** Бақайдгирӣ ва воридшавӣ бо почта ва парол: 1. POST /api/auth/register/ {email, password, full_name} -> ҳисоб сохта шуд, коди 6-рақама ба почта меравад; 2. POST /api/auth/verify-email/ {email, code} -> почта тасдиқ шуд, токенҳои JWT дода мешаванд; 3. POST /api/auth/login/ {email, password} -> токенҳои JWT (танҳо баъди тасдиқи почта). Паролро фаромӯш кардед: POST password/forgot/ {email} код мефиристад, POST password/reset/ {email, code, password}. resend-code/ {email} коди бақайдгириро боз мефиристад. Баъд: token/refresh/, logout/, profile/, notifications/. Воридшавӣ бо Google: GET google/ -> {client_id}, POST google/ {credential} -> токенҳои JWT. Воридшавӣ бо Apple: GET apple/ -> {client_id}, POST apple/ {id_token, full_name} -> токенҳои JWT.
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
@@ -481,8 +482,11 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `verify_email(data, db)` | функсияи async · `POST /api/auth/verify-email/` | Қадами 2-и бақайдгирӣ: код аз почта. Почтаро тасдиқ мекунад ва ворид мешавад. |
 | `resend_code(data, db)` | функсияи async · `POST /api/auth/resend-code/` | Коди бақайдгириро боз мефиристад (танҳо ба ҳисобҳои ҳанӯз тасдиқнашуда). |
 | `login(data, db)` | функсияи async · `POST /api/auth/login/` | Почта + парол. Ҳисобе, ки почтааш ҳанӯз тасдиқ нашудааст, ба ҷои токенҳо коди нав мегирад. |
+| `social_login(db, email, full_name)` | функсияи async | Барои Google ва Apple умумӣ: ба ҳисоби дорои ин почта ворид мекунад ё ҳисоби нави бе парол месозад (201). Ҳисобе, ки почтааш тасдиқ нашуда буд, пароли кӯҳнаашро гум мекунад: онро соҳиби почта нагузошта буд. Баста — 403. |
 | `google_settings()` | функсияи async · `GET /api/auth/google/` | Client ID барои тугмаи Google; сатри холӣ — воридшавӣ бо Google хомӯш аст. |
-| `google_login(data, db)` | функсияи async · `POST /api/auth/google/` | Воридшавӣ бо Google: ID-токенро месанҷад, баъд ба ҳисоби дорои ин почта ворид мекунад ё ҳисоби нави бе парол месозад (201). Ҳисобе, ки почтааш тасдиқ нашуда буд, пароли кӯҳнаашро гум мекунад: онро соҳиби почта нагузошта буд. Баста — 403, токени бад — 400, GOOGLE_CLIENT_ID нест — 503. |
+| `google_login(data, db)` | функсияи async · `POST /api/auth/google/` | Воридшавӣ бо Google: ID-токенро месанҷад, баъд social_login. GOOGLE_CLIENT_ID нест — 503, токени бад — 400. |
+| `apple_settings()` | функсияи async · `GET /api/auth/apple/` | Services ID барои скрипти Apple; сатри холӣ — воридшавӣ бо Apple хомӯш аст. |
+| `apple_login(data, db)` | функсияи async · `POST /api/auth/apple/` | Воридшавӣ бо Apple: ID-токенро месанҷад, баъд social_login. Apple номро танҳо дар воридшавии аввал медиҳад, бинобар ин сайт онро дар full_name мефиристад. APPLE_CLIENT_ID нест — 503, токени бад — 400. |
 | `forgot_password(data, db)` | функсияи async · `POST /api/auth/password/forgot/` | Код барои пароли нав мефиристад. Ҷавоб якхела аст, почта бақайд бошад ё не, то касе натавонад бо он фаҳмад, ки кӣ ҳисоб дорад. |
 | `reset_password(data, db)` | функсияи async · `POST /api/auth/password/reset/` | Код аз почта ва пароли нав. Инчунин почтаро тасдиқ мекунад ва ворид мешавад. |
 | `revoke(db, payload)` | функсияи async | Токени refresh-ро баста мекунад. Агар аллакай баста бошад, False бармегардонад. |
@@ -674,6 +678,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 |---|---|---|
 | `alert_filters(alert)` | функсия | Огоҳӣ ҳамчун параметрҳои рӯйхати кор (?search=...&city=...). |
 | `notify_alerts(db, since)` | функсияи async | Ба ҳар огоҳӣ дар бораи ҷойҳои коре, ки аз ин лаҳза пайдо шудаанд, хабар медиҳад. Шумораи корбарони огоҳшударо бармегардонад. |
+
+### `app/services/apple.py`
+
+**Барои чӣ:** ID-токени Apple-ро месанҷад: имзои RS256 бо калидҳои ошкорои Apple (https://appleid.apple.com/auth/keys, як шабонарӯз нигоҳ дошта мешаванд), audience = APPLE_CLIENT_ID, нашркунанда appleid.apple.com, мӯҳлат нагузаштааст, почта тасдиқ шудааст.
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `verify_apple_token(token)` | функсия | Маълумоти токен (email, sub...) ё None-ро бармегардонад. Синхронӣ: роутер онро дар thread даъват мекунад. |
 
 ### `app/services/emails.py`
 
@@ -977,6 +989,19 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `last_code(email)` | функсия | Коди охирине, ки ба ин почта фиристода шуд. |
 | `user(client)` | функсияи async | Муҳоҷири нави тасдиқшуда; (headers, data) бармегардонад. |
 | `set_role(user_id, role)` | функсияи async | Нақши корбарро иваз мекунад (editor, admin). |
+
+### `tests/test_apple.py`
+
+**Барои чӣ:** Санҷишҳои воридшавӣ бо Apple: токенҳо бо калиди санҷишии RSA ба ҷои калиди Apple имзо мешаванд.
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `apple_token(email, **extra)` | функсия | Токени имзошудаи монанди Apple месозад; extra майдонҳоро иваз мекунад. |
+| `test_client_id_is_public(client)` | функсияи async | GET apple/ Services ID-ро бармегардонад. |
+| `test_new_user_then_same_user(client)` | функсияи async | Воридшавии аввал ҳисобро бо ном месозад; дуюм ҳамон ҳисобро меёбад. |
+| `test_bad_tokens(client, extra)` | функсияи async | audience-и бегона, нашркунандаи бегона, мӯҳлати гузашта, почтаи тасдиқнашуда — 400. |
+| `test_forged_signature(client)` | функсияи async | Токене, ки бо калиди дигар имзо шудааст — 400. |
+| `test_not_set_up(client, monkeypatch)` | функсияи async | Бе APPLE_CLIENT_ID — 503. |
 
 ### `tests/test_assistant.py`
 
@@ -1339,15 +1364,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `linkStyle` | const | Мисли Muhojir-и аввал: ҳангоми бурдани курсор пайванд каме ба рост мелағжад ва хат аз чап дар зераш меафзояд. |
 | `Footer` | функсияи экспортӣ | Поёни сайт. |
 
-### `frontend/src/components/GoogleButton.jsx`
-
-**Барои чӣ:** Тугмаи «Бо Google ворид шудан» (Google Identity Services) бо хати «ё» дар болояш. То дар сервер GOOGLE_CLIENT_ID нест, пинҳон аст.
-
-| Ном | Навъ | Чӣ кор мекунад |
-|---|---|---|
-| `loadGoogle` | функсия | Як бор дар саҳифа: client ID-ро аз GET /api/auth/google/ мегирад, скрипти Google-ро бор мекунад ва initialize-ро даъват мекунад. |
-| `GoogleButton` | функсияи экспортӣ | Тугмаи Google-ро мекашад (рӯзона равшан, шабона торик, мудаввар); text = "continue_with" ё "signup_with". onCredential ID-токенро мегирад. |
-
 ### `frontend/src/components/GuideSteps.jsx`
 
 **Барои чӣ:** Роҳнамои қадам ба қадам барои навъи ҳуҷҷат: қадамҳо, чӣ бояд овард, намунаҳои пуркардашудаи форма.
@@ -1479,6 +1495,20 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 |---|---|---|
 | `makeSprite` | функсия | Расми тайёри як барфро месозад. |
 | `Snowfall` | функсияи экспортӣ | Canvas бо барфи боранда. |
+
+### `frontend/src/components/SocialLogin.jsx`
+
+**Барои чӣ:** «Бо Google идома диҳед» ва «Бо Apple идома диҳед» дар зери формаҳои воридшавӣ ва бақайдгирӣ, бо хати «ё» дар болояшон. Ҳар тугма танҳо вақте намоён аст, ки дар сервер client ID-и он ҳаст. Агар ҳарду бошанд, бо навиштаҷоти кӯтоҳ (Google / Apple) паҳлӯи ҳам меистанд.
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `loadScript(src)` | функсия | Скрипти берунаро як бор илова мекунад ва боркуниашро интизор мешавад. |
+| `setupGoogle()` | функсия | Як бор дар саҳифа: client ID аз GET /api/auth/google/, скрипти Google, initialize. Вақте воридшавӣ бо Google фаъол аст, true медиҳад. |
+| `setupApple()` | функсия | Як бор дар саҳифа: Services ID аз GET /api/auth/apple/, скрипти Apple, AppleID.auth.init (равзанаи попап, суроғаи бозгашт <сайт>/login). |
+| `GoogleLogo / AppleLogo` | функсия | Логотипҳо дар SVG. |
+| `GoogleChoice` | функсия | Тугмаи худи сайт; тугмаи аслии Google ноаён дар болои он аст, бинобар ин пахшкуниро Google мегирад. onCredential ID-токенро мегирад. |
+| `AppleChoice` | функсия | Равзанаи Apple-ро мекушояд ва {id_token, full_name}-ро ба onSignIn медиҳад; null, агар Apple хато баргардонад (пӯшидани равзана ҳисоб намешавад). |
+| `SocialLogin` | функсияи экспортӣ | Хати «ё» ва тугмаҳои фаъол. |
 
 ### `frontend/src/components/Stars.jsx`
 
@@ -1655,7 +1685,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/pages/Login.jsx`
 
-**Барои чӣ:** /login — бақайдгирӣ, воридшавӣ, тасдиқи почта бо код, барқарор кардани парол. Дар экранҳои воридшавӣ ва бақайдгирӣ тугмаи Google ҳаст (POST /api/auth/google/).
+**Барои чӣ:** /login — бақайдгирӣ, воридшавӣ, тасдиқи почта бо код, барқарор кардани парол. Дар зери формаҳо: SocialLogin (Google ва Apple). Корт васеъ ва ихчам аст, бинобар ин тугмаҳо бе ҳаракат додани саҳифа намоёнанд.
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|

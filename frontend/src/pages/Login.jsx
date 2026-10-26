@@ -8,7 +8,7 @@ import { Button, ErrorBox } from "../components/ui.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { LangSwitch, ThemeToggle } from "../components/Layout.jsx";
 import Snowfall from "../components/Snowfall.jsx";
-import GoogleButton from "../components/GoogleButton.jsx";
+import SocialLogin from "../components/SocialLogin.jsx";
 
 const RESEND_SECONDS = 60;
 
@@ -180,14 +180,17 @@ export default function Login() {
     enter(await api("/auth/password/reset/", { method: "POST", body: { email, code: code.replace(/\s/g, ""), password } }));
   });
 
-  const google = (credential) =>
+  const social = (path, body, failed) =>
     run(async () => {
+      if (!body) throw new Error(failed);
       try {
-        enter(await api("/auth/google/", { method: "POST", body: { credential } }));
+        enter(await api(path, { method: "POST", body }));
       } catch (err) {
-        throw err.status === 403 ? err : new Error(t("Бо Google ворид шудан нашуд. Боз кӯшиш кунед."));
+        throw err.status === 403 ? err : new Error(failed);
       }
     })();
+  const google = (credential) => social("/auth/google/", { credential }, t("Бо Google ворид шудан нашуд. Боз кӯшиш кунед."));
+  const apple = (body) => social("/auth/apple/", body, t("Бо Apple ворид шудан нашуд. Боз кӯшиш кунед."));
 
   const Icon = ICONS[mode];
   const codeReady = code.replace(/\s/g, "").length === 6;
@@ -232,9 +235,9 @@ export default function Login() {
         </p>
       </aside>
 
-      <div className="relative z-10 flex flex-col justify-center px-4 pb-10 pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-10">
-        <div className="mx-auto w-full max-w-[440px]">
-          <div className="mb-8 flex items-center justify-between gap-2">
+      <div className="relative z-10 flex flex-col justify-center px-4 pb-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-10">
+        <div className="mx-auto w-full max-w-[540px]">
+          <div className="mb-4 flex items-center justify-between gap-2">
             <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-label-md text-navy/80 hover:text-navy dark:text-[#c9d6f2] dark:hover:text-white">
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("Ба саҳифаи асосӣ")}
@@ -244,23 +247,23 @@ export default function Login() {
               <ThemeToggle />
             </div>
           </div>
-          <Link to="/" className="mb-6 flex items-center justify-center gap-2 lg:hidden">
+          <Link to="/" className="mb-4 flex items-center justify-center gap-2 lg:hidden">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm"><img src="/logo.png" alt="" className="h-full w-full" /></span>
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
-          <div className="relative rounded-3xl bg-white/75 p-7 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-9 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
+          <div className="relative rounded-3xl bg-white/75 p-6 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-8 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
             <svg className="pointer-events-none absolute -top-[13px] left-5 right-5 h-[22px] w-[calc(100%-2.5rem)] drop-shadow-[0_2px_2px_rgba(60,90,160,0.18)]" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden>
               <path className="fill-white dark:fill-[#e3ebfb]" d="M0 22 C10 22 12 12 26 11 C40 10 44 4 62 5 C80 6 84 13 102 12 C118 11 124 3 146 3 C168 3 172 12 192 12 C212 12 218 6 238 6 C256 6 262 14 282 13 C302 12 306 2 330 2 C352 2 356 12 372 13 C386 14 392 22 400 22Z" />
             </svg>
-          <div className="mb-6 flex items-center gap-3">
+          <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#5b8def] text-white shadow-lg shadow-primary/30">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
           </div>
 
           {mode === "login" && (
-            <form onSubmit={signIn} className="space-y-5">
-              <div>
+            <form onSubmit={signIn} className="space-y-4">
+              <div className="pr-14">
                 <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Ворид шудан")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">{t("Почтаи электронӣ ва пароли худро нависед.")}</p>
               </div>
@@ -272,13 +275,13 @@ export default function Login() {
                 <button type="button" onClick={() => go("forgot")} className={linkButton}>{t("Паролро фаромӯш кардед?")}</button>
                 <button type="button" onClick={() => go("register")} className={linkButton}>{t("Ҳисоб надоред? Сабти ном")}</button>
               </div>
-              <GoogleButton onCredential={google} />
+              <SocialLogin onGoogle={google} onApple={apple} />
             </form>
           )}
 
           {mode === "register" && (
-            <form onSubmit={register} className="space-y-5">
-              <div>
+            <form onSubmit={register} className="space-y-4">
+              <div className="pr-14">
                 <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Сабти ном")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">{t("Парол созед. Баъд ба почтаи шумо рамзи 6-рақама меояд, то онро тасдиқ кунед.")}</p>
               </div>
@@ -291,13 +294,13 @@ export default function Login() {
               <ErrorBox error={error} />
               <Button type="submit" loading={busy} className="w-full">{t("Сабти ном ва гирифтани рамз")}</Button>
               <button type="button" onClick={() => go("login")} className={linkButton}>{t("Ҳисоб доред? Ворид шавед")}</button>
-              <GoogleButton onCredential={google} text="signup_with" />
+              <SocialLogin onGoogle={google} onApple={apple} />
             </form>
           )}
 
           {(mode === "verify" || mode === "reset") && (
-            <form onSubmit={mode === "verify" ? verify : reset} className="space-y-5">
-              <div>
+            <form onSubmit={mode === "verify" ? verify : reset} className="space-y-4">
+              <div className="pr-14">
                 <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{mode === "verify" ? t("Почтаро тасдиқ кунед") : t("Пароли нав")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">
                   {t("Рамзро ба {0} фиристодем. Агар набошад, папкаи «Спам»-ро бинед.", email)}
@@ -324,8 +327,8 @@ export default function Login() {
           )}
 
           {mode === "forgot" && (
-            <form onSubmit={forgot} className="space-y-5">
-              <div>
+            <form onSubmit={forgot} className="space-y-4">
+              <div className="pr-14">
                 <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Барқарор кардани парол")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">{t("Почтаи худро нависед. Мо рамз мефиристем ва шумо пароли нав мегузоред.")}</p>
               </div>

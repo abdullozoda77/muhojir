@@ -16,9 +16,10 @@ from app.core.throttle import throttle
 from app.db.types import utcnow
 from app.models import EmailCode, Notification, RevokedToken, User
 from app.schemas.accounts import (
-    CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
+    AppleIn, CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
 )
 from app.services.emails import send_code
+from app.services.apple import verify_apple_token
 from app.services.google import verify_google_token
 from app.services.live import notification_json, push_count
 
@@ -142,18 +143,12 @@ async def google_settings():
     return {"client_id": settings.google_client_id}
 
 
-@router.post("/google/", dependencies=[Depends(throttle("login"))])
-async def google_login(data: GoogleIn, db: DB):
-    if not settings.google_client_id:
-        raise ApiError("Google login is not set up.", 503)
-    claims = await run_in_threadpool(verify_google_token, data.credential)
-    if claims is None:
-        raise ApiError("Could not sign in with Google. Try again.")
-    email = claims["email"].strip().lower()
+async def social_login(db, email, full_name):
+    email = email.strip().lower()
     user = await user_by_email(db, email)
     created = user is None
     if created:
-        user = User(email=email, full_name=claims.get("name", "")[:150], email_verified=True)
+        user = User(email=email, full_name=full_name.strip()[:150], email_verified=True)
         db.add(user)
     elif not user.is_active:
         raise ApiError(BLOCKED, 403)
@@ -162,6 +157,31 @@ async def google_login(data: GoogleIn, db: DB):
         user.email_verified = True
     await db.commit()
     return logged_in(user, 201 if created else 200)
+
+
+@router.post("/google/", dependencies=[Depends(throttle("login"))])
+async def google_login(data: GoogleIn, db: DB):
+    if not settings.google_client_id:
+        raise ApiError("Google login is not set up.", 503)
+    claims = await run_in_threadpool(verify_google_token, data.credential)
+    if claims is None:
+        raise ApiError("Could not sign in with Google. Try again.")
+    return await social_login(db, claims["email"], claims.get("name", ""))
+
+
+@router.get("/apple/")
+async def apple_settings():
+    return {"client_id": settings.apple_client_id}
+
+
+@router.post("/apple/", dependencies=[Depends(throttle("login"))])
+async def apple_login(data: AppleIn, db: DB):
+    if not settings.apple_client_id:
+        raise ApiError("Apple login is not set up.", 503)
+    claims = await run_in_threadpool(verify_apple_token, data.id_token)
+    if claims is None:
+        raise ApiError("Could not sign in with Apple. Try again.")
+    return await social_login(db, claims["email"], data.full_name)
 
 
 @router.post("/password/forgot/", dependencies=[Depends(throttle("login_code"))])
