@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeftRight, BellPlus, BookOpen, CalendarDays, Check, ExternalLink, Info, Plane, PlaneLanding, PlaneTakeoff, Trash2 } from "lucide-react";
+import { ArrowLeftRight, BellPlus, BookOpen, CalendarDays, Check, ChevronDown, ExternalLink, Info, Minus, Plane, PlaneLanding, PlaneTakeoff, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -64,9 +64,54 @@ function monthDays(month) {
   return Array.from({ length: last }, (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`).filter((d) => d >= today);
 }
 
+// Passengers in an aviasales.ru link: adults, then children and infants when there are any ("2", "21", "201").
+function paxCode({ adults, children, infants }) {
+  return `${adults}${children || infants ? children : ""}${infants ? infants : ""}`;
+}
+
 // The search on aviasales.ru for one day: /search/DYU0511MOW1.
-function aviasalesDay(origin, destination, day) {
-  return `https://www.aviasales.ru/search/${origin}${day.slice(8, 10)}${day.slice(5, 7)}${destination}1`;
+function aviasalesDay(origin, destination, day, pax) {
+  return `https://www.aviasales.ru/search/${origin}${day.slice(8, 10)}${day.slice(5, 7)}${destination}${paxCode(pax)}`;
+}
+
+// Puts our passengers into a search link from Aviasales (they always give 1 passenger: /search/DYU3010SVO1?t=...).
+function withPax(url, pax) {
+  return url ? url.replace(/(\/search\/[A-Z]{3}\d{4}[A-Z]{3})\d{1,3}/, `$1${paxCode(pax)}`) : url;
+}
+
+// The price for everyone: adults and children pay a full seat, an infant without a seat about a tenth.
+function totalPrice(price, { adults, children, infants }) {
+  return price * (adults + children) + Math.round(price * 0.1) * infants;
+}
+
+const WEEK = [1, 2, 3, 4, 5, 6, 0]; // Monday first
+const TIMES = [
+  ["night", 0, 5, () => t("Шаб"), "00–05"],
+  ["morning", 5, 12, () => t("Саҳар"), "05–12"],
+  ["day", 12, 18, () => t("Рӯз"), "12–18"],
+  ["evening", 18, 24, () => t("Бегоҳ"), "18–24"],
+];
+const SORTS = [
+  ["price", () => t("Арзонтарин")],
+  ["early", () => t("Барвақттарин")],
+  ["fast", () => t("Тезтарин")],
+];
+
+function hourOf(ticket) {
+  return Number(ticket.departure_at.slice(11, 13));
+}
+
+function weekdayOf(ticket) {
+  return new Date(`${ticket.departure_at.slice(0, 10)}T00:00:00`).getDay();
+}
+
+// "1,3" -> ["1", "3"]
+function list(value) {
+  return value ? value.split(",").filter(Boolean) : [];
+}
+
+function toggle(values, value) {
+  return (values.includes(value) ? values.filter((v) => v !== value) : [...values, value]).join(",");
 }
 
 function duration(minutes) {
@@ -75,7 +120,7 @@ function duration(minutes) {
 }
 
 // Every day of the month with its cheapest price; the cheapest day is marked. A day is picked to see its flights.
-function Calendar({ calendar, month, day, onPick }) {
+function Calendar({ calendar, month, day, onPick, weekdays }) {
   const days = monthDays(month);
   const prices = Object.values(calendar);
   if (!days.length) return null;
@@ -98,13 +143,15 @@ function Calendar({ calendar, month, day, onPick }) {
           const price = calendar[d];
           const picked = d === day;
           const cheapest = price != null && price === min;
+          const off = weekdays.length > 0 && !weekdays.includes(String(new Date(`${d}T00:00:00`).getDay()));
           return (
             <button
               key={d}
               type="button"
               onClick={() => onPick(picked ? "" : d)}
               aria-pressed={picked}
-              className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-center ring-1 ring-inset transition-colors ${
+              disabled={off}
+              className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-center ring-1 ring-inset transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
                 picked ? "bg-ink text-on-ink ring-ink" : cheapest ? "bg-tertiary-fixed text-on-tertiary-fixed ring-tertiary hover:brightness-105" : "ring-outline-variant hover:bg-surface-container-low"
               }`}
             >
@@ -115,12 +162,13 @@ function Calendar({ calendar, month, day, onPick }) {
           );
         })}
       </div>
-      <p className="text-body-sm text-on-surface-variant">{t("Нарх — арзонтарин чипта дар ҳамон рӯз, ₽. «—» — нарх ҳоло маълум нест.")}</p>
+      <p className="text-body-sm text-on-surface-variant">{t("Нарх — арзонтарин чипта дар ҳамон рӯз (бо филтрҳо), барои як нафар, ₽. «—» — нарх ҳоло маълум нест.")}</p>
     </div>
   );
 }
 
-function TicketRow({ ticket }) {
+function TicketRow({ ticket, pax }) {
+  const people = pax.adults + pax.children + pax.infants;
   return (
     <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-5">
       <div className="flex items-center gap-3">
@@ -140,12 +188,195 @@ function TicketRow({ ticket }) {
         </div>
       </div>
       <div className="flex items-center justify-between gap-4 md:justify-end">
-        <span className="text-[22px] font-semibold tracking-tight tabular-nums">{rub(ticket.price)}</span>
+        <span className="flex flex-col items-start md:items-end">
+          <span className="text-[22px] font-semibold tracking-tight tabular-nums">{rub(ticket.price)}</span>
+          {people > 1 && <span className="text-body-sm tabular-nums text-on-surface-variant">{t("≈ {0} барои {1} нафар", rub(totalPrice(ticket.price, pax)), people)}</span>}
+        </span>
         {ticket.link && (
-          <a href={ticket.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-ink px-4 text-label-md text-on-ink transition-colors hover:bg-ink/90">
+          <a href={withPax(ticket.link, pax)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-ink px-4 text-label-md text-on-ink transition-colors hover:bg-ink/90">
             {t("Харидан")}
             <ExternalLink className="h-4 w-4" aria-hidden />
           </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Adults (12+), children (2–11) and infants (under 2, on a lap): at most 9 people, an infant for every adult.
+const PAX_ROWS = [
+  ["adults", () => t("Калонсолон"), () => t("аз 12 сола"), 1],
+  ["children", () => t("Кӯдакон"), () => t("2–11 сола"), 0],
+  ["infants", () => t("Тифлон"), () => t("то 2 сола, бе ҷой"), 0],
+];
+
+function Passengers({ pax, onChange }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => box.current && !box.current.contains(e.target) && setOpen(false);
+    const esc = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const people = pax.adults + pax.children + pax.infants;
+  const can = (key, step) => {
+    const next = { ...pax, [key]: pax[key] + step };
+    return next[key] >= (key === "adults" ? 1 : 0) && next.adults + next.children + next.infants <= 9 && next.infants <= next.adults;
+  };
+  return (
+    <div ref={box} className="relative">
+      <span className="label">{t("Мусофирон")}</span>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="input flex items-center gap-2 text-left">
+        <Users className="h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden />
+        <span className="flex-1 truncate">{t("{0} нафар", people)}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-on-surface-variant transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-30 mt-2 flex w-72 flex-col gap-1 rounded-2xl bg-surface-container-lowest p-3 shadow-xl ring-1 ring-outline-variant">
+          {PAX_ROWS.map(([key, label, hint]) => (
+            <div key={key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2">
+              <span className="flex flex-col">
+                <span className="text-[15px] font-semibold">{label()}</span>
+                <span className="text-body-sm text-on-surface-variant">{hint()}</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <button type="button" onClick={() => onChange({ ...pax, [key]: pax[key] - 1 })} disabled={!can(key, -1)} aria-label={t("Кам кардан")} className="flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:opacity-35">
+                  <Minus className="h-4 w-4" aria-hidden />
+                </button>
+                <span className="w-5 text-center text-[15px] font-semibold tabular-nums">{pax[key]}</span>
+                <button type="button" onClick={() => onChange({ ...pax, [key]: pax[key] + 1 })} disabled={!can(key, 1)} aria-label={t("Зиёд кардан")} className="flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:opacity-35">
+                  <Plus className="h-4 w-4" aria-hidden />
+                </button>
+              </span>
+            </div>
+          ))}
+          <p className="px-2 pt-1 text-body-sm text-on-surface-variant">{t("Нархҳо барои як нафар; ҳамаи мусофирон дар сайти Aviasales ҳисоб мешаванд.")}</p>
+          <button type="button" onClick={() => setOpen(false)} className="mt-1 inline-flex min-h-[40px] items-center justify-center rounded-xl bg-ink px-4 text-label-md text-on-ink hover:bg-ink/90">
+            {t("Тайёр")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterChip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors ${
+        active ? "bg-ink text-on-ink ring-ink" : "text-on-surface-variant ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FilterRow({ label, children }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-label-md text-on-surface-variant">{label}</span>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+// Stops, weekdays, departure time, airlines, the highest price and the order. Everything but "direct only" is
+// applied here to the month's tickets; "direct only" is asked from the server (it returns other tickets then).
+function Filters({ f, set, airlines, priceRange, active, onReset }) {
+  const [lo, hi] = priceRange;
+  return (
+    <div className="card flex flex-col gap-5 p-5 md:p-6">
+      <h2 className="flex items-center gap-3 text-[17px] font-semibold leading-tight">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
+          <SlidersHorizontal className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="flex-1">{t("Филтрҳо")}</span>
+        {active > 0 && (
+          <button type="button" onClick={onReset} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 text-label-md text-primary ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+            <X className="h-4 w-4" aria-hidden />
+            {t("Тоза кардан ({0})", active)}
+          </button>
+        )}
+      </h2>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <FilterRow label={t("Пайвастшавӣ")}>
+          {[
+            ["", t("Ҳама")],
+            ["0", t("Бе пайвастшавӣ")],
+            ["1", t("То 1 пайвастшавӣ")],
+          ].map(([value, label]) => (
+            <FilterChip key={value} active={f.stops === value} onClick={() => set({ stops: value, direct: "" })}>
+              {label}
+            </FilterChip>
+          ))}
+        </FilterRow>
+
+        <FilterRow label={t("Тартиб")}>
+          {SORTS.map(([value, label]) => (
+            <FilterChip key={value} active={f.sort === value} onClick={() => set({ sort: value === "price" ? "" : value })}>
+              {label()}
+            </FilterChip>
+          ))}
+        </FilterRow>
+
+        <FilterRow label={t("Рӯзҳои ҳафта")}>
+          {WEEK.map((d) => (
+            <FilterChip key={d} active={f.weekdays.includes(String(d))} onClick={() => set({ wd: toggle(f.weekdays, String(d)), day: "" })}>
+              {WEEKDAYS[lang === "ru" ? "ru" : "tg"][d]}
+            </FilterChip>
+          ))}
+        </FilterRow>
+
+        <FilterRow label={t("Вақти парвоз")}>
+          {TIMES.map(([value, , , label, hours]) => (
+            <FilterChip key={value} active={f.times.includes(value)} onClick={() => set({ time: toggle(f.times, value) })}>
+              {label()} <span className="tabular-nums opacity-70">{hours}</span>
+            </FilterChip>
+          ))}
+        </FilterRow>
+
+        {airlines.length > 1 && (
+          <FilterRow label={t("Ширкати ҳавопаймоӣ")}>
+            {airlines.map(([code, name]) => (
+              <FilterChip key={code} active={f.airlines.includes(code)} onClick={() => set({ airline: toggle(f.airlines, code) })}>
+                {name}
+              </FilterChip>
+            ))}
+          </FilterRow>
+        )}
+
+        {hi > lo && (
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center justify-between text-label-md text-on-surface-variant">
+              {t("Нархи ҳадди аксар")}
+              <span className="tabular-nums text-on-surface">{f.max && f.max < hi ? rub(f.max) : t("ҳама")}</span>
+            </span>
+            <input
+              type="range"
+              min={lo}
+              max={hi}
+              step={100}
+              value={f.max && f.max < hi ? Math.max(f.max, lo) : hi}
+              onChange={(e) => set({ max: Number(e.target.value) >= hi ? "" : e.target.value })}
+              aria-label={t("Нархи ҳадди аксар")}
+              className="h-9 w-full cursor-pointer accent-primary"
+            />
+            <span className="flex justify-between text-body-sm tabular-nums text-on-surface-variant">
+              <span>{rub(lo)}</span>
+              <span>{rub(hi)}</span>
+            </span>
+          </div>
         )}
       </div>
     </div>
@@ -323,8 +554,23 @@ export default function Tickets() {
   const from = params.get("from") || "DYU";
   const to = params.get("to") || "MOW";
   const month = params.get("month") || months[0];
-  const direct = params.get("direct") === "true";
+  // "direct=true" is the old link for "direct only"
+  const stops = params.get("stops") ?? (params.get("direct") === "true" ? "0" : "");
+  const direct = stops === "0";
   const day = (params.get("day") || "").startsWith(month) ? params.get("day") : "";
+  const count = (key, min, fallback) => Math.min(9, Math.max(min, Number(params.get(key)) || fallback));
+  const adults = count("adults", 1, 1);
+  const children = Math.min(count("children", 0, 0), 9 - adults);
+  const pax = { adults, children, infants: Math.min(count("infants", 0, 0), adults, 9 - adults - children) };
+  const f = {
+    stops,
+    weekdays: list(params.get("wd")),
+    times: list(params.get("time")),
+    airlines: list(params.get("airline")),
+    max: Number(params.get("max")) || 0,
+    sort: params.get("sort") || "price",
+  };
+  const [limit, setLimit] = useState(30);
   const toRussia = !airports || tjCodes.has(from);
 
   const set = (changes) => {
@@ -340,7 +586,9 @@ export default function Tickets() {
       { replace: true },
     );
   };
-  const swap = () => set({ from: to, to: from, day: "" });
+  const swap = () => set({ from: to, to: from, day: "", airline: "", max: "" });
+  const setPax = (next) => set({ adults: next.adults > 1 ? next.adults : "", children: next.children || "", infants: next.infants || "" });
+  const resetFilters = () => set({ stops: "", direct: "", wd: "", time: "", airline: "", max: "", sort: "", day: "" });
   const setDirection = (wantToRussia) => {
     if (wantToRussia !== toRussia) swap();
   };
@@ -364,13 +612,38 @@ export default function Tickets() {
   const fromOptions = places(toRussia ? tj : ru);
   const toOptions = places(toRussia ? ru : tj);
   const cheapest = result?.results?.length ? Math.min(...result.results.map((r) => r.price)) : null;
-  // A picked day: all its flights by time. Otherwise the 30 cheapest of the month.
-  const shown = result?.results
-    ? day
-      ? result.results.filter((r) => r.departure_at.startsWith(day)).sort((a, b) => a.departure_at.localeCompare(b.departure_at))
-      : result.results.slice(0, 30)
-    : [];
-  const searchUrl = result && day ? aviasalesDay(from, to, day) : result?.search_url;
+  const all = result?.results || [];
+
+  // The airlines and the price range of this month (for the chips and the slider).
+  const airlines = useMemo(() => [...new Map(all.map((r) => [r.airline, r.airline_name])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [all]);
+  const priceRange = all.length ? [Math.floor(Math.min(...all.map((r) => r.price)) / 100) * 100, Math.ceil(Math.max(...all.map((r) => r.price)) / 100) * 100] : [0, 0];
+
+  // Every filter but the weekdays: the calendar shows its own days, the weekdays only grey them out.
+  const fitting = all.filter(
+    (r) =>
+      (f.stops !== "1" || r.transfers <= 1) &&
+      (!f.times.length || TIMES.some(([key, from_, to_]) => f.times.includes(key) && hourOf(r) >= from_ && hourOf(r) < to_)) &&
+      (!f.airlines.length || f.airlines.includes(r.airline)) &&
+      (!f.max || r.price <= f.max),
+  );
+  const calendar = {};
+  for (const r of fitting) {
+    const d = r.departure_at.slice(0, 10);
+    if (calendar[d] == null || r.price < calendar[d]) calendar[d] = r.price;
+  }
+  const order = {
+    price: (a, b) => a.price - b.price,
+    early: (a, b) => a.departure_at.localeCompare(b.departure_at),
+    fast: (a, b) => (a.duration || 1e9) - (b.duration || 1e9) || a.price - b.price,
+  };
+  // A picked day: all its flights (by time unless another order is chosen). Otherwise the whole month, filtered.
+  const matching = fitting
+    .filter((r) => (day ? r.departure_at.startsWith(day) : !f.weekdays.length || f.weekdays.includes(String(weekdayOf(r)))))
+    .sort(day && f.sort === "price" ? order.early : order[f.sort] || order.price);
+  const shown = matching.slice(0, limit);
+  const activeFilters = [f.stops, f.weekdays.length, f.times.length, f.airlines.length, f.max, f.sort !== "price"].filter(Boolean).length;
+  useEffect(() => setLimit(30), [from, to, month, day, params]);
+  const searchUrl = result && day ? aviasalesDay(from, to, day, pax) : withPax(result?.search_url, pax);
 
   return (
     <div className="flex flex-col gap-8">
@@ -389,7 +662,7 @@ export default function Tickets() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1.3fr)_auto_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label>
             <span className="label">{t("Аз куҷо")}</span>
             <select className="input" value={from} onChange={(e) => set({ from: e.target.value, day: "" })}>
@@ -411,11 +684,8 @@ export default function Tickets() {
               {months.map((m) => <option key={m} value={m}>{monthTitle(m)}</option>)}
             </select>
           </label>
+          <Passengers pax={pax} onChange={setPax} />
         </div>
-        <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 self-start rounded-xl px-4 ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
-          <input type="checkbox" className="h-5 w-5 rounded text-primary focus:ring-primary" checked={direct} onChange={(e) => set({ direct: e.target.checked ? "true" : "" })} />
-          <span className="text-label-md">{t("Танҳо парвози бе пайвастшавӣ")}</span>
-        </label>
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-12">
@@ -439,24 +709,40 @@ export default function Tickets() {
             </EmptyState>
           ) : result ? (
             <>
-              <Calendar calendar={result.calendar} month={month} day={day} onPick={(d) => set({ day: d })} />
+              <Filters f={f} set={set} airlines={airlines} priceRange={priceRange} active={activeFilters} onReset={resetFilters} />
+              <Calendar calendar={calendar} month={month} day={day} weekdays={f.weekdays} onPick={(d) => set({ day: d })} />
               <div className="flex items-center justify-between gap-3 px-1">
-                <h2 className="text-[19px] font-semibold">{day ? t("Чиптаҳо барои {0}", dayLabel(day, true)) : t("Арзонтарин чиптаҳо")}</h2>
+                <h2 className="flex flex-wrap items-baseline gap-x-2 text-[19px] font-semibold">
+                  {day ? t("Чиптаҳо барои {0}", dayLabel(day, true)) : activeFilters ? t("Чиптаҳои ёфтшуда") : t("Арзонтарин чиптаҳо")}
+                  <span className="text-body-sm font-normal tabular-nums text-on-surface-variant">{matching.length}</span>
+                </h2>
                 <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-label-md text-primary">
                   {t("Ҳама дар Aviasales")}
                   <ExternalLink className="h-4 w-4" aria-hidden />
                 </a>
               </div>
               {shown.length ? (
-                <Stagger key={`${from}${to}${month}${direct}${day}`} className="card flex flex-col divide-y divide-outline-variant p-1">
-                  {shown.map((ticket, i) => (
-                    <StaggerItem key={`${ticket.departure_at}-${ticket.price}-${i}`}>
-                      <TicketRow ticket={ticket} />
-                    </StaggerItem>
-                  ))}
-                </Stagger>
+                <>
+                  <Stagger key={`${from}${to}${month}${direct}${day}${params.get("wd")}${params.get("time")}${params.get("airline")}${f.sort}`} className="card flex flex-col divide-y divide-outline-variant p-1">
+                    {shown.map((ticket, i) => (
+                      <StaggerItem key={`${ticket.departure_at}-${ticket.price}-${i}`}>
+                        <TicketRow ticket={ticket} pax={pax} />
+                      </StaggerItem>
+                    ))}
+                  </Stagger>
+                  {matching.length > shown.length && (
+                    <button type="button" onClick={() => setLimit(limit + 30)} className="inline-flex min-h-[44px] items-center justify-center gap-2 self-center rounded-xl px-5 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+                      {t("Боз нишон додан ({0})", matching.length - shown.length)}
+                    </button>
+                  )}
+                </>
               ) : (
-                <EmptyState icon={Plane} title={t("Барои ин рӯз нарх ёфт нашуд")} text={t("Рӯзи дигарро интихоб кунед ё чиптаҳои ҳамин рӯзро дар Aviasales бинед.")}>
+                <EmptyState icon={Plane} title={activeFilters ? t("Бо ин филтрҳо чипта ёфт нашуд") : t("Барои ин рӯз нарх ёфт нашуд")} text={activeFilters ? t("Баъзе филтрҳоро тоза кунед ё рӯзи дигарро интихоб кунед.") : t("Рӯзи дигарро интихоб кунед ё чиптаҳои ҳамин рӯзро дар Aviasales бинед.")}>
+                  {activeFilters > 0 && (
+                    <Button variant="plain" onClick={resetFilters}>
+                      {t("Тоза кардан ({0})", activeFilters)}
+                    </Button>
+                  )}
                   <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-md text-on-ink transition-colors hover:bg-ink/90">
                     {t("Ҷустуҷӯ дар Aviasales")}
                     <ExternalLink className="h-4 w-4" aria-hidden />
