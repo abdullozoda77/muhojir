@@ -1,5 +1,7 @@
 # Muhojir — documentation of every file
 
+**Language:** English · [Тоҷикӣ](DOCUMENTATION.tg.md) · [Русский](DOCUMENTATION.ru.md)
+
 Muhojir is a platform for Tajik migrants in Russia: documents and their deadlines, patent prices for every
 region, step-by-step guides, real vacancies from «Работа России» with a workers' blacklist of employers, exam
 practice, law news, live notifications, an AI assistant, air tickets between Tajikistan and Russia and a map of
@@ -303,12 +305,12 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `User` | class · `table `users`` | migrant: documents, reminders, payments, reviews of companies. editor: also the site's content (news, guides, exam questions, help sites, centers, patent prices), in the admin panel and through the API; no access to users, their documents or payments. admin: everything, including users, roles and the blacklist of companies. |
+| `User` | class · table `users` | migrant: documents, reminders, payments, reviews of companies. editor: also the site's content (news, guides, exam questions, help sites, centers, patent prices), in the admin panel and through the API; no access to users, their documents or payments. admin: everything, including users, roles and the blacklist of companies. |
 | &nbsp;&nbsp;↳ `is_admin()` | method | — |
 | &nbsp;&nbsp;↳ `is_editor()` | method | Editors manage the site's content; admins too. |
-| `EmailCode` | class · `table `email_codes`` | A 6-digit code sent by email: to confirm the email after sign-up ("verify") or to set a new password ("reset"). Only a hash is stored, like a password; asking for a new code replaces the old one. |
-| `Notification` | class · `table `notifications`` | — |
-| `RevokedToken` | class · `table `revoked_tokens`` | Refresh tokens that can not be used again: after logout, and the old one after each refresh. |
+| `EmailCode` | class · table `email_codes` | A 6-digit code sent by email: to confirm the email after sign-up ("verify") or to set a new password ("reset"). Only a hash is stored, like a password; asking for a new code replaces the old one. |
+| `Notification` | class · table `notifications` | — |
+| `RevokedToken` | class · table `revoked_tokens` | Refresh tokens that can not be used again: after logout, and the old one after each refresh. |
 
 ### `app/models/documents.py`
 
@@ -317,17 +319,17 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `add_months(day, months)` | function | add_months(date(2026, 1, 31), 1) -> date(2026, 2, 28): the same day next month, or the month's last day. |
-| `DocumentType` | class · `table `document_types`` | A kind of paper a migrant needs: patent, migration registration, migration card, insurance, medical check. |
-| `GuideStep` | class · `table `guide_steps`` | One step of the step-by-step guide for a document type. |
-| `Region` | class · `table `regions`` | A region of Russia with its monthly patent price (the NDFL advance). Editors update prices each January. |
-| `UserDocument` | class · `table `user_documents`` | A document the user holds, with its end date. Reminders are sent before it runs out. |
+| `DocumentType` | class · table `document_types` | A kind of paper a migrant needs: patent, migration registration, migration card, insurance, medical check. |
+| `GuideStep` | class · table `guide_steps` | One step of the step-by-step guide for a document type. |
+| `Region` | class · table `regions` | A region of Russia with its monthly patent price (the NDFL advance). Editors update prices each January. |
+| `UserDocument` | class · table `user_documents` | A document the user holds, with its end date. Reminders are sent before it runs out. |
 | &nbsp;&nbsp;↳ `days_left()` | method | — |
 | &nbsp;&nbsp;↳ `status()` | method | — |
-| `Payment` | class · `table `payments`` | A payment for a document, e.g. the monthly patent tax, with a photo of the receipt (the receipts archive). A new payment moves the document's end date forward by the months paid; deleting it does not move it back. |
-| `MigrationCenter` | class · `table `migration_centers`` | A migration center where papers are handed in. Editors add them; the site shows them by region. |
-| `ReminderLog` | class · `table `reminder_logs`` | Remembers which reminders were already sent, so the daily job never sends the same one twice. The end date is part of the key: after the user renews a document, its reminders start again. |
-| `LawNews` | class · `table `law_news`` | News about migration law, written in Tajik. |
-| `ExamQuestion` | class · `table `exam_questions`` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. A listening question has listen_text: the site reads it aloud in Russian before the question. |
+| `Payment` | class · table `payments` | A payment for a document, e.g. the monthly patent tax, with a photo of the receipt (the receipts archive). A new payment moves the document's end date forward by the months paid; deleting it does not move it back. |
+| `MigrationCenter` | class · table `migration_centers` | A migration center where papers are handed in. Editors add them; the site shows them by region. |
+| `ReminderLog` | class · table `reminder_logs` | Remembers which reminders were already sent, so the daily job never sends the same one twice. The end date is part of the key: after the user renews a document, its reminders start again. |
+| `LawNews` | class · table `law_news` | News about migration law, written in Tajik. |
+| `ExamQuestion` | class · table `exam_questions` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. A listening question has listen_text: the site reads it aloud in Russian before the question. |
 
 ### `app/models/jobs.py`
 
@@ -336,13 +338,13 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `default_job_expiry()` | function | — |
-| `Employer` | class · `table `employers`` | The company of imported job ads, found again by its code on the source site (external_id). Admins verify real companies and put the ones that don't pay wages on the blacklist. |
-| `Job` | class · `table `jobs`` | — |
+| `Employer` | class · table `employers` | The company of imported job ads, found again by its code on the source site (external_id). Admins verify real companies and put the ones that don't pay wages on the blacklist. |
+| `Job` | class · table `jobs` | — |
 | &nbsp;&nbsp;↳ `industry_label()` | method | — |
-| `EmployerReview` | class · `table `employer_reviews`` | A worker's review of an employer. salary_not_paid marks complaints that feed the blacklist. |
-| `BlacklistReport` | class · `table `blacklist_reports`` | A worker puts a job's company on the blacklist, with the reason. Everyone sees the reports at once; the jobs stay visible with a warning. Admins check them and may blacklist the company for real (Employer.is_blacklisted hides its jobs) or delete a false report. |
-| `SavedJob` | class · `table `saved_jobs`` | A job the user saved to look at later. |
-| `JobAlert` | class · `table `job_alerts`` | "Tell me about new jobs like these": the filters of the jobs page, kept. After each import the user gets one notification with the new jobs that match (see services/alerts.py). Empty fields mean "any". |
+| `EmployerReview` | class · table `employer_reviews` | A worker's review of an employer. salary_not_paid marks complaints that feed the blacklist. |
+| `BlacklistReport` | class · table `blacklist_reports` | A worker puts a job's company on the blacklist, with the reason. Everyone sees the reports at once; the jobs stay visible with a warning. Admins check them and may blacklist the company for real (Employer.is_blacklisted hides its jobs) or delete a false report. |
+| `SavedJob` | class · table `saved_jobs` | A job the user saved to look at later. |
+| `JobAlert` | class · table `job_alerts` | "Tell me about new jobs like these": the filters of the jobs page, kept. After each import the user gets one notification with the new jobs that match (see services/alerts.py). Empty fields mean "any". |
 | &nbsp;&nbsp;↳ `industry_label()` | method | — |
 
 ### `app/models/places.py`
@@ -351,8 +353,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `Place` | class · `table `places`` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user"), which appear after an editor approves them. |
-| `PlaceReview` | class · `table `place_reviews`` | A visitor's rating (1-5) and words about a place; one per person per place. |
+| `Place` | class · table `places` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user"), which appear after an editor approves them. |
+| `PlaceReview` | class · table `place_reviews` | A visitor's rating (1-5) and words about a place; one per person per place. |
 
 ### `app/models/support.py`
 
@@ -360,8 +362,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `HelpContact` | class · `table `help_contacts`` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
-| `LegalQuestion` | class · `table `legal_questions`` | A worker's question to a lawyer. An admin writes the answer; the worker gets a notification. |
+| `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
+| `LegalQuestion` | class · table `legal_questions` | A worker's question to a lawyer. An admin writes the answer; the worker gets a notification. |
 
 ### `app/models/travel.py`
 
@@ -369,8 +371,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `Airport` | class · `table `airports`` | An airport in Tajikistan (TJ) or Russia (RU). city_code groups the airports of one city (Moscow: MOW), so a search can be "any airport of Moscow". |
-| `FlightWatch` | class · `table `flight_watches`` | "Tell me when a ticket on this route gets cheaper than max_price": checked every day (services/flights.py). month is "2026-11"; after that month the watch switches itself off. |
+| `Airport` | class · table `airports` | An airport in Tajikistan (TJ) or Russia (RU). city_code groups the airports of one city (Moscow: MOW), so a search can be "any airport of Moscow". |
+| `FlightWatch` | class · table `flight_watches` | "Tell me when a ticket on this route gets cheaper than max_price": checked every day (services/flights.py). month is "2026-11"; after that month the watch switches itself off. |
 
 
 ---
@@ -732,16 +734,17 @@ A generic, single database configuration.
 
 ### `app/services/places.py`
 
-**What it is for:** Real places from OpenStreetMap (© OpenStreetMap contributors, ODbL) through an Overpass server: for every region where most migrants live and every kind of place, one query; places are found again by their OSM id, so running the import again updates them. Places users suggested are never touched by the import.
+**What it is for:** Real places from OpenStreetMap (© OpenStreetMap contributors, ODbL) through Overpass servers, for the 30 regions where most migrants live (`REGIONS`: name → ISO code such as `RU-TA`; the region is found by its ISO3166-2 code, so it does not depend on how its name is written in OSM) and 12 kinds of places (`SELECTORS`: migration, medical, notary, translation, embassy, mosque, food, halal, money, hostel, market, photo). Places are found again by their OSM id, so running the import again updates them. Places users suggested are never touched by the import.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `query(region, category)` | function | — |
-| `fetch(client, region, category)` | async function | Asks the Overpass servers in turn, waiting longer after each busy answer; returns the elements, or raises the last error. |
-| `_clean(value, limit)` | function | — |
-| `place_fields(element, region, category)` | function | — |
-| `save(db, element, region, category)` | async function | — |
-| `import_places(db, regions, categories, pause, log)` | async function | — |
+| `query(region, selector)` | function | The Overpass query for one search (one selector) inside one region. |
+| `fetch_one(client, region, selector)` | async function | Asks the Overpass servers in turn, waiting longer after each busy answer (15, 45, 90, 180 s); returns the elements, or raises the last error. |
+| `fetch(client, region, category, pause, log)` | async function | Runs every search of a category one by one (small queries pass the servers' time limits) and merges the results without duplicates; a failed search is logged and the others are still used. |
+| `_clean(value, limit)` | function | One line of text without extra spaces, cut to the column's length. |
+| `place_fields(element, region, category)` | function | The fields of a Place from an OSM element (name, address, coordinates, phone, website, hours); None when it has no name or position. |
+| `save(db, element, region, category)` | async function | Creates the place or updates the one with the same OSM id; returns "created", "updated" or "skipped". |
+| `import_places(db, regions, categories, pause, log)` | async function | The whole import: regions by name or ISO code (all 30 by default), every category; returns the counts. Run with `python -m app.cli import-places [--region RU-TA] [--category hostel]`; Celery runs it every Sunday at 03:00. |
 
 ### `app/services/reminders.py`
 
@@ -1074,7 +1077,7 @@ A generic, single database configuration.
 
 ### `frontend/index.html`
 
-**What it is for:** For Google and link previews in Telegram/WhatsApp.
+**What it is for:** The site's only HTML page: title and description for Google and link previews in Telegram/WhatsApp, icon, PWA manifest, the dark theme before the first paint, and the place for React (`#root`).
 
 ### `frontend/postcss.config.js`
 
@@ -1217,7 +1220,7 @@ A generic, single database configuration.
 
 ### `frontend/src/index.css`
 
-**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent,
+**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px.
 
 ### `frontend/src/live.js`
 
@@ -1350,7 +1353,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/JobCard.jsx`
 
-**What it is for:** The job's industry square: one quiet style for every industry, the icon tells them apart.
+**What it is for:** The job card and its parts: badges, perks, the link to the official ad, the save and blacklist buttons.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1361,7 +1364,7 @@ A generic, single database configuration.
 | `OfficialLink` | export function | The link to the ad on the official site, where people read the contacts and apply. |
 | `placeOf` | export const | — |
 | `SaveButton` | export function | Save a job for later (only for logged-in users). onChange tells the page, e.g. to drop it from the saved list. |
-| `IndustryIcon` | function | — |
+| `IndustryIcon` | function | The job's industry square: one quiet style for every industry, the icon tells them apart. |
 | `JobRow` | export function | compact (home page): a short row, the whole row a link to the job. Otherwise (jobs list): a card with the company, address and perks, the salary, and buttons to the official ad and to save it. |
 
 ### `frontend/src/components/Layout.jsx`
@@ -1423,7 +1426,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/PaymentDrawer.jsx`
 
-**What it is for:** "2026-10-01" in the local time zone
+**What it is for:** The side panel to record a payment.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1466,7 +1469,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/motion.jsx`
 
-**What it is for:** fast start, soft landing
+**What it is for:** All animations of the site in one place (the motion library).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1586,7 +1589,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. --- Pieces --------------------------------------------------------------------------------------------------- --- Pages ----------------------------------------------------------------------------------------------------
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1673,12 +1676,12 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Places.jsx`
 
-**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones. width of the list over the map, px
+**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `PLACE_KINDS` | export const | — |
-| `REGION_VIEW` | const | Where the map opens for each region (latitude, longitude, zoom). |
+| `PLACE_KINDS` | export const | The 12 kinds of places with their label, icon and map color (same keys as PLACE_CATEGORIES in app/models/places.py). |
+| `REGION_VIEW` | const | Where the map opens for each of the 30 regions (latitude, longitude, zoom). |
 | `ROUTER` | const | Routes: the free OSRM servers of openstreetmap.de, on foot or by car. Coordinates are "lon,lat". |
 | `findRoute` | export function | — |
 | `myPosition` | function | The person's position, once (asks for permission the first time). |
@@ -1730,7 +1733,9 @@ A generic, single database configuration.
 | `aviasalesDay` | function | The search on aviasales.ru for one day: /search/DYU0511MOW1. |
 | `withPax` | function | Puts our passengers into a search link from Aviasales (they always give 1 passenger: /search/DYU3010SVO1?t=...). |
 | `totalPrice` | function | The price for everyone: adults and children pay a full seat, an infant without a seat about a tenth. |
-| `TIMES` | const | Monday first |
+| `WEEK` | const | Weekdays, Monday first. |
+| `TIMES` | const | Departure times: night, morning, day, evening (with hours). |
+| `SORTS` | const | Order: cheapest, earliest, fastest. |
 | `hourOf` | function | — |
 | `weekdayOf` | function | — |
 | `list` | function | "1,3" -> ["1", "3"] |
