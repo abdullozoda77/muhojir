@@ -1086,7 +1086,7 @@ A generic, single database configuration.
 
 ### `deploy/nginx-muhojir-api-site.conf`
 
-**What it is for:** Muhojir (FastAPI) site (installed as /etc/nginx/snippets/muhojir-api-site.conf). The React site from frontend/dist; the API, admin, API docs and live notifications from uvicorn (127.0.0.1:8071).
+**What it is for:** Muhojir (FastAPI) site (installed as /etc/nginx/snippets/muhojir-api-site.conf). The React site from frontend/dist; the API, admin, API docs and live notifications from uvicorn (127.0.0.1:8071). /index.html is sent with Cache-Control: no-cache, so browsers always ask the server whether the site changed.
 
 ### `deploy/setup.sh`
 
@@ -1145,7 +1145,7 @@ A generic, single database configuration.
 
 ### `frontend/public/sw.js`
 
-**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files).
+**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v6.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1269,6 +1269,10 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `registerServiceWorker` | export function | Only in the built site: in development the service worker would keep old files while the code changes. |
+| `CHECK_EVERY` | const | How often an open app looks for a new version: every 10 minutes. |
+| `loadedBuild` | const | The file name of the site's main script on this page (/assets/index-<hash>.js); the hash changes with every build. |
+| `newBuildOnServer` | async function | Downloads /index.html without any cache and compares its main script with the loaded one. |
+| `useAppUpdate` | export function | Keeps the installed app fresh: when the app is opened again from the background and there is a new version, it reloads by itself; while the app is being used it checks every 10 minutes and returns {ready, apply} for the "new version" bar in Layout. Also asks the service worker to update. Only in the built site. |
 | `clearUserData` | export function | After logout (or a login as someone else) the saved copies of the user's own data are forgotten. |
 | `installEvent` | const | Chrome on Android offers installing through this event; it comes once, so it is caught early and kept. |
 | `isIOS` | export const | — |
@@ -1405,7 +1409,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Layout.jsx`
 
-**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section.
+**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar.
 
 | Name | Kind | What it does |
 |---|---|---|

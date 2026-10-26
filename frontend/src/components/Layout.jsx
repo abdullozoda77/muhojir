@@ -2,14 +2,14 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
-  PenSquare, Plane, ReceiptText, SearchCheck, Settings, ShieldCheck, Sun, UserRound, WifiOff, X,
+  PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { lang, setLang, t } from "../i18n.js";
 import { useTheme } from "../theme.js";
-import { useOnline } from "../pwa.js";
+import { useAppUpdate, useOnline } from "../pwa.js";
 import { useLiveNotifications } from "../live.js";
 import Footer from "./Footer.jsx";
 import LiveToast from "./LiveToast.jsx";
@@ -223,6 +223,7 @@ export default function Layout() {
   const counts = useCounters(user, setToast);
   const { pathname } = useLocation();
   const online = useOnline();
+  const update = useAppUpdate();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -309,6 +310,15 @@ export default function Layout() {
 
       <main className="flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]">
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
+          {update.ready && (
+            <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">
+              <RefreshCw className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="flex-1">{t("Версияи нави сайт омад.")}</span>
+              <button type="button" onClick={update.apply} className="rounded-lg bg-primary px-3 py-1.5 text-label-md text-on-primary hover:bg-primary/90">
+                {t("Навсозӣ кардан")}
+              </button>
+            </p>
+          )}
           {!online && (
             <p role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-warning-fixed px-4 py-3 text-label-md text-on-warning-fixed">
               <WifiOff className="h-4 w-4 shrink-0" aria-hidden />
