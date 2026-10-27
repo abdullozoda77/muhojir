@@ -1568,12 +1568,13 @@ A generic, single database configuration.
 
 ### `frontend/src/components/LocationPicker.jsx`
 
-**What it is for:** A small MapLibre map (the colorful OpenFreeMap «liberty» style: streets, buildings, shops) to mark or show where a shop is. «I am in the shop now» asks the phone for its GPS position (high accuracy, up to 20 s) and shows the accuracy; if it is rougher than 100 m it asks to drag the pin. Permission denied, timeout, no signal and a non-https address each get their own message. A click or dragging the pin sets the place; under the map are the coordinates and links to Yandex satellite and street panorama.
+**What it is for:** A small MapLibre map (the colorful OpenFreeMap «liberty» style: streets, buildings, shops) to mark or show where a shop is. «I am in the shop now» listens to the device position for up to 20 s with high accuracy and keeps the best reading: it stops at once at ±30 m (phone GPS), or 6 s after the last reading. Up to 100 m the pin is placed; up to 1 km it is placed with a «drag the pin» warning; worse than 1 km (a computer without GPS guesses by the internet, often hundreds of km off) nothing is saved and the owner is asked to use the phone in the shop or tap the map. Permission denied, timeout, no signal and a non-https address get their own messages. A click or dragging the pin sets the place; under the map are the coordinates and links to Yandex satellite and street panorama.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `panoramaUrl(lat, lon)` | export function | Yandex Maps street panorama at the point. |
 | `satelliteUrl(lat, lon)` | export function | Yandex Maps satellite view with a pin at the point. |
+| `distanceText(meters)` | export function | «240 м» or «305 км». |
 | `geoProblem(error)` | function | The message for a failed location request, by its error code. |
 | `LocationPicker` | export function | The map; readOnly shows the pin only (for editors). |
 

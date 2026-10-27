@@ -7,6 +7,14 @@ import { t } from "../i18n.js";
 const STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const MOSCOW = [37.6176, 55.7558];
 const ROUGH_METERS = 100;
+const USELESS_METERS = 1000;
+const GOOD_METERS = 30;
+const MAX_WAIT = 20000;
+const SETTLE = 6000;
+
+export function distanceText(meters) {
+  return meters < 1000 ? `${Math.round(meters)} м` : `${Math.round(meters / 1000)} км`;
+}
 
 export function panoramaUrl(lat, lon) {
   return `https://yandex.ru/maps/?ll=${lon},${lat}&z=18&l=stv%2Csta&panorama%5Bpoint%5D=${lon},${lat}`;
@@ -33,6 +41,7 @@ export default function LocationPicker({ value, onChange, readOnly = false, clas
   const [locating, setLocating] = useState(false);
   const [problem, setProblem] = useState("");
   const [accuracy, setAccuracy] = useState(null);
+  const watch = useRef(null);
   const has = value && value.lat != null && value.lon != null;
   change.current = onChange;
 
@@ -84,24 +93,57 @@ export default function LocationPicker({ value, onChange, readOnly = false, clas
     else m.easeTo(target);
   }, [has, value?.lat, value?.lon, readOnly]);
 
+  useEffect(() => () => watch.current?.stop(), []);
+
+  const applyFix = (pos) => {
+    const meters = Math.round(pos.coords.accuracy);
+    if (meters <= USELESS_METERS) {
+      pick(point(pos.coords.latitude, pos.coords.longitude), meters);
+      return;
+    }
+    const zoom = Math.max(5, Math.min(14, 16 - Math.log2(meters / 100)));
+    if (!has) map.current?.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom });
+    setProblem(t("Ин дастгоҳ GPS надорад, бинобар ин браузер ҷойро танҳо аз рӯи интернет тахмин кард (±{0}) — барои мағоза ин дақиқ нест. Сайтро дар телефон дар худи мағоза кушоед ва тугмаро пахш кунед, ё ҷойи мағозаро дар харита ёфта пахш кунед.", distanceText(meters)));
+  };
+
   const locate = () => {
     if (!window.isSecureContext || !navigator.geolocation) {
       setProblem(geoProblem(null));
       return;
     }
+    watch.current?.stop();
     setLocating(true);
     setProblem("");
-    navigator.geolocation.getCurrentPosition(
+    let best = null;
+    let lastError = null;
+    let settle = null;
+    const stop = () => {
+      navigator.geolocation.clearWatch(id);
+      clearTimeout(limit);
+      clearTimeout(settle);
+      watch.current = null;
+    };
+    const finish = (error) => {
+      stop();
+      setLocating(false);
+      if (best) applyFix(best);
+      else setProblem(geoProblem(error || lastError || { code: 3 }));
+    };
+    const id = navigator.geolocation.watchPosition(
       (pos) => {
-        setLocating(false);
-        pick(point(pos.coords.latitude, pos.coords.longitude), Math.round(pos.coords.accuracy));
+        if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+        if (pos.coords.accuracy <= GOOD_METERS) return finish();
+        clearTimeout(settle);
+        settle = setTimeout(() => finish(), SETTLE);
       },
       (error) => {
-        setLocating(false);
-        setProblem(geoProblem(error));
+        lastError = error;
+        if (error.code === 1) finish(error);
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: MAX_WAIT, maximumAge: 0 },
     );
+    const limit = setTimeout(() => finish(), MAX_WAIT);
+    watch.current = { stop };
   };
 
   const rough = accuracy != null && accuracy > ROUGH_METERS;
@@ -125,8 +167,8 @@ export default function LocationPicker({ value, onChange, readOnly = false, clas
         <span className={`flex items-start gap-1.5 text-body-sm ${rough ? "text-warning" : "text-tertiary"}`}>
           {rough && <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
           {rough
-            ? t("Ҷой тахминӣ аст (±{0} м). Нишонаи сурхро ба ҷойи дақиқи мағоза кашед ё дар харита пахш кунед.", accuracy)
-            : t("Ҷой бо GPS ёфт шуд (±{0} м). Агар лозим бошад, нишонаро кашида ислоҳ кунед.", accuracy)}
+            ? t("Ҷой тахминӣ аст (±{0}). Нишонаи сурхро ба ҷойи дақиқи мағоза кашед ё дар харита пахш кунед.", distanceText(accuracy))
+            : t("Ҷой бо GPS ёфт шуд (±{0}). Агар лозим бошад, нишонаро кашида ислоҳ кунед.", distanceText(accuracy))}
         </span>
       )}
       {has ? (
