@@ -1568,12 +1568,13 @@ A generic, single database configuration.
 
 ### `frontend/src/components/LocationPicker.jsx`
 
-**What it is for:** A small MapLibre map to mark or show where a shop is: «I am in the shop now» uses the phone's GPS, a click or dragging the pin sets the place; under it the coordinates and a Yandex street panorama link.
+**What it is for:** A small MapLibre map (the colorful OpenFreeMap «liberty» style: streets, buildings, shops) to mark or show where a shop is. «I am in the shop now» asks the phone for its GPS position (high accuracy, up to 20 s) and shows the accuracy; if it is rougher than 100 m it asks to drag the pin. Permission denied, timeout, no signal and a non-https address each get their own message. A click or dragging the pin sets the place; under the map are the coordinates and links to Yandex satellite and street panorama.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `panoramaUrl(lat, lon)` | export function | Yandex Maps street panorama at the point. |
-| `mapUrl(lat, lon)` | export function | Yandex Maps with a pin at the point. |
+| `satelliteUrl(lat, lon)` | export function | Yandex Maps satellite view with a pin at the point. |
+| `geoProblem(error)` | function | The message for a failed location request, by its error code. |
 | `LocationPicker` | export function | The map; readOnly shows the pin only (for editors). |
 
 
