@@ -10,6 +10,7 @@ RATES = {
     "login_code": (5, 3600),
     "login": (20, 3600),
     "assistant": (40, 3600),
+    "geocode": (60, 3600),
 }
 
 _memory = defaultdict(list)

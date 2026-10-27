@@ -124,3 +124,48 @@ async def test_shop_limit_and_strangers(client, user):
     assert (await client.patch(f"/api/market/shops/{shop_id}/", headers=stranger, json={"name": "Мой"})).status_code == 404
     assert (await client.post(f"/api/market/shops/{shop_id}/products/", headers=stranger, json={"name": "Нон", "price": 50})).status_code == 404
     assert (await client.post("/api/market/shops/", json=SHOP)).status_code == 401
+
+
+async def test_geocode(client, user, monkeypatch):
+    from app.services import geocode
+
+    calls = []
+
+    class Answer:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return [{"display_name": "10, Люблинская улица, Люблино, Москва, Россия", "lat": "55.6765123", "lon": "37.7612345", "type": "house"}]
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def get(self, url, params):
+            calls.append(params)
+            return Answer()
+
+    monkeypatch.setattr(geocode.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(geocode, "GAP", 0)
+    headers, _ = user
+    assert (await client.get("/api/market/geocode/", params={"q": "Люблинская 10"})).status_code == 401
+    assert "q" in (await client.get("/api/market/geocode/", params={"q": "a"}, headers=headers)).json()
+    r = await client.get("/api/market/geocode/", params={"q": "Москва, Люблинская 10"}, headers=headers)
+    assert r.json() == [{"name": "10, Люблинская улица, Люблино, Москва", "full_name": "10, Люблинская улица, Люблино, Москва, Россия",
+                         "lat": 55.676512, "lon": 37.761235, "kind": "house"}]
+    await client.get("/api/market/geocode/", params={"q": "москва,  люблинская 10"}, headers=headers)
+    assert len(calls) == 1 and calls[0]["countrycodes"] == "ru,tj"
+
+    class Broken(Client):
+        async def get(self, url, params):
+            raise geocode.httpx.ConnectError("down")
+
+    monkeypatch.setattr(geocode.httpx, "AsyncClient", Broken)
+    assert (await client.get("/api/market/geocode/", params={"q": "Казань, Баумана 5"}, headers=headers)).status_code == 503

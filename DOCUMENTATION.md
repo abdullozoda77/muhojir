@@ -59,7 +59,7 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - `app/models/` — database tables (SQLAlchemy) — 8 files
 - `app/schemas/` — request bodies and JSON answers — 5 files
 - `app/routers/` — the API endpoints — 9 files
-- `app/services/` — business logic used by routers and background tasks — 10 files
+- `app/services/` — business logic used by routers and background tasks — 11 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
@@ -670,6 +670,7 @@ A generic, single database configuration.
 | `visible(query, user)` | function | Guests see approved shops; an owner also sees their own; editors see all. |
 | `shop_filters(query, request, search)` | function | search (also in product names), city, category, delivery. |
 | `as_json(user)` | function | A row -> shop_json for this viewer. |
+| `find_address(request, user)` | async function · `GET /api/market/geocode/` | ?q=address -> matching places (logged-in users, 60 per hour); 503 when the search service is down. |
 | `list_shops(request, db, user, page)` | async function · `GET /api/market/shops/` | Approved shops with the filters; mine=true — my shops in any status; editors: status=pending. Ordering: rating, name, created_at. |
 | `summary(db)` | async function · `GET /api/market/shops/summary/` | Number of shops and products, shops per kind and the cities with shops. |
 | `get_shop_row(db, user, shop_id)` | async function | One visible shop row or 404. |
@@ -794,6 +795,17 @@ A generic, single database configuration.
 | `_ticket(item)` | function | — |
 | `prices(origin, destination, month, direct)` | async function | The one-way tickets of the month (or the nearest ones), cheapest first (up to 200, so every day has its flights), and the cheapest price of every day. |
 | `check_watches(db, today)` | async function | Every day: tells users whose watched route got cheaper than their price. Returns how many were told. |
+
+### `app/services/geocode.py`
+
+**What it is for:** Address search for the shop location (works on computers without GPS): OpenStreetMap Nominatim, only Russia and Tajikistan, at most one request per second from the whole server (their usage rule), answers cached for 7 days.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `GeocodeUnavailable` | class | Nominatim did not answer. |
+| `short_name(item)` | function | The first four parts of the address. |
+| `search(query, lang)` | async function | Up to 6 places: name, full_name, lat, lon, kind. |
+
 
 ### `app/services/google.py`
 
@@ -1177,6 +1189,7 @@ A generic, single database configuration.
 | `sign_up(client, email)` | async function | A second confirmed user; returns (headers, id). |
 | `test_shop_moderation_products_reviews(client, user)` | async function | Contacts check, draft hidden, proofs (wrong kind, wrong file, private), location required, submit, reject -> fix -> submit -> approve with notifications, filters, reviews, deleting. |
 | `test_shop_limit_and_strangers(client, user)` | async function | At most 3 shops; another user cannot change my shop. |
+| `test_geocode(client, user, monkeypatch)` | async function | Address search: login, short query, result format, cache, service down. |
 
 
 ### `tests/test_travel.py`
@@ -1576,7 +1589,8 @@ A generic, single database configuration.
 | `satelliteUrl(lat, lon)` | export function | Yandex Maps satellite view with a pin at the point. |
 | `distanceText(meters)` | export function | «240 м» or «305 км». |
 | `geoProblem(error)` | function | The message for a failed location request, by its error code. |
-| `LocationPicker` | export function | The map; readOnly shows the pin only (for editors). |
+| `AddressSearch` | function | The address box above the map (pre-filled with the shop's city and address): one match moves the pin at once, several are shown as a list to choose from. |
+| `LocationPicker` | export function | The map; query is the starting address text; readOnly shows the pin only (for editors). |
 
 
 ### `frontend/src/components/Map3D.jsx`

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Crosshair, ExternalLink, Loader2, MapPin, Satellite, TriangleAlert } from "lucide-react";
+import { Crosshair, ExternalLink, Loader2, MapPin, Satellite, Search, TriangleAlert } from "lucide-react";
+import { api } from "../api.js";
 import { t } from "../i18n.js";
 
 const STYLE = "https://tiles.openfreemap.org/styles/liberty";
@@ -33,7 +34,83 @@ function geoProblem(error) {
   return t("Ҷойи шумо ёфт нашуд. GPS-ро дар телефон фаъол кунед ё ҷойро дар харита пахш кунед.");
 }
 
-export default function LocationPicker({ value, onChange, readOnly = false, className = "h-72" }) {
+function AddressSearch({ query, onFound }) {
+  const [text, setText] = useState(query || "");
+  const [results, setResults] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
+
+  useEffect(() => {
+    setText((current) => current || query || "");
+  }, [query]);
+
+  const find = async () => {
+    const q = text.trim();
+    if (q.length < 3) {
+      setProblem(t("Суроғаро нависед: шаҳр, кӯча ва хона."));
+      return;
+    }
+    setBusy(true);
+    setProblem("");
+    setResults(null);
+    try {
+      const found = await api(`/market/geocode/?q=${encodeURIComponent(q)}`);
+      setResults(found);
+      if (found.length === 1) {
+        onFound(found[0]);
+        setResults(null);
+      }
+    } catch (err) {
+      setProblem(err.status === 503 ? t("Ҷустуҷӯи суроға ҳоло кор намекунад. Мағозаро дар харита пахш кунед.") : err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <label className="flex min-h-[44px] flex-1 items-center gap-2 rounded-xl bg-surface-container-lowest px-3 ring-1 ring-inset ring-outline-variant focus-within:ring-2 focus-within:ring-primary/40">
+          <Search className="h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden />
+          <input
+            type="search"
+            className="w-full border-0 bg-transparent p-0 text-body-md focus:ring-0"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                find();
+              }
+            }}
+            placeholder={t("Масалан: Москва, Люблинская 10")}
+            aria-label={t("Суроғаи мағоза")}
+          />
+        </label>
+        <button type="button" onClick={find} disabled={busy} className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:opacity-60">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="h-4 w-4" aria-hidden />}
+          {t("Ёфтан")}
+        </button>
+      </div>
+      {problem && <span className="text-body-sm text-error">{problem}</span>}
+      {results && (results.length === 0 ? (
+        <span className="text-body-sm text-on-surface-variant">{t("Чунин суроға ёфт нашуд. Шаҳр, кӯча ва рақами хонаро санҷед ё мағозаро дар харита пахш кунед.")}</span>
+      ) : (
+        <div className="flex flex-col overflow-hidden rounded-xl ring-1 ring-outline-variant">
+          <span className="bg-surface-container-low px-3 py-2 text-label-sm text-on-surface-variant">{t("Суроғаи дурустро интихоб кунед:")}</span>
+          {results.map((r) => (
+            <button key={`${r.lat},${r.lon}`} type="button" title={r.full_name} onClick={() => { onFound(r); setResults(null); }} className="flex items-start gap-2 border-t border-outline-variant px-3 py-2.5 text-left text-body-sm transition-colors hover:bg-surface-container-low">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+              {r.name}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function LocationPicker({ value, onChange, readOnly = false, query = "", className = "h-72" }) {
   const box = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -41,12 +118,14 @@ export default function LocationPicker({ value, onChange, readOnly = false, clas
   const [locating, setLocating] = useState(false);
   const [problem, setProblem] = useState("");
   const [accuracy, setAccuracy] = useState(null);
+  const [address, setAddress] = useState("");
   const watch = useRef(null);
   const has = value && value.lat != null && value.lon != null;
   change.current = onChange;
 
-  const pick = (p, meters = null) => {
+  const pick = (p, meters = null, name = "") => {
     setAccuracy(meters);
+    setAddress(name);
     setProblem("");
     change.current?.(p);
   };
@@ -156,12 +235,16 @@ export default function LocationPicker({ value, onChange, readOnly = false, clas
           {locating ? t("Ҷойи шуморо меҷӯем…") : t("Ман ҳозир дар мағоза ҳастам — ҷойи маро гиред")}
         </button>
       )}
+      {!readOnly && <AddressSearch query={query} onFound={(r) => pick(point(r.lat, r.lon), null, r.name)} />}
       <div ref={box} className={`${className} w-full overflow-hidden rounded-xl ring-1 ring-outline-variant`} />
       {problem && (
         <span role="alert" className="flex items-start gap-1.5 text-body-sm text-error">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {problem}
         </span>
+      )}
+      {has && address && (
+        <span className="text-body-sm text-tertiary">{t("Аз рӯи суроға ёфт шуд: {0}. Агар хона дигар бошад, нишонаро кашида ислоҳ кунед.", address)}</span>
       )}
       {has && accuracy != null && (
         <span className={`flex items-start gap-1.5 text-body-sm ${rough ? "text-warning" : "text-tertiary"}`}>

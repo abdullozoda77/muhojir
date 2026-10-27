@@ -81,7 +81,7 @@ function ProofIntro() {
   );
 }
 
-function LocationProof({ value, onChange, saving }) {
+function LocationProof({ value, onChange, saving, query }) {
   const has = value && value.lat != null;
   return (
     <div className="flex flex-col gap-2 rounded-xl bg-surface-container-lowest p-3 ring-1 ring-inset ring-outline-variant">
@@ -90,7 +90,7 @@ function LocationProof({ value, onChange, saving }) {
         {has && <span className="ml-2 text-label-sm font-normal text-tertiary">✓ {saving ? t("Сабт шуда истодааст…") : t("Қайд шуд")}</span>}
       </span>
       <span className="text-body-sm text-on-surface-variant">{t("Муҳаррир ҷойро дар харита ва панорамаи кӯча месанҷад, ки мағоза воқеан ҳаст.")}</span>
-      <LocationPicker value={value} onChange={onChange} />
+      <LocationPicker value={value} onChange={onChange} query={query} />
     </div>
   );
 }
@@ -165,7 +165,7 @@ function ProofPanel({ shop, onSubmitted }) {
           </div>
         );
       })}
-      <LocationProof value={location} onChange={place} saving={saving} />
+      <LocationProof value={location} onChange={place} saving={saving} query={[shop.city, shop.address].filter(Boolean).join(", ")} />
       <ErrorBox error={error} />
       {canSubmit && (
         <Button icon={Send} loading={busy === "submit"} disabled={!ready} onClick={submit} className="self-start">
@@ -269,7 +269,7 @@ function ShopForm({ open, shop, onClose, onSaved }) {
             {PROOF_KINDS.map((kind) => (
               <ProofSlot key={kind.value} kind={kind} file={proofs[kind.value]} onPick={(file) => setProofs((p) => ({ ...p, [kind.value]: file }))} />
             ))}
-            <LocationProof value={location} onChange={setLocation} />
+            <LocationProof value={location} onChange={setLocation} query={[form.city, form.address].filter(Boolean).join(", ")} />
           </div>
         )}
         <ErrorBox error={error} />

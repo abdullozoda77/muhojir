@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import func, or_, select
 
@@ -9,10 +9,12 @@ from app.core.deps import DB, CurrentUser, EditorUser, OptionalUser
 from app.core.errors import ApiError, FieldError
 from app.core.files import delete_image, delete_private, private_path, save_image, save_private
 from app.core.pagination import Paginate
+from app.core.throttle import throttle
 from app.models import REQUIRED_PROOFS, SHOP_CATEGORIES, Product, Shop, ShopProof, ShopReview
 from app.routers.documents import int_param, param
 from app.routers.jobs import bool_param
 from app.schemas import market as s
+from app.services import geocode
 from app.services.market import LOGOS, PHOTOS, PROOFS, delete_files, shop_files, tell_owner
 
 router = APIRouter(prefix="/api/market", tags=["market"])
@@ -72,6 +74,18 @@ async def list_shops(request: Request, db: DB, user: OptionalUser, page: Paginat
     query = apply_ordering(request, query, {"created_at": Shop.created_at, "name": Shop.name, "rating": ratings.c.avg},
                            [ratings.c.n.desc().nulls_last(), stock.c.n.desc().nulls_last(), Shop.created_at.desc()])
     return await page.respond(db, query, as_json(user))
+
+
+@router.get("/geocode/", dependencies=[Depends(throttle("geocode"))])
+async def find_address(request: Request, user: CurrentUser):
+    query = (param(request, "q") or "").strip()
+    if len(query) < 3:
+        raise FieldError("q", "Write the address: city, street and house.")
+    lang = "ru" if request.headers.get("accept-language", "").startswith("ru") else "ru,tg"
+    try:
+        return await geocode.search(query, lang)
+    except geocode.GeocodeUnavailable:
+        raise ApiError("Address search is not available now. Tap the shop on the map.", 503)
 
 
 @router.get("/shops/summary/")

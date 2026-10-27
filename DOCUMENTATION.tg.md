@@ -62,7 +62,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 - `app/models/` — ҷадвалҳои пойгоҳи додаҳо (SQLAlchemy) — 8 файл
 - `app/schemas/` — ҷисми дархостҳо ва ҷавобҳои JSON — 5 файл
 - `app/routers/` — endpoint-ҳои API — 9 файл
-- `app/services/` — мантиқи корӣ барои роутерҳо ва корҳои пасзамина — 10 файл
+- `app/services/` — мантиқи корӣ барои роутерҳо ва корҳои пасзамина — 11 файл
 - `app/assistant/` — ёрдамчии AI — 3 файл
 - `app/admin/` — панели админ (SQLAdmin, `/admin/`) — 2 файл
 - `app/admin/templates/` — саҳифаҳои панели админ — 1 файл
@@ -660,6 +660,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `visible(query, user)` | функсия | Меҳмон мағозаҳои тасдиқшударо мебинад; соҳиб — инчунин мағозаҳои худро; муҳаррир — ҳамаро. |
 | `shop_filters(query, request, search)` | функсия | search (инчунин дар номи молҳо), city, category, delivery. |
 | `as_json(user)` | функсия | Сатр -> shop_json барои ин бинанда. |
+| `find_address(request, user)` | функсияи async · `GET /api/market/geocode/` | ?q=суроға -> ҷойҳои мувофиқ (корбарони воридшуда, 60 дар як соат); 503, агар хидмати ҷустуҷӯ кор накунад. |
 | `list_shops(request, db, user, page)` | функсияи async · `GET /api/market/shops/` | Мағозаҳои тасдиқшуда бо филтрҳо; mine=true — мағозаҳои ман бо ҳар ҳолат; муҳаррир: status=pending. Тартиб: rating, name, created_at. |
 | `summary(db)` | функсияи async · `GET /api/market/shops/summary/` | Шумораи мағозаҳо ва молҳо, мағозаҳо аз рӯи навъ ва шаҳрҳо. |
 | `get_shop_row(db, user, shop_id)` | функсияи async | Як мағозаи намоён ё 404. |
@@ -783,6 +784,17 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `_ticket(item)` | функсия | Як чиптаро аз ҷавоби API ба шакли мо меорад. |
 | `prices(origin, destination, month, direct)` | функсияи async | Чиптаҳои яктарафаи моҳ (ё наздиктаринҳо), аввал арзонтарин (то 200, то ҳар рӯз парвозҳояшро дошта бошад), ва арзонтарин нархи ҳар рӯз. |
 | `check_watches(db, today)` | функсияи async | Ҳар рӯз: ба корбароне, ки роҳи назораткардаашон аз нархашон арзон шудааст, хабар медиҳад. Шумораи огоҳшудаҳоро бармегардонад. |
+
+### `app/services/geocode.py`
+
+**Барои чӣ:** Ҷустуҷӯи суроға барои ҷойи мағоза (дар компютери бе GPS ҳам кор мекунад): Nominatim-и OpenStreetMap, танҳо Русия ва Тоҷикистон, на зиёда аз як дархост дар сония аз тамоми сервер (қоидаи онҳо), ҷавобҳо 7 рӯз дар кэш.
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `GeocodeUnavailable` | класс | Nominatim ҷавоб надод. |
+| `short_name(item)` | функсия | Чор қисми аввали суроға. |
+| `search(query, lang)` | функсияи async | То 6 ҷой: name, full_name, lat, lon, kind. |
+
 
 ### `app/services/google.py`
 
@@ -1166,6 +1178,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `sign_up(client, email)` | функсияи async | Корбари дуюми тасдиқшуда; (headers, id) медиҳад. |
 | `test_shop_moderation_products_reviews(client, user)` | функсияи async | Санҷиши тамос, draft пинҳон, исботҳо (навъи хато, файли хато, шахсӣ), ҷойгиршавӣ ҳатмӣ, фиристодан, рад -> ислоҳ -> фиристодан -> тасдиқ бо огоҳиҳо, филтрҳо, шарҳҳо, нест кардан. |
 | `test_shop_limit_and_strangers(client, user)` | функсияи async | На зиёда аз 3 мағоза; корбари дигар мағозаи маро тағйир дода наметавонад. |
+| `test_geocode(client, user, monkeypatch)` | функсияи async | Ҷустуҷӯи суроға: воридшавӣ, дархости кӯтоҳ, шакли ҷавоб, кэш, хидмат кор намекунад. |
 
 
 ### `tests/test_travel.py`
@@ -1565,7 +1578,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `satelliteUrl(lat, lon)` | функсияи экспортӣ | Намои моҳвораи Яндекс-харита бо нишона дар нуқта. |
 | `distanceText(meters)` | функсияи экспортӣ | «240 м» ё «305 км». |
 | `geoProblem(error)` | функсия | Паёми хатои ҷойгиршавӣ аз рӯи рамзи хато. |
-| `LocationPicker` | функсияи экспортӣ | Харита; readOnly танҳо нишонаро нишон медиҳад (барои муҳаррир). |
+| `AddressSearch` | функсия | Қутти суроға болои харита (бо шаҳр ва суроғаи мағоза пур шудааст): агар як ҷавоб бошад, нишона фавран мегузарад, якчанд — рӯйхат барои интихоб. |
+| `LocationPicker` | функсияи экспортӣ | Харита; query — матни аввалаи суроға; readOnly танҳо нишонаро нишон медиҳад (барои муҳаррир). |
 
 
 ### `frontend/src/components/Map3D.jsx`
