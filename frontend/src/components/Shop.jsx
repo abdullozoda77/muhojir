@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Ban, BadgeCheck, Hourglass, MapPin, MessageCircle, Package, Phone, Send, Truck } from "lucide-react";
+import { Ban, BadgeCheck, FileText, Hourglass, MapPin, MessageCircle, Package, PencilLine, Phone, Send, Truck } from "lucide-react";
+import { api, openPrivateFile } from "../api.js";
 import { t } from "../i18n.js";
 import { rub } from "../format.js";
-import { shopCategory, shopOrigin, unitLabel } from "../constants.js";
+import { shopCategory, unitLabel } from "../constants.js";
 import { Stars } from "./Stars.jsx";
 
 export async function fitPhoto(file, side = 1200) {
@@ -26,17 +28,8 @@ export function ShopLogo({ shop, className = "h-14 w-14" }) {
   );
 }
 
-export function OriginBadge({ origin }) {
-  const o = shopOrigin(origin);
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-low px-2.5 py-1 text-label-sm text-on-surface-variant">
-      <span aria-hidden>{o.flag}</span>
-      {o.label}
-    </span>
-  );
-}
-
 const STATUS = {
+  draft: { icon: PencilLine, box: "bg-surface-container-high text-on-surface-variant", label: () => t("Ба санҷиш нафиристода") },
   pending: { icon: Hourglass, box: "bg-warning-fixed text-on-warning-fixed", label: () => t("Интизори санҷиш") },
   approved: { icon: BadgeCheck, box: "bg-tertiary-fixed text-on-tertiary-fixed", label: () => t("Тасдиқ шуд") },
   rejected: { icon: Ban, box: "bg-error-container text-on-error-container", label: () => t("Рад шуд") },
@@ -49,6 +42,38 @@ export function ShopStatus({ status }) {
       <s.icon className="h-3.5 w-3.5" aria-hidden />
       {s.label()}
     </span>
+  );
+}
+
+export const PROOF_KINDS = [
+  { value: "place", required: true, get label() { return t("Акси ҷойи савдо"); }, get hint() { return t("Мағоза аз берун бо лавҳа ё растаи шумо дар бозор."); } },
+  { value: "goods", required: true, get label() { return t("Акси молҳо дар ҷой"); }, get hint() { return t("Рафҳо ё пештахта бо молҳо, ки ҳозир мефурӯшед."); } },
+  { value: "document", required: false, get label() { return t("Ҳуҷҷат"); }, get hint() { return t("ИП, самозанятый, шартномаи иҷора ё патент. Ихтиёрӣ, вале зудтар тасдиқ мекунем."); } },
+];
+
+export function ProofThumb({ shopId, proof, className = "h-24 w-24" }) {
+  const path = `/market/shops/${shopId}/proofs/${proof.id}/`;
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (proof.is_pdf) return undefined;
+    let alive = true;
+    let made = null;
+    api(path, { raw: true })
+      .then((res) => res.blob())
+      .then((blob) => {
+        made = URL.createObjectURL(blob);
+        if (alive) setUrl(made);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [path, proof.is_pdf]);
+  return (
+    <button type="button" onClick={() => openPrivateFile(path).catch(() => {})} title={proof.kind_label} className={`${className} shrink-0 overflow-hidden rounded-xl bg-surface-container ring-1 ring-outline-variant transition-opacity hover:opacity-85`}>
+      {url ? <img src={url} alt={proof.kind_label} className="h-full w-full object-cover" /> : <FileText className="mx-auto h-7 w-7 text-on-surface-variant" aria-hidden />}
+    </button>
   );
 }
 
@@ -103,7 +128,6 @@ export function ShopCard({ shop }) {
       </div>
       {shop.description && <p className="line-clamp-2 text-body-sm text-on-surface-variant">{shop.description}</p>}
       <div className="mt-auto flex flex-wrap items-center gap-2">
-        <OriginBadge origin={shop.origin} />
         <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-low px-2.5 py-1 text-label-sm text-on-surface-variant">
           <MapPin className="h-3.5 w-3.5" aria-hidden />
           {shop.city}
@@ -156,7 +180,6 @@ export function ProductCard({ product, showShop = false, children }) {
         <Price product={product} className="mt-auto pt-1 text-[16px]" />
         {showShop && product.shop && (
           <span className="flex items-center gap-1.5 truncate text-label-sm text-on-surface-variant">
-            <span aria-hidden>{shopOrigin(product.shop.origin).flag}</span>
             {product.shop.name} · {product.shop.city}
           </span>
         )}

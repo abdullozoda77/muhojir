@@ -6,7 +6,7 @@ from tests.conftest import last_code, set_role
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
-SHOP = {"name": "Дӯкони Саид", "category": "grocery", "origin": "tj", "city": "Москва", "address": "Люблинская 10",
+SHOP = {"name": "Дӯкони Саид", "category": "grocery", "city": "Москва", "address": "Люблинская 10",
         "phone": "8 999 123-45-67", "telegram": "https://t.me/dukoni_said", "delivery": True}
 
 
@@ -26,7 +26,7 @@ async def test_shop_moderation_products_reviews(client, user):
     r = await client.post("/api/market/shops/", headers=owner, json=SHOP)
     assert r.status_code == 201, r.text
     shop = r.json()
-    assert shop["status"] == "pending" and shop["phone"] == "+79991234567" and shop["telegram"] == "dukoni_said"
+    assert shop["status"] == "draft" and shop["phone"] == "+79991234567" and shop["telegram"] == "dukoni_said"
     assert shop["is_mine"] and shop["reject_reason"] == ""
 
     assert (await client.get(f"/api/market/shops/{shop['id']}/")).status_code == 404
@@ -48,6 +48,30 @@ async def test_shop_moderation_products_reviews(client, user):
     editor, editor_id = await sign_up(client, "editor-market@example.com")
     assert (await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=owner, json={"status": "approved"})).status_code == 403
     await set_role(editor_id, "editor")
+    r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "approved"})
+    assert r.status_code == 400
+
+    r = await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)
+    assert "proofs" in r.json()
+    proof = lambda kind, data=PNG, name="p.png": client.post(f"/api/market/shops/{shop['id']}/proofs/", headers=owner,
+                                                             data={"kind": kind}, files={"file": (name, data, "image/png")})
+    r = await proof("place")
+    assert r.status_code == 201, r.text
+    place_id = r.json()["id"]
+    assert (await proof("selfie")).status_code == 400
+    assert (await proof("goods", b"x", "p.exe")).status_code == 400
+    assert (await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)).status_code == 400
+    assert (await proof("goods")).status_code == 201
+    assert (await client.get(f"/api/market/shops/{shop['id']}/proofs/{place_id}/", headers=editor)).content == PNG
+    r = await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)
+    assert "location" in r.json()
+    r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"lat": 55.68, "lon": 37.76})
+    assert r.json()["lat"] == 55.68
+    stranger, _ = await sign_up(client, "proof-stranger@example.com")
+    assert (await client.get(f"/api/market/shops/{shop['id']}/proofs/", headers=stranger)).status_code == 404
+    r = await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)
+    assert r.json()["status"] == "pending"
+    assert (await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)).status_code == 400
 
     r = await client.get("/api/market/shops/", params={"status": "pending"}, headers=editor)
     assert shop["id"] in [x["id"] for x in r.json()["results"]]
@@ -56,6 +80,8 @@ async def test_shop_moderation_products_reviews(client, user):
     r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "rejected", "reason": "Суроға нест"})
     assert r.json()["status"] == "rejected"
     r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"address": "Люблинская 12"})
+    assert r.json()["status"] == "rejected"
+    r = await client.post(f"/api/market/shops/{shop['id']}/submit/", headers=owner)
     assert r.json()["status"] == "pending"
     r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "approved"})
     assert r.json()["status"] == "approved" and r.json()["reject_reason"] == ""
@@ -63,11 +89,9 @@ async def test_shop_moderation_products_reviews(client, user):
         titles = (await db.scalars(select(Notification.title).where(Notification.user_id == owner_data["user"]["id"]))).all()
     assert "Мағозаи шумо рад шуд" in titles and "Мағозаи шумо тасдиқ шуд" in titles
 
-    r = await client.get("/api/market/shops/", params={"search": "курага", "city": "моск", "origin": "tj", "delivery": "true"})
+    r = await client.get("/api/market/shops/", params={"search": "курага", "city": "моск", "delivery": "true"})
     assert [x["id"] for x in r.json()["results"]] == [shop["id"]]
     assert r.json()["results"][0]["products_count"] == 1 and "reject_reason" not in r.json()["results"][0]
-    r = await client.get("/api/market/shops/", params={"origin": "uz"})
-    assert shop["id"] not in [x["id"] for x in r.json()["results"]]
     r = await client.get("/api/market/products/", params={"search": "курага", "max_price": 700})
     assert r.json()["results"][0]["shop"]["name"] == "Дӯкони Саид"
     r = await client.get("/api/market/shops/summary/")

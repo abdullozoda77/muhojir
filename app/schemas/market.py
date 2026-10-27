@@ -3,12 +3,12 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from app.models.market import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_ORIGINS
+from app.models.market import PRODUCT_UNITS, PROOF_KINDS, SHOP_CATEGORIES
 from app.schemas.common import Form, normalize_phone
 
 Category = Literal[tuple(SHOP_CATEGORIES)]
-Origin = Literal[tuple(SHOP_ORIGINS)]
 Unit = Literal[PRODUCT_UNITS]
+ProofKind = Literal[tuple(PROOF_KINDS)]
 
 NO_CONTACT = "Give at least one contact: phone, WhatsApp or Telegram."
 BAD_TELEGRAM = "Write the Telegram username, e.g. @dukoni_mo."
@@ -26,7 +26,7 @@ def owner_name(user):
 def shop_json(shop, avg=None, n=None, products=None, viewer=None):
     data = {
         "id": shop.id, "name": shop.name, "category": shop.category, "category_label": shop.category_label,
-        "origin": shop.origin, "origin_label": shop.origin_label, "description": shop.description,
+        "description": shop.description,
         "city": shop.city, "address": shop.address, "lat": shop.lat, "lon": shop.lon, "phone": shop.phone,
         "whatsapp": shop.whatsapp, "telegram": shop.telegram, "opening_hours": shop.opening_hours,
         "delivery": shop.delivery, "logo": media(shop.logo), "status": shop.status,
@@ -40,7 +40,7 @@ def shop_json(shop, avg=None, n=None, products=None, viewer=None):
 
 
 def shop_short_json(shop):
-    return {"id": shop.id, "name": shop.name, "city": shop.city, "origin": shop.origin, "logo": media(shop.logo),
+    return {"id": shop.id, "name": shop.name, "city": shop.city, "logo": media(shop.logo),
             "delivery": shop.delivery, "phone": shop.phone, "whatsapp": shop.whatsapp, "telegram": shop.telegram}
 
 
@@ -59,6 +59,11 @@ def review_json(review, viewer=None):
     return {"id": review.id, "shop": review.shop_id, "author_name": owner_name(review.author),
             "is_mine": bool(viewer and review.author_id == viewer.id), "rating": review.rating, "text": review.text,
             "created_at": review.created_at}
+
+
+def proof_json(proof):
+    return {"id": proof.id, "kind": proof.kind, "kind_label": proof.kind_label,
+            "is_pdf": proof.file.lower().endswith(".pdf"), "created_at": proof.created_at}
 
 
 def clean_phone(value):
@@ -88,7 +93,6 @@ class ShopFields(Form):
 class ShopIn(ShopFields):
     name: str = Field(min_length=2, max_length=120)
     category: Category
-    origin: Origin = "tj"
     description: str = Field("", max_length=2000)
     city: str = Field(min_length=2, max_length=100)
     address: str = Field("", max_length=255)
@@ -110,7 +114,6 @@ class ShopIn(ShopFields):
 class ShopPatch(ShopFields):
     name: str | None = Field(None, min_length=2, max_length=120)
     category: Category | None = None
-    origin: Origin | None = None
     description: str | None = Field(None, max_length=2000)
     city: str | None = Field(None, min_length=2, max_length=100)
     address: str | None = Field(None, max_length=255)

@@ -187,3 +187,28 @@ export function BackLink({ to, children }) {
     </Link>
   );
 }
+
+export function Switch({ checked, onChange, icon: Icon, title, text }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`flex w-full items-center gap-3 rounded-xl p-3.5 text-left ring-1 ring-inset transition-colors ${checked ? "bg-primary-fixed/60 ring-primary/40" : "bg-surface-container-lowest ring-outline-variant hover:bg-surface-container-low"}`}
+    >
+      {Icon && (
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${checked ? "bg-primary text-on-primary" : "bg-surface-container text-on-surface-variant"}`}>
+          <Icon className="h-5 w-5" aria-hidden />
+        </span>
+      )}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-body-md font-medium text-on-surface">{title}</span>
+        {text && <span className="text-body-sm text-on-surface-variant">{text}</span>}
+      </span>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? "bg-primary" : "bg-outline-variant"}`} aria-hidden>
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
+      </span>
+    </button>
+  );
+}

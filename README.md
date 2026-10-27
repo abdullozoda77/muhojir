@@ -5,9 +5,9 @@ step-by-step guides, real vacancies from «Работа России», exam pra
 notifications, an AI assistant that answers questions and opens pages of the site, **air tickets between
 Tajikistan and Russia** (both ways: prices from Aviasales, a calendar of prices, alerts when a ticket gets cheaper)
 and a **map of useful places** (migration centers, notaries, the embassy, mosques, Tajik cafes, halal shops... from
-OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places) and **Tajik and Uzbek shops**
-(owners add their shop, products, prices and photos; an editor approves the shop; buyers search and contact the
-seller by phone, WhatsApp or Telegram).
+OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places) and **Tajik shops**
+(owners add their shop, products, prices and photos, prove the shop is real with photos and its place on the map;
+an editor approves it; buyers search and contact the seller by phone, WhatsApp or Telegram).
 
 Everything is async: FastAPI, the database (SQLAlchemy asyncio), email (aiosmtplib), outside APIs (httpx), files
 (anyio) and the AI models.

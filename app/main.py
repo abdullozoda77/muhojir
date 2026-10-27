@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_title,
-    description="API for Tajik migrants in Russia: documents and deadlines, patent prices, guides, real jobs and Tajik and Uzbek shops",
+    description="API for Tajik migrants in Russia: documents and deadlines, patent prices, guides, real jobs and Tajik shops",
     version="1.0",
     docs_url="/swagger/",
     redoc_url="/redoc/",

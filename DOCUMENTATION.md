@@ -64,14 +64,14 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
-- `alembic/versions/` — the migrations, in order — 6 files
+- `alembic/versions/` — the migrations, in order — 7 files
 - `tests/` — automated tests (pytest) — 8 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 13 files
-- `frontend/src/components/` — reusable parts of pages — 22 files
+- `frontend/src/components/` — reusable parts of pages — 23 files
 - `frontend/src/pages/` — one file per page of the site — 23 files
 
 
@@ -351,16 +351,18 @@ A generic, single database configuration.
 
 ### `app/models/market.py`
 
-**What it is for:** Database tables of the shops section: Tajik and Uzbek shops, cafes and bakeries in Russia, their products and reviews.
+**What it is for:** Database tables of the shops section: Tajik shops, cafes and bakeries in Russia, their products, reviews and the owner's proof that the shop is real.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `SHOP_CATEGORIES` | const | Kinds of shops (grocery, meat, bakery, sweets, cafe, clothes, home, other) with Tajik labels. |
-| `SHOP_ORIGINS` | const | Whose goods: tj (Tajik), uz (Uzbek), mixed (both). |
-| `SHOP_STATUSES` | const | pending (waits for an editor), approved (seen by everyone), rejected. |
+| `SHOP_STATUSES` | const | draft (proofs not sent yet), pending (waits for an editor), approved (seen by everyone), rejected. |
+| `PROOF_KINDS` | const | Kinds of proof: place (the shop or market stall), goods (shelves with goods), document (ИП, lease, patent). |
+| `REQUIRED_PROOFS` | const | place and goods are required to send a shop for checking. |
 | `PRODUCT_UNITS` | const | What the price is for: piece, kg, litre, bunch, box, portion. |
-| `Shop` | class · table `shops` | A shop of a user (owner): name, kind, origin, city, address, phone/WhatsApp/Telegram, hours, delivery, logo. New shops are pending until an editor approves them; reject_reason tells the owner what to fix. |
+| `Shop` | class · table `shops` | A shop of a user (owner): name, kind, city, address, location (lat, lon), phone/WhatsApp/Telegram, hours, delivery, logo. A new shop is a draft; the owner adds proofs and the location and sends it, then an editor approves it; reject_reason tells the owner what to fix. |
 | `Product` | class · table `products` | A product of a shop: name, price in roubles, unit, photo, in stock or not. |
+| `ShopProof` | class · table `shop_proofs` | A private proof file of a shop (photo or PDF in PRIVATE_MEDIA_ROOT); only the owner and editors can open it. |
 | `ShopReview` | class · table `shop_reviews` | A buyer's rating (1-5) and words about a shop; one per person per shop. |
 
 
@@ -486,6 +488,7 @@ A generic, single database configuration.
 | `shop_short_json(shop)` | function | A shop inside a product of the common product list. |
 | `product_json(product, with_shop)` | function | A product; with_shop adds its shop. |
 | `review_json(review, viewer)` | function | A shop review. |
+| `proof_json(proof)` | function | A proof: kind, label, whether it is a PDF (the file itself comes from its own endpoint). |
 | `clean_phone(value)` | function | Empty or +7… form. |
 | `clean_telegram(value)` | function | Takes @name, t.me/name or a link and keeps the bare username. |
 | `ShopFields` | class | Shared checks of phone, WhatsApp and Telegram. |
@@ -659,13 +662,13 @@ A generic, single database configuration.
 
 ### `app/routers/market.py`
 
-**What it is for:** /api/market/: Tajik and Uzbek shops in Russia. Any logged-in user can open up to 3 shops and add products with prices and photos; an editor approves a shop before everyone sees it. Buyers search shops and products and contact the seller by phone, WhatsApp or Telegram (there is no online payment).
+**What it is for:** /api/market/: Tajik shops in Russia. Any logged-in user can open up to 3 shops and add products with prices and photos. To stop fake shops, the owner adds a photo of the place, a photo of the goods (a document is optional) and marks the shop on the map; only then can the shop be sent to an editor, who checks the photos, the map and the street panorama. Buyers search shops and products and contact the seller by phone, WhatsApp or Telegram (there is no online payment).
 
 | Name | Kind | What it does |
 |---|---|---|
 | `shops_query()` | function | Shops with average rating, number of reviews and products. |
 | `visible(query, user)` | function | Guests see approved shops; an owner also sees their own; editors see all. |
-| `shop_filters(query, request, search)` | function | search (also in product names), city, category, origin (tj/uz also shows mixed), delivery. |
+| `shop_filters(query, request, search)` | function | search (also in product names), city, category, delivery. |
 | `as_json(user)` | function | A row -> shop_json for this viewer. |
 | `list_shops(request, db, user, page)` | async function · `GET /api/market/shops/` | Approved shops with the filters; mine=true — my shops in any status; editors: status=pending. Ordering: rating, name, created_at. |
 | `summary(db)` | async function · `GET /api/market/shops/summary/` | Number of shops and products, shops per kind and the cities with shops. |
@@ -673,15 +676,22 @@ A generic, single database configuration.
 | `own_shop(db, user, shop_id)` | async function | The shop if the user is its owner or an editor, otherwise 403. |
 | `shop_answer(db, user, shop_id)` | async function | Reads the shop again and returns its JSON. |
 | `shop_detail(shop_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/` | A shop and my review of it. |
-| `create_shop(data, db, user)` | async function · `POST /api/market/shops/` | Opens a shop (at most 3 per user); pending until approved, editors' shops are approved at once. |
-| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop; a rejected shop changed by its owner goes back to pending. |
+| `create_shop(data, db, user)` | async function · `POST /api/market/shops/` | Opens a shop (at most 3 per user) as a draft; editors' shops are approved at once. |
+| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop, also its location (lat, lon); the status does not change. |
 | `delete_shop(shop_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/` | Deletes the shop, its products, reviews and photos. |
-| `moderate_shop(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/moderate/` | Editors approve or reject (with a reason); the owner gets a notification. |
+| `moderate_shop(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/moderate/` | Editors approve or reject (with a reason) a sent shop, not a draft; the owner gets a notification. |
+| `proof_kinds(db, shop_id)` | async function | Which kinds of proof a shop has. |
+| `list_proofs(shop_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/proofs/` | Proofs of a shop, for its owner and editors. |
+| `add_proof(shop_id, db, user, kind, file)` | async function · `POST /api/market/shops/{shop_id}/proofs/` | Uploads a proof (form: kind, file; JPG, PNG, WEBP or PDF up to 10 MB, at most 8) into private files. |
+| `get_proof(db, user, shop_id, proof_id)` | async function | One proof of my shop (or any for editors), otherwise 404/403. |
+| `proof_file(shop_id, proof_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/proofs/{proof_id}/` | The proof file itself, never cached. |
+| `delete_proof(shop_id, proof_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/proofs/{proof_id}/` | Deletes a proof and its file. |
+| `submit_shop(shop_id, db, user)` | async function · `POST /api/market/shops/{shop_id}/submit/` | Sends a draft or rejected shop for checking; needs the place and goods photos ({"proofs"}) and the location ({"location"}). |
 | `upload_logo / remove_logo` | async function · `POST/DELETE /api/market/shops/{shop_id}/logo/` | The shop logo (JPG, PNG, WEBP up to 3 MB). |
 | `product_filters(query, request)` | function | search, max_price, in_stock; ordering price, created_at, name (in stock first by default). |
 | `shop_products(shop_id, request, db, user, page)` | async function · `GET /api/market/shops/{shop_id}/products/` | Products of one shop. |
 | `create_product(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/products/` | Adds a product (at most 300 per shop). |
-| `list_products(request, db, page)` | async function · `GET /api/market/products/` | Products of all approved shops; the shop filters (city, category, origin, delivery) work here too. |
+| `list_products(request, db, page)` | async function · `GET /api/market/products/` | Products of all approved shops; the shop filters (city, category, delivery) work here too. |
 | `get_product(db, user, product_id)` | async function | A product whose shop the user may see, or 404. |
 | `own_product(db, user, product_id)` | async function | A product of my shop (or any for editors), otherwise 403. |
 | `product_detail(product_id, db, user)` | async function · `GET /api/market/products/{product_id}/` | A product with its shop. |
@@ -816,11 +826,11 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `LOGOS, PHOTOS` | const | Folders in MEDIA_ROOT for logos and product photos. |
+| `LOGOS, PHOTOS` | const | Folders for logos and product photos (MEDIA_ROOT); PROOFS — proofs (PRIVATE_MEDIA_ROOT). |
 | `status_message(shop)` | function | Title and text of the notification (approved or rejected with the reason), in Tajik. |
 | `tell_owner(db, shop)` | async function | Sends the notification (site, live and email) to the owner. |
-| `shop_files(db, shop)` | async function | The logo and all product photos of a shop, read before it is deleted. |
-| `delete_files(files)` | async function | Deletes those files. |
+| `shop_files(db, shop)` | async function | The logo, product photos and proofs of a shop, read before it is deleted. |
+| `delete_files(files)` | async function | Deletes those files (proofs from private files). |
 
 
 ### `app/services/notify.py`
@@ -1071,6 +1081,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the three tables and their indexes. |
 | `downgrade()` | function | Drops them. |
 
+### `alembic/versions/0007_shop_proofs.py`
+
+**What it is for:** Shop proofs: table shop_proofs; shops.origin is removed (only Tajik shops). Revision ID: 0007 Revises: 0006
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates shop_proofs and drops shops.origin. |
+| `downgrade()` | function | Brings origin back (as tj) and drops shop_proofs. |
+
 
 ---
 
@@ -1156,7 +1175,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `sign_up(client, email)` | async function | A second confirmed user; returns (headers, id). |
-| `test_shop_moderation_products_reviews(client, user)` | async function | Contacts check, pending shop hidden, products and photos, reject -> fix -> approve with notifications, filters, reviews, deleting. |
+| `test_shop_moderation_products_reviews(client, user)` | async function | Contacts check, draft hidden, proofs (wrong kind, wrong file, private), location required, submit, reject -> fix -> submit -> approve with notifications, filters, reviews, deleting. |
 | `test_shop_limit_and_strangers(client, user)` | async function | At most 3 shops; another user cannot change my shop. |
 
 
@@ -1317,7 +1336,6 @@ A generic, single database configuration.
 | `INDUSTRIES` | export const | Same keys as INDUSTRIES in jobs/models.py. |
 | `industry` | export const | — |
 | `SHOP_CATEGORIES, shopCategory` | export const | Kinds of shops with icons (same keys as app/models/market.py). |
-| `SHOP_ORIGINS, shopOrigin` | export const | Tajik / Uzbek / both, with flags. |
 | `UNITS, unitLabel` | export const | Units of a price. |
 | `CITIES` | export const | Big cities for the city suggestions. |
 
@@ -1548,6 +1566,17 @@ A generic, single database configuration.
 | `SHOW_SECONDS` | const | A new notification that just arrived over the WebSocket: slides in at the corner, goes away by itself. |
 | `LiveToast` | export function | — |
 
+### `frontend/src/components/LocationPicker.jsx`
+
+**What it is for:** A small MapLibre map to mark or show where a shop is: «I am in the shop now» uses the phone's GPS, a click or dragging the pin sets the place; under it the coordinates and a Yandex street panorama link.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `panoramaUrl(lat, lon)` | export function | Yandex Maps street panorama at the point. |
+| `mapUrl(lat, lon)` | export function | Yandex Maps with a pin at the point. |
+| `LocationPicker` | export function | The map; readOnly shows the pin only (for editors). |
+
+
 ### `frontend/src/components/Map3D.jsx`
 
 **What it is for:** The 3D map of the places page: OpenFreeMap vector tiles in MapLibre GL. Quiet base maps that follow the site's theme ("positron" by day, "dark" at night) with our own 3D buildings; places in their category's color, gathered into numbered clusters; and a route between two points when one is built.
@@ -1610,14 +1639,15 @@ A generic, single database configuration.
 |---|---|---|
 | `fitPhoto(file, side)` | export async function | Shrinks a photo to at most 1200 px and WEBP before upload. |
 | `ShopLogo` | export function | The logo, or the kind's icon when there is none. |
-| `OriginBadge` | export function | Flag and «Tajik / Uzbek». |
-| `ShopStatus` | export function | Pending / approved / rejected badge. |
+| `ShopStatus` | export function | Draft / pending / approved / rejected badge. |
+| `PROOF_KINDS` | export const | The three proofs with labels and hints; place and goods are required. |
+| `ProofThumb` | export function | A private proof as a thumbnail (loaded with the login token); a click opens it in a new tab. |
 | `contactLinks(shop)` | export function | tel:, wa.me and t.me links of a shop. |
 | `ContactButtons` | export function | Call / WhatsApp / Telegram buttons. |
 | `ShopCard` | export function | A shop in the list. |
 | `ProductPhoto` | export function | Product photo or an empty box icon. |
 | `Price` | export function | «650 ₽ / kg». |
-| `ProductCard` | export function | A product; with showShop it links to its shop. |
+| `ProductCard` | export function | A product; with showShop it shows and links to its shop. |
 
 
 ### `frontend/src/components/Snowfall.jsx`
@@ -1688,6 +1718,7 @@ A generic, single database configuration.
 | `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Closes on Escape and on the dark backdrop. |
 | `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). |
 | `BackLink` | export function | "← Back" above a detail page: a quiet text link. |
+| `Switch` | export function | An on/off row with an icon, a title and a hint (role=switch); used for «we deliver» and «in stock». |
 
 
 ---
@@ -1827,11 +1858,16 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/MyShops.jsx`
 
-**What it is for:** /shops/my — the owner's page: open a shop, edit it, change the logo, add, edit, hide (not in stock) and delete products. Editors can open any shop here with ?shop=id.
+**What it is for:** /shops/my — the owner's page: open a shop (with the proofs and the location in the same form, then it is sent for checking), edit it, change the logo, finish the proofs of a draft or rejected shop and send it again, add, edit, hide (not in stock) and delete products. Editors can open any shop here with ?shop=id.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `upload(path, field, file)` | async function | Shrinks and uploads a picture. |
+| `uploadProof(shopId, kind, file)` | async function | Uploads a proof: photos are shrunk to 1600 px WEBP, PDFs go as they are. |
+| `ProofSlot` | function | One kind of proof: pick a file, preview, remove. |
+| `ProofIntro` | function | Why proofs are needed and that only editors see them. |
+| `LocationProof` | function | The required «location of the shop» box with LocationPicker. |
+| `ProofPanel` | function | Proofs and location of a shop that is not approved yet (saved at once), and the «Send for checking» button. |
 | `ShopForm` | function | Drawer to create or edit a shop. |
 | `ProductForm` | function | Drawer to add or edit a product with its photo. |
 | `ShopManager` | function | One shop: status, logo, buttons and the product list. |
@@ -1919,7 +1955,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `Moderate` | function | Editor's approve / reject box. |
+| `Moderate` | function | Editor's box: the proof photos, the location map with the street panorama link, approve / reject with a reason. |
 | `Reviews` | function | Rating, my review form and the reviews. |
 | `Products` | function | Products of the shop with a search box. |
 | `ShopPage` | export function | The page. |
@@ -1927,7 +1963,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Shops.jsx`
 
-**What it is for:** /shops — Tajik and Uzbek shops: tabs «Shops» and «Products», search, city, kind chips, Tajik/Uzbek switch, delivery, cheapest first. All filters live in the address bar.
+**What it is for:** /shops — Tajik shops: tabs «Shops» and «Products», search, city, kind chips, delivery, cheapest first. All filters live in the address bar.
 
 | Name | Kind | What it does |
 |---|---|---|

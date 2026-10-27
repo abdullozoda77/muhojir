@@ -32,14 +32,6 @@ export const SHOP_CATEGORIES = [
 
 export const shopCategory = (value) => SHOP_CATEGORIES.find((c) => c.value === value) || SHOP_CATEGORIES.at(-1);
 
-export const SHOP_ORIGINS = [
-  { value: "tj", flag: "🇹🇯", get label() { return t("Тоҷикӣ"); } },
-  { value: "uz", flag: "🇺🇿", get label() { return t("Ӯзбекӣ"); } },
-  { value: "mixed", flag: "🇹🇯🇺🇿", get label() { return t("Тоҷикӣ ва ӯзбекӣ"); } },
-];
-
-export const shopOrigin = (value) => SHOP_ORIGINS.find((o) => o.value === value) || SHOP_ORIGINS[0];
-
 export const UNITS = [
   { value: "dona", get label() { return t("дона"); } },
   { value: "kg", get label() { return t("кг"); } },

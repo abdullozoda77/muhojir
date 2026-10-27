@@ -1,18 +1,19 @@
 from sqlalchemy import select
 
-from app.core.files import delete_image
-from app.models import Product, User
+from app.core.files import delete_image, delete_private
+from app.models import Product, ShopProof, User
 from app.services.notify import notify
 
 LOGOS = "shops"
 PHOTOS = "products"
+PROOFS = "shop-proofs"
 
 
 def status_message(shop):
     if shop.status == "approved":
         return "Мағозаи шумо тасдиқ шуд", f"Мағозаи «{shop.name}» санҷида шуд ва акнун дар саҳифаи «Мағозаҳо» ба ҳама намоён аст."
     reason = f"\n\nСабаб: {shop.reject_reason}" if shop.reject_reason else ""
-    return "Мағозаи шумо рад шуд", f"Мағозаи «{shop.name}» қабул нашуд.{reason}\n\nМаълумотро ислоҳ кунед — пас аз тағйир боз санҷида мешавад."
+    return "Мағозаи шумо рад шуд", f"Мағозаи «{shop.name}» қабул нашуд.{reason}\n\nМаълумот ё аксҳоро ислоҳ кунед ва дар саҳифаи «Мағозаҳои ман» боз ба санҷиш фиристед."
 
 
 async def tell_owner(db, shop):
@@ -26,9 +27,13 @@ async def tell_owner(db, shop):
 
 async def shop_files(db, shop):
     photos = (await db.scalars(select(Product.photo).where(Product.shop_id == shop.id, Product.photo != ""))).all()
-    return [(shop.logo, LOGOS), *((photo, PHOTOS) for photo in photos)]
+    proofs = (await db.scalars(select(ShopProof.file).where(ShopProof.shop_id == shop.id))).all()
+    return [(shop.logo, LOGOS), *((photo, PHOTOS) for photo in photos), *((proof, PROOFS) for proof in proofs)]
 
 
 async def delete_files(files):
     for name, folder in files:
-        await delete_image(name, folder)
+        if folder == PROOFS:
+            await delete_private(name)
+        else:
+            await delete_image(name, folder)

@@ -8,7 +8,7 @@ from app.models import (
     LegalQuestion, MigrationCenter, Notification, Payment, Region, ReminderLog, SavedJob, User, UserDocument,
 )
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
-from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_ORIGINS, SHOP_STATUSES, Product, Shop, ShopReview
+from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopReview
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -335,16 +335,15 @@ class FlightWatchAdmin(Base, model=FlightWatch):
 
 class ShopAdmin(Base, model=Shop):
     name, name_plural, icon, category = "Мағоза", "Мағозаҳо", "fa-solid fa-store", "Мағозаҳо"
-    column_list = [Shop.name, Shop.category, Shop.origin, Shop.city, Shop.owner, Shop.status, Shop.created_at]
+    column_list = [Shop.name, Shop.category, Shop.city, Shop.owner, Shop.status, Shop.created_at]
     column_searchable_list = [Shop.name, Shop.city, Shop.address, Shop.phone]
     column_sortable_list = [Shop.name, Shop.city, Shop.status, Shop.created_at]
     column_default_sort = [(Shop.created_at, True)]
-    form_columns = [Shop.status, Shop.reject_reason, Shop.name, Shop.category, Shop.origin, Shop.description, Shop.city,
+    form_columns = [Shop.status, Shop.reject_reason, Shop.name, Shop.category, Shop.description, Shop.city,
                     Shop.address, Shop.lat, Shop.lon, Shop.phone, Shop.whatsapp, Shop.telegram, Shop.opening_hours,
                     Shop.delivery]
     form_choices = {"status": [(st, st) for st in SHOP_STATUSES],
-                    "category": [(c, label) for c, label in SHOP_CATEGORIES.items()],
-                    "origin": [(o, label) for o, label in SHOP_ORIGINS.items()]}
+                    "category": [(c, label) for c, label in SHOP_CATEGORIES.items()]}
     can_create = False
 
     async def on_model_change(self, data, model, is_created, request):

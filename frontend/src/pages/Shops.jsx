@@ -5,7 +5,7 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
-import { CITIES, SHOP_CATEGORIES, SHOP_ORIGINS } from "../constants.js";
+import { CITIES, SHOP_CATEGORIES } from "../constants.js";
 import { ProductCard, ShopCard } from "../components/Shop.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
@@ -124,13 +124,12 @@ export default function Shops() {
   const path = tab === "products" ? `/market/products/?${q}` : `/market/shops/?${q}`;
   const { page, loading, more, error, loadMore } = usePaged(path);
   const category = params.get("category");
-  const origin = params.get("origin");
   const delivery = params.get("delivery") === "true";
   const cities = summary?.cities?.length ? summary.cities.map((c) => c.name) : CITIES;
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow={t("Аз ҳамватанон барои ҳамватанон")} title={t("Мағозаҳои тоҷикӣ ва ӯзбекӣ")} text={t("Озуқа, гӯшти ҳалол, нони тандирӣ, меваи хушк ва ошхонаҳо дар шаҳрҳои Русия. Бо фурӯшанда бевосита гап занед.")} icon={Store}>
+      <PageHeader eyebrow={t("Аз ҳамватанон барои ҳамватанон")} title={t("Мағозаҳои тоҷикӣ")} text={t("Озуқа, гӯшти ҳалол, нони тандирӣ, меваи хушк ва ошхонаҳо дар шаҳрҳои Русия. Бо фурӯшанда бевосита гап занед.")} icon={Store}>
         {summary && (
           <div className="flex gap-2">
             <span className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-label-md tabular-nums ring-1 ring-inset ring-outline-variant">
@@ -195,14 +194,6 @@ export default function Shops() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant">
-            {[{ value: "", flag: "", label: t("Ҳама") }, ...SHOP_ORIGINS.filter((o) => o.value !== "mixed")].map((o) => (
-              <button key={o.value} type="button" onClick={() => update("origin", o.value)} aria-pressed={(origin || "") === o.value} className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-3.5 text-label-md transition-colors ${(origin || "") === o.value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
-                {o.flag && <span aria-hidden>{o.flag}</span>}
-                {o.label}
-              </button>
-            ))}
-          </div>
           <button type="button" onClick={() => update("delivery", delivery ? "" : "true")} aria-pressed={delivery} className={`flex min-h-[40px] items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${delivery ? "bg-tertiary-fixed text-on-tertiary-fixed ring-1 ring-inset ring-tertiary-container" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
             {delivery ? <Check className="h-4 w-4" aria-hidden /> : <Truck className="h-4 w-4" aria-hidden />}
             {t("Бо расонидан")}

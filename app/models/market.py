@@ -17,13 +17,15 @@ SHOP_CATEGORIES = {
     "other": "Дигар",
 }
 
-SHOP_ORIGINS = {
-    "tj": "Тоҷикӣ",
-    "uz": "Ӯзбекӣ",
-    "mixed": "Тоҷикӣ ва ӯзбекӣ",
+SHOP_STATUSES = ("draft", "pending", "approved", "rejected")
+
+PROOF_KINDS = {
+    "place": "Акси ҷойи савдо",
+    "goods": "Акси молҳо дар ҷой",
+    "document": "Ҳуҷҷат",
 }
 
-SHOP_STATUSES = ("pending", "approved", "rejected")
+REQUIRED_PROOFS = ("place", "goods")
 
 PRODUCT_UNITS = ("dona", "kg", "litr", "bandcha", "qutti", "portion")
 
@@ -37,7 +39,6 @@ class Shop(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     category: Mapped[str] = mapped_column(String(20), index=True)
-    origin: Mapped[str] = mapped_column(String(10), default="tj")
     description: Mapped[str] = mapped_column(Text, default="")
     city: Mapped[str] = mapped_column(String(100))
     address: Mapped[str] = mapped_column(String(255), default="")
@@ -49,7 +50,7 @@ class Shop(Base):
     opening_hours: Mapped[str] = mapped_column(String(120), default="")
     delivery: Mapped[bool] = mapped_column(Boolean, default=False)
     logo: Mapped[str] = mapped_column(String(100), default="")
-    status: Mapped[str] = mapped_column(String(10), default="pending", index=True)
+    status: Mapped[str] = mapped_column(String(10), default="draft", index=True)
     reject_reason: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
@@ -59,10 +60,6 @@ class Shop(Base):
     @property
     def category_label(self):
         return SHOP_CATEGORIES.get(self.category, self.category)
-
-    @property
-    def origin_label(self):
-        return SHOP_ORIGINS.get(self.origin, self.origin)
 
     def __str__(self):
         return self.name
@@ -87,6 +84,26 @@ class Product(Base):
 
     def __str__(self):
         return self.name
+
+
+class ShopProof(Base):
+
+    __tablename__ = "shop_proofs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    file: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    shop: Mapped[Shop] = relationship()
+
+    @property
+    def kind_label(self):
+        return PROOF_KINDS.get(self.kind, self.kind)
+
+    def __str__(self):
+        return self.kind_label
 
 
 class ShopReview(Base):

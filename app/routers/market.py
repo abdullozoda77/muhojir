@@ -1,23 +1,27 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Request, Response, UploadFile
+from fastapi import APIRouter, File, Form, Request, Response, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import func, or_, select
 
 from app.core.crud import apply_ordering
 from app.core.deps import DB, CurrentUser, EditorUser, OptionalUser
 from app.core.errors import ApiError, FieldError
-from app.core.files import delete_image, save_image
+from app.core.files import delete_image, delete_private, private_path, save_image, save_private
 from app.core.pagination import Paginate
-from app.models import SHOP_CATEGORIES, SHOP_ORIGINS, Product, Shop, ShopReview
+from app.models import REQUIRED_PROOFS, SHOP_CATEGORIES, Product, Shop, ShopProof, ShopReview
 from app.routers.documents import int_param, param
 from app.routers.jobs import bool_param
 from app.schemas import market as s
-from app.services.market import LOGOS, PHOTOS, delete_files, shop_files, tell_owner
+from app.services.market import LOGOS, PHOTOS, PROOFS, delete_files, shop_files, tell_owner
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 MAX_SHOPS = 3
 MAX_PRODUCTS = 300
+MAX_PROOFS = 8
+NEED_PROOFS = "Add a photo of the place and a photo of the goods first."
+NEED_LOCATION = "Mark where the shop is on the map."
 NO_RIGHTS = "У вас недостаточно прав для выполнения данного действия."
 
 ratings = (select(ShopReview.shop_id, func.avg(ShopReview.rating).label("avg"), func.count().label("n"))
@@ -46,8 +50,6 @@ def shop_filters(query, request, search=True):
         query = query.where(Shop.city.ilike(f"%{city}%"))
     if (category := param(request, "category")) and category in SHOP_CATEGORIES:
         query = query.where(Shop.category == category)
-    if (origin := param(request, "origin")) and origin in SHOP_ORIGINS:
-        query = query.where(Shop.origin.in_((origin, "mixed")) if origin != "mixed" else Shop.origin == "mixed")
     if bool_param(request, "delivery"):
         query = query.where(Shop.delivery.is_(True))
     return query
@@ -118,7 +120,7 @@ async def create_shop(data: s.ShopIn, db: DB, user: CurrentUser):
         count = await db.scalar(select(func.count()).select_from(Shop).where(Shop.owner_id == user.id))
         if count >= MAX_SHOPS:
             raise ApiError({"detail": [f"You can have at most {MAX_SHOPS} shops."]})
-    shop = Shop(**data.model_dump(), owner_id=user.id, status="approved" if user.is_editor else "pending")
+    shop = Shop(**data.model_dump(), owner_id=user.id, status="approved" if user.is_editor else "draft")
     db.add(shop)
     await db.commit()
     return await shop_answer(db, user, shop.id)
@@ -132,8 +134,6 @@ async def update_shop(shop_id: int, data: s.ShopPatch, db: DB, user: CurrentUser
             setattr(shop, field, value)
     if not (shop.phone or shop.whatsapp or shop.telegram):
         raise ApiError({"non_field_errors": [s.NO_CONTACT]})
-    if shop.status == "rejected" and shop.owner_id == user.id:
-        shop.status = "pending"
     await db.commit()
     return await shop_answer(db, user, shop_id)
 
@@ -151,11 +151,76 @@ async def delete_shop(shop_id: int, db: DB, user: CurrentUser):
 @router.post("/shops/{shop_id}/moderate/")
 async def moderate_shop(shop_id: int, data: s.ModerateIn, db: DB, user: EditorUser):
     shop = (await get_shop_row(db, user, shop_id))[0]
+    if shop.status == "draft":
+        raise ApiError({"detail": ["The owner has not sent this shop for checking yet."]})
     if data.status == "rejected" and not data.reason:
         raise FieldError("reason", "Write why the shop is rejected.")
     shop.status, shop.reject_reason = data.status, data.reason if data.status == "rejected" else ""
     await db.commit()
     await tell_owner(db, shop)
+    return await shop_answer(db, user, shop_id)
+
+
+async def proof_kinds(db, shop_id):
+    return set((await db.scalars(select(ShopProof.kind).where(ShopProof.shop_id == shop_id))).all())
+
+
+@router.get("/shops/{shop_id}/proofs/")
+async def list_proofs(shop_id: int, db: DB, user: CurrentUser):
+    shop = await own_shop(db, user, shop_id)
+    proofs = await db.scalars(select(ShopProof).where(ShopProof.shop_id == shop.id).order_by(ShopProof.id))
+    return [s.proof_json(p) for p in proofs]
+
+
+@router.post("/shops/{shop_id}/proofs/", status_code=201)
+async def add_proof(shop_id: int, db: DB, user: CurrentUser, kind: Annotated[s.ProofKind, Form()],
+                    file: Annotated[UploadFile, File()]):
+    shop = await own_shop(db, user, shop_id)
+    if await db.scalar(select(func.count()).select_from(ShopProof).where(ShopProof.shop_id == shop.id)) >= MAX_PROOFS:
+        raise ApiError({"detail": [f"At most {MAX_PROOFS} files."]})
+    proof = ShopProof(shop_id=shop.id, kind=kind, file=await save_private(file, PROOFS, "file"))
+    db.add(proof)
+    await db.commit()
+    return s.proof_json(proof)
+
+
+async def get_proof(db, user, shop_id, proof_id):
+    shop = await own_shop(db, user, shop_id)
+    proof = await db.scalar(select(ShopProof).where(ShopProof.id == proof_id, ShopProof.shop_id == shop.id))
+    if proof is None:
+        raise ApiError("No ShopProof matches the given query.", 404)
+    return proof
+
+
+@router.get("/shops/{shop_id}/proofs/{proof_id}/")
+async def proof_file(shop_id: int, proof_id: int, db: DB, user: CurrentUser):
+    path = private_path((await get_proof(db, user, shop_id, proof_id)).file)
+    if path is None or not path.exists():
+        raise ApiError("File not found.", 404)
+    return FileResponse(path, headers={"Cache-Control": "private, no-store"})
+
+
+@router.delete("/shops/{shop_id}/proofs/{proof_id}/", status_code=204)
+async def delete_proof(shop_id: int, proof_id: int, db: DB, user: CurrentUser):
+    proof = await get_proof(db, user, shop_id, proof_id)
+    name = proof.file
+    await db.delete(proof)
+    await db.commit()
+    await delete_private(name)
+    return Response(status_code=204)
+
+
+@router.post("/shops/{shop_id}/submit/")
+async def submit_shop(shop_id: int, db: DB, user: CurrentUser):
+    shop = await own_shop(db, user, shop_id)
+    if shop.status not in ("draft", "rejected"):
+        raise ApiError({"detail": ["The shop is already sent for checking."]})
+    if not set(REQUIRED_PROOFS) <= await proof_kinds(db, shop.id):
+        raise ApiError({"proofs": [NEED_PROOFS]})
+    if shop.lat is None or shop.lon is None:
+        raise ApiError({"location": [NEED_LOCATION]})
+    shop.status = "pending"
+    await db.commit()
     return await shop_answer(db, user, shop_id)
 
 

@@ -8,12 +8,14 @@ import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import { shopCategory } from "../constants.js";
 import { canEdit } from "../components/Layout.jsx";
-import { ContactButtons, OriginBadge, ProductCard, ShopLogo, ShopStatus } from "../components/Shop.jsx";
+import { ContactButtons, PROOF_KINDS, ProductCard, ProofThumb, ShopLogo, ShopStatus } from "../components/Shop.jsx";
 import { StarPicker, Stars } from "../components/Stars.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
+import LocationPicker from "../components/LocationPicker.jsx";
 import { BackLink, Button, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
 
 function Moderate({ shop, onDone }) {
+  const { data: proofs } = useApi(`/market/shops/${shop.id}/proofs/`);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
@@ -32,6 +34,30 @@ function Moderate({ shop, onDone }) {
   return (
     <div className="card flex flex-col gap-3 border-l-[3px] border-warning-container p-5">
       <span className="text-[16px] font-semibold">{t("Санҷиши муҳаррир")}</span>
+      <p className="text-body-sm text-on-surface-variant">{t("Аксҳоро кушоед ва бинед, ки мағоза воқеӣ аст. Агар шубҳа бошад, ба телефони соҳиб занг занед.")}</p>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {PROOF_KINDS.map((kind) => {
+          const mine = (proofs || []).filter((p) => p.kind === kind.value);
+          return (
+            <div key={kind.value} className="flex flex-col gap-2 rounded-xl bg-surface-container-low p-3">
+              <span className="text-label-md">{kind.label}</span>
+              {mine.length ? (
+                <div className="flex flex-wrap gap-2">{mine.map((p) => <ProofThumb key={p.id} shopId={shop.id} proof={p} />)}</div>
+              ) : (
+                <span className="text-body-sm text-on-surface-variant">{kind.required ? t("Нест — тасдиқ накунед") : t("Нест")}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-col gap-2 rounded-xl bg-surface-container-low p-3">
+        <span className="text-label-md">{t("Ҷойгиршавии мағоза")}</span>
+        {shop.lat != null ? (
+          <LocationPicker value={{ lat: shop.lat, lon: shop.lon }} readOnly className="h-56" />
+        ) : (
+          <span className="text-body-sm text-on-surface-variant">{t("Нест — тасдиқ накунед")}</span>
+        )}
+      </div>
       <textarea className="input h-20 py-3" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} placeholder={t("Сабаби рад (агар рад кунед)")} />
       <ErrorBox error={error} />
       <div className="flex flex-wrap gap-2">
@@ -170,7 +196,6 @@ export default function ShopPage() {
               <category.icon className="h-3.5 w-3.5" aria-hidden />
               {category.label}
             </span>
-            <OriginBadge origin={shop.origin} />
             {shop.delivery && (
               <span className="inline-flex items-center gap-1 rounded-full bg-tertiary-fixed px-2.5 py-1 text-label-sm text-on-tertiary-fixed">
                 <Truck className="h-3.5 w-3.5" aria-hidden />
@@ -207,7 +232,7 @@ export default function ShopPage() {
         )}
       </section>
 
-      {canEdit(user) && shop.status !== "approved" && <Moderate shop={shop} onDone={reload} />}
+      {canEdit(user) && (shop.status === "pending" || shop.status === "rejected") && <Moderate shop={shop} onDone={reload} />}
 
       <Products shop={shop} />
       <Reviews key={shop.my_review?.id || "new"} shop={shop} onChange={reload} />
