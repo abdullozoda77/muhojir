@@ -26,7 +26,7 @@ function sections(user) {
     { to: "/tickets", icon: Plane, label: t("Чиптаҳо"), main: true, dock: user ? null : 3 },
     { to: "/places", icon: MapPinned, label: t("Ҷойҳо"), main: true, dock: 4 },
     { to: "/shops", icon: Store, label: t("Мағозаҳо"), main: true },
-    { to: "/calculator", icon: Calculator, label: t("Нархи патент"), main: true },
+    { to: "/calculator", icon: Calculator, label: t("Нархи патент") },
     { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо") },
     { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо") },
     { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон") },
@@ -253,7 +253,7 @@ export default function Layout() {
           <Logo />
           <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
