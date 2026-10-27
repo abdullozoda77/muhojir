@@ -47,22 +47,30 @@ def image_ext(data):
     return next((ext for magic, ext in IMAGE_TYPES.items() if data.startswith(magic)), None)
 
 
-async def save_avatar(file: UploadFile, field="avatar"):
-    data = await file.read(MAX_AVATAR_MB * 1024 * 1024 + 1)
+async def save_image(file: UploadFile, folder, field, max_mb=MAX_AVATAR_MB):
+    data = await file.read(max_mb * 1024 * 1024 + 1)
     if not data:
         raise FieldError(field, "Загруженный файл пуст.")
-    if len(data) > MAX_AVATAR_MB * 1024 * 1024:
-        raise FieldError(field, f"The photo is too big. The limit is {MAX_AVATAR_MB} MB.")
+    if len(data) > max_mb * 1024 * 1024:
+        raise FieldError(field, f"The photo is too big. The limit is {max_mb} MB.")
     ext = image_ext(data)
     if ext is None:
         raise FieldError(field, "Upload a photo: JPG, PNG or WEBP.")
-    name = f"avatars/{uuid.uuid4().hex}{ext}"
+    name = f"{folder}/{uuid.uuid4().hex}{ext}"
     path = anyio.Path(MEDIA_ROOT / name)
     await path.parent.mkdir(parents=True, exist_ok=True)
     await path.write_bytes(data)
     return name
 
 
-async def delete_avatar(name):
-    if name and name.startswith("avatars/"):
+async def delete_image(name, folder):
+    if name and name.startswith(f"{folder}/"):
         await anyio.Path(MEDIA_ROOT / name).unlink(missing_ok=True)
+
+
+async def save_avatar(file: UploadFile, field="avatar"):
+    return await save_image(file, "avatars", field)
+
+
+async def delete_avatar(name):
+    await delete_image(name, "avatars")

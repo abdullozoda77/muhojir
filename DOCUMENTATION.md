@@ -56,23 +56,23 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - Backend — the FastAPI application (`app/`) — 4 files
 - `app/core/` — settings, security, request helpers — 9 files
 - `app/db/` — database connection and column types — 3 files
-- `app/models/` — database tables (SQLAlchemy) — 7 files
-- `app/schemas/` — request bodies and JSON answers — 4 files
-- `app/routers/` — the API endpoints — 8 files
-- `app/services/` — business logic used by routers and background tasks — 9 files
+- `app/models/` — database tables (SQLAlchemy) — 8 files
+- `app/schemas/` — request bodies and JSON answers — 5 files
+- `app/routers/` — the API endpoints — 9 files
+- `app/services/` — business logic used by routers and background tasks — 10 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
-- `alembic/versions/` — the migrations, in order — 5 files
-- `tests/` — automated tests (pytest) — 7 files
+- `alembic/versions/` — the migrations, in order — 6 files
+- `tests/` — automated tests (pytest) — 8 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 13 files
-- `frontend/src/components/` — reusable parts of pages — 21 files
-- `frontend/src/pages/` — one file per page of the site — 20 files
+- `frontend/src/components/` — reusable parts of pages — 22 files
+- `frontend/src/pages/` — one file per page of the site — 23 files
 
 
 ---
@@ -221,6 +221,8 @@ A generic, single database configuration.
 | `private_path(name)` | function | — |
 | `image_ext(data)` | function | The real type of the picture from its first bytes (not from the file name); None if it is not one. |
 | `save_avatar(file, field)` | async function | — |
+| `save_image(file, folder, field, max_mb)` | async function | Checks a public picture by its bytes (JPG, PNG, WEBP, size) and saves it in MEDIA_ROOT/folder. |
+| `delete_image(name, folder)` | async function | Deletes a picture, only inside that folder. |
 | `delete_avatar(name)` | async function | — |
 
 ### `app/core/pagination.py`
@@ -347,6 +349,21 @@ A generic, single database configuration.
 | `JobAlert` | class · table `job_alerts` | "Tell me about new jobs like these": the filters of the jobs page, kept. After each import the user gets one notification with the new jobs that match (see services/alerts.py). Empty fields mean "any". |
 | &nbsp;&nbsp;↳ `industry_label()` | method | — |
 
+### `app/models/market.py`
+
+**What it is for:** Database tables of the shops section: Tajik and Uzbek shops, cafes and bakeries in Russia, their products and reviews.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `SHOP_CATEGORIES` | const | Kinds of shops (grocery, meat, bakery, sweets, cafe, clothes, home, other) with Tajik labels. |
+| `SHOP_ORIGINS` | const | Whose goods: tj (Tajik), uz (Uzbek), mixed (both). |
+| `SHOP_STATUSES` | const | pending (waits for an editor), approved (seen by everyone), rejected. |
+| `PRODUCT_UNITS` | const | What the price is for: piece, kg, litre, bunch, box, portion. |
+| `Shop` | class · table `shops` | A shop of a user (owner): name, kind, origin, city, address, phone/WhatsApp/Telegram, hours, delivery, logo. New shops are pending until an editor approves them; reject_reason tells the owner what to fix. |
+| `Product` | class · table `products` | A product of a shop: name, price in roubles, unit, photo, in stock or not. |
+| `ShopReview` | class · table `shop_reviews` | A buyer's rating (1-5) and words about a shop; one per person per shop. |
+
+
 ### `app/models/places.py`
 
 **What it is for:** Database tables of the places directory (map of useful places) and their reviews.
@@ -456,6 +473,28 @@ A generic, single database configuration.
 | `AlertIn` | class | — |
 | `AlertPatch` | class | — |
 | `alert_json(a)` | function | — |
+
+### `app/schemas/market.py`
+
+**What it is for:** Request bodies and JSON answers of /api/market/.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `media(name)` | function | A stored file name -> its /media/ address (or None). |
+| `owner_name(user)` | function | Only the first name is shown to others. |
+| `shop_json(shop, avg, n, products, viewer)` | function | A shop with rating, number of reviews and products; reject_reason only for the owner and editors. |
+| `shop_short_json(shop)` | function | A shop inside a product of the common product list. |
+| `product_json(product, with_shop)` | function | A product; with_shop adds its shop. |
+| `review_json(review, viewer)` | function | A shop review. |
+| `clean_phone(value)` | function | Empty or +7… form. |
+| `clean_telegram(value)` | function | Takes @name, t.me/name or a link and keeps the bare username. |
+| `ShopFields` | class | Shared checks of phone, WhatsApp and Telegram. |
+| `ShopIn` | class | A new shop; at least one contact is required. |
+| `ShopPatch` | class | Changing a shop (only the sent fields). |
+| `ModerateIn` | class | An editor's decision: approved, or rejected with a reason. |
+| `ProductIn` | class | A new product. |
+| `ProductPatch` | class | Changing a product. |
+| `ReviewIn` | class | Rating 1-5 and text. |
 
 
 ---
@@ -618,6 +657,41 @@ A generic, single database configuration.
 | `patch_alert(alert_id, data, db, user)` | async function · `PATCH /api/jobs/alerts/{alert_id}/` | — |
 | `delete_alert(alert_id, db, user)` | async function · `DELETE /api/jobs/alerts/{alert_id}/` | — |
 
+### `app/routers/market.py`
+
+**What it is for:** /api/market/: Tajik and Uzbek shops in Russia. Any logged-in user can open up to 3 shops and add products with prices and photos; an editor approves a shop before everyone sees it. Buyers search shops and products and contact the seller by phone, WhatsApp or Telegram (there is no online payment).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `shops_query()` | function | Shops with average rating, number of reviews and products. |
+| `visible(query, user)` | function | Guests see approved shops; an owner also sees their own; editors see all. |
+| `shop_filters(query, request, search)` | function | search (also in product names), city, category, origin (tj/uz also shows mixed), delivery. |
+| `as_json(user)` | function | A row -> shop_json for this viewer. |
+| `list_shops(request, db, user, page)` | async function · `GET /api/market/shops/` | Approved shops with the filters; mine=true — my shops in any status; editors: status=pending. Ordering: rating, name, created_at. |
+| `summary(db)` | async function · `GET /api/market/shops/summary/` | Number of shops and products, shops per kind and the cities with shops. |
+| `get_shop_row(db, user, shop_id)` | async function | One visible shop row or 404. |
+| `own_shop(db, user, shop_id)` | async function | The shop if the user is its owner or an editor, otherwise 403. |
+| `shop_answer(db, user, shop_id)` | async function | Reads the shop again and returns its JSON. |
+| `shop_detail(shop_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/` | A shop and my review of it. |
+| `create_shop(data, db, user)` | async function · `POST /api/market/shops/` | Opens a shop (at most 3 per user); pending until approved, editors' shops are approved at once. |
+| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop; a rejected shop changed by its owner goes back to pending. |
+| `delete_shop(shop_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/` | Deletes the shop, its products, reviews and photos. |
+| `moderate_shop(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/moderate/` | Editors approve or reject (with a reason); the owner gets a notification. |
+| `upload_logo / remove_logo` | async function · `POST/DELETE /api/market/shops/{shop_id}/logo/` | The shop logo (JPG, PNG, WEBP up to 3 MB). |
+| `product_filters(query, request)` | function | search, max_price, in_stock; ordering price, created_at, name (in stock first by default). |
+| `shop_products(shop_id, request, db, user, page)` | async function · `GET /api/market/shops/{shop_id}/products/` | Products of one shop. |
+| `create_product(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/products/` | Adds a product (at most 300 per shop). |
+| `list_products(request, db, page)` | async function · `GET /api/market/products/` | Products of all approved shops; the shop filters (city, category, origin, delivery) work here too. |
+| `get_product(db, user, product_id)` | async function | A product whose shop the user may see, or 404. |
+| `own_product(db, user, product_id)` | async function | A product of my shop (or any for editors), otherwise 403. |
+| `product_detail(product_id, db, user)` | async function · `GET /api/market/products/{product_id}/` | A product with its shop. |
+| `update_product / delete_product` | async function · `PATCH/DELETE /api/market/products/{product_id}/` | Change or delete a product (its photo is deleted too). |
+| `upload_photo / remove_photo` | async function · `POST/DELETE /api/market/products/{product_id}/photo/` | The product photo (JPG, PNG, WEBP up to 3 MB). |
+| `shop_reviews(shop_id, db, user, page)` | async function · `GET /api/market/shops/{shop_id}/reviews/` | Reviews of a shop, newest first. |
+| `write_review / delete_review` | async function · `PUT/DELETE /api/market/shops/{shop_id}/reviews/mine/` | My review of an approved shop; an owner cannot review their own shop. |
+| `remove_review(review_id, db, user)` | async function · `DELETE /api/market/reviews/{review_id}/` | Editors delete a bad review. |
+
+
 ### `app/routers/places.py`
 
 **What it is for:** /api/places/: the directory of useful places (migration centers, clinics for the medical exam, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers) with a map, ratings and reviews. Places come from OpenStreetMap; logged-in users may suggest new ones, which editors approve.
@@ -735,6 +809,19 @@ A generic, single database configuration.
 | `unread_count(db, user_id)` | async function | — |
 | `push_new(db, notification)` | async function | — |
 | `push_count(db, user_id)` | async function | After notifications were read or deleted: every open tab updates its bell. |
+
+### `app/services/market.py`
+
+**What it is for:** Shop helpers shared by the API and the admin panel: telling the owner about the editor's decision and deleting shop pictures.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `LOGOS, PHOTOS` | const | Folders in MEDIA_ROOT for logos and product photos. |
+| `status_message(shop)` | function | Title and text of the notification (approved or rejected with the reason), in Tajik. |
+| `tell_owner(db, shop)` | async function | Sends the notification (site, live and email) to the owner. |
+| `shop_files(db, shop)` | async function | The logo and all product photos of a shop, read before it is deleted. |
+| `delete_files(files)` | async function | Deletes those files. |
+
 
 ### `app/services/notify.py`
 
@@ -893,6 +980,9 @@ A generic, single database configuration.
 | `PlaceReviewAdmin` | class | — |
 | `AirportAdmin` | class | — |
 | `FlightWatchAdmin` | class | — |
+| `ShopAdmin` | class | Shops: approve or reject (a reason is required); the owner is notified; deleting removes the pictures. |
+| `ProductAdmin` | class | Products of the shops. |
+| `ShopReviewAdmin` | class | Shop reviews (delete only). |
 
 
 ---
@@ -972,6 +1062,15 @@ A generic, single database configuration.
 | `upgrade()` | function | — |
 | `downgrade()` | function | — |
 
+### `alembic/versions/0006_market.py`
+
+**What it is for:** Shops: tables shops, products, shop_reviews. Revision ID: 0006 Revises: 0005
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the three tables and their indexes. |
+| `downgrade()` | function | Drops them. |
+
 
 ---
 
@@ -1049,6 +1148,17 @@ A generic, single database configuration.
 | `make_jobs()` | async function | — |
 | `test_jobs_filters_saved_reviews_alerts(client, user)` | async function | — |
 | `test_blacklist_reports(client, user)` | async function | — |
+
+### `tests/test_market.py`
+
+**What it is for:** Tests of the shops section.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `sign_up(client, email)` | async function | A second confirmed user; returns (headers, id). |
+| `test_shop_moderation_products_reviews(client, user)` | async function | Contacts check, pending shop hidden, products and photos, reject -> fix -> approve with notifications, filters, reviews, deleting. |
+| `test_shop_limit_and_strangers(client, user)` | async function | At most 3 shops; another user cannot change my shop. |
+
 
 ### `tests/test_travel.py`
 
@@ -1206,6 +1316,10 @@ A generic, single database configuration.
 |---|---|---|
 | `INDUSTRIES` | export const | Same keys as INDUSTRIES in jobs/models.py. |
 | `industry` | export const | — |
+| `SHOP_CATEGORIES, shopCategory` | export const | Kinds of shops with icons (same keys as app/models/market.py). |
+| `SHOP_ORIGINS, shopOrigin` | export const | Tajik / Uzbek / both, with flags. |
+| `UNITS, unitLabel` | export const | Units of a price. |
+| `CITIES` | export const | Big cities for the city suggestions. |
 
 ### `frontend/src/format.js`
 
@@ -1488,6 +1602,24 @@ A generic, single database configuration.
 |---|---|---|
 | `RouteArt` | export function | — |
 
+### `frontend/src/components/Shop.jsx`
+
+**What it is for:** Parts of the shops pages: logo, badges, contact buttons, shop and product cards.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `fitPhoto(file, side)` | export async function | Shrinks a photo to at most 1200 px and WEBP before upload. |
+| `ShopLogo` | export function | The logo, or the kind's icon when there is none. |
+| `OriginBadge` | export function | Flag and «Tajik / Uzbek». |
+| `ShopStatus` | export function | Pending / approved / rejected badge. |
+| `contactLinks(shop)` | export function | tel:, wa.me and t.me links of a shop. |
+| `ContactButtons` | export function | Call / WhatsApp / Telegram buttons. |
+| `ShopCard` | export function | A shop in the list. |
+| `ProductPhoto` | export function | Product photo or an empty box icon. |
+| `Price` | export function | «650 ₽ / kg». |
+| `ProductCard` | export function | A product; with showShop it links to its shop. |
+
+
 ### `frontend/src/components/Snowfall.jsx`
 
 **What it is for:** Falling snow drawn on a canvas (winter decoration of the login page).
@@ -1648,7 +1780,7 @@ A generic, single database configuration.
 | `Eyebrow` | function | — |
 | `STAT_TONES` | const | value: a number; it counts up once it has loaded. The three numbers in the colors of the flag of Tajikistan in the light theme: red, white (wider), green. At night the rows stay dark and keep only a thin stripe of their color on the left. |
 | `Stat` | function | — |
-| `SERVICES` | const | Every service as a tile, all alike; the calculator is twice as wide. |
+| `SERVICES` | const | Every service as a tile, all alike; the calculator and the shops are twice as wide. |
 | `TileIcon` | function | — |
 | `ServicesGrid` | function | — |
 | `SectionTitle` | function | — |
@@ -1692,6 +1824,19 @@ A generic, single database configuration.
 | `CodeBoxes` | function | — |
 | `WinterScene` | function | The winter sky behind the page (pale blue by day, deep blue at night) with slowly falling snow. |
 | `Login` | export function | — |
+
+### `frontend/src/pages/MyShops.jsx`
+
+**What it is for:** /shops/my — the owner's page: open a shop, edit it, change the logo, add, edit, hide (not in stock) and delete products. Editors can open any shop here with ?shop=id.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upload(path, field, file)` | async function | Shrinks and uploads a picture. |
+| `ShopForm` | function | Drawer to create or edit a shop. |
+| `ProductForm` | function | Drawer to add or edit a product with its photo. |
+| `ShopManager` | function | One shop: status, logo, buttons and the product list. |
+| `MyShops` | export function | The list of my shops and the chosen one. |
+
 
 ### `frontend/src/pages/NewsDetail.jsx`
 
@@ -1767,6 +1912,31 @@ A generic, single database configuration.
 |---|---|---|
 | `Alerts` | function | — |
 | `SavedJobs` | export function | — |
+
+### `frontend/src/pages/ShopPage.jsx`
+
+**What it is for:** /shops/:id — one shop: logo, kind, address with a Yandex map link, hours, contact buttons, products with search, reviews. Editors approve or reject a pending shop here.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Moderate` | function | Editor's approve / reject box. |
+| `Reviews` | function | Rating, my review form and the reviews. |
+| `Products` | function | Products of the shop with a search box. |
+| `ShopPage` | export function | The page. |
+
+
+### `frontend/src/pages/Shops.jsx`
+
+**What it is for:** /shops — Tajik and Uzbek shops: tabs «Shops» and «Products», search, city, kind chips, Tajik/Uzbek switch, delivery, cheapest first. All filters live in the address bar.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `chip(on)` | function | Style of a filter chip. |
+| `usePaged(path)` | function | Loads a page of results and «show more». |
+| `OpenShop` | function | Side card inviting owners to add their shop. |
+| `HowItWorks` | function | Three steps: find, write to the seller, pay only after seeing the goods. |
+| `Shops` | export function | The page. |
+
 
 ### `frontend/src/pages/Tickets.jsx`
 

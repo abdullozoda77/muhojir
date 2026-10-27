@@ -14,7 +14,7 @@ from app.db.session import SessionLocal, engine
 from app.db.types import utcnow
 from app.models import (
     Employer, EmployerReview, ExamQuestion, FlightWatch, Job, JobAlert, LawNews, Payment, Place, PlaceReview, ReminderLog,
-    SavedJob, User, UserDocument,
+    SavedJob, Shop, User, UserDocument,
 )
 
 
@@ -94,6 +94,8 @@ async def stats():
             ("Ҷойҳо дар харита", await count(select(Place).where(Place.is_approved.is_(True)))),
             ("Ҷойҳои пешниҳодшуда (интизор)", await count(select(Place).where(Place.is_approved.is_(False)))),
             ("Шарҳҳо дар бораи ҷойҳо", await count(select(PlaceReview))),
+            ("Мағозаҳо", await count(select(Shop).where(Shop.status == "approved"))),
+            ("Мағозаҳо (интизори санҷиш)", await count(select(Shop).where(Shop.status == "pending"))),
             ("Огоҳиҳои нархи чипта", await count(select(FlightWatch).where(FlightWatch.is_active.is_(True)))),
         ]
         jobs_by_city = (await db.execute(

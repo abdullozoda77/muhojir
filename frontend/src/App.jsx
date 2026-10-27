@@ -25,6 +25,9 @@ const Payments = lazy(() => import("./pages/Payments.jsx"));
 const Profile = lazy(() => import("./pages/Profile.jsx"));
 const Tickets = lazy(() => import("./pages/Tickets.jsx"));
 const Places = lazy(() => import("./pages/Places.jsx"));
+const Shops = lazy(() => import("./pages/Shops.jsx"));
+const ShopPage = lazy(() => import("./pages/ShopPage.jsx"));
+const MyShops = lazy(() => import("./pages/MyShops.jsx"));
 
 function Private({ children }) {
   const { user, loading } = useAuth();
@@ -59,10 +62,13 @@ export default function App() {
         <Route path="exam" element={<Exam />} />
         <Route path="tickets" element={<Tickets />} />
         <Route path="places" element={<Places />} />
+        <Route path="shops" element={<Shops />} />
+        <Route path="shops/:id" element={<ShopPage />} />
 
         <Route path="documents" element={<Private><Documents /></Private>} />
         <Route path="payments" element={<Private><Payments /></Private>} />
         <Route path="saved-jobs" element={<Private><SavedJobs /></Private>} />
+        <Route path="shops/my" element={<Private><MyShops /></Private>} />
 
         <Route path="notifications" element={<Private><Notifications /></Private>} />
         <Route path="profile" element={<Private><Profile /></Private>} />

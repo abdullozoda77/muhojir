@@ -8,6 +8,7 @@ from app.models import (
     LegalQuestion, MigrationCenter, Notification, Payment, Region, ReminderLog, SavedJob, User, UserDocument,
 )
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
+from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_ORIGINS, SHOP_STATUSES, Product, Shop, ShopReview
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -21,6 +22,9 @@ EDITOR_VIEWS = {
     "place": ALL,
     "place-review": ("list", "details", "delete"),
     "airport": ALL,
+    "shop": ("list", "details", "edit", "delete"),
+    "product": ("list", "details", "edit", "delete"),
+    "shop-review": ("list", "details", "delete"),
 }
 
 
@@ -329,6 +333,72 @@ class FlightWatchAdmin(Base, model=FlightWatch):
     can_create = False
 
 
+class ShopAdmin(Base, model=Shop):
+    name, name_plural, icon, category = "Мағоза", "Мағозаҳо", "fa-solid fa-store", "Мағозаҳо"
+    column_list = [Shop.name, Shop.category, Shop.origin, Shop.city, Shop.owner, Shop.status, Shop.created_at]
+    column_searchable_list = [Shop.name, Shop.city, Shop.address, Shop.phone]
+    column_sortable_list = [Shop.name, Shop.city, Shop.status, Shop.created_at]
+    column_default_sort = [(Shop.created_at, True)]
+    form_columns = [Shop.status, Shop.reject_reason, Shop.name, Shop.category, Shop.origin, Shop.description, Shop.city,
+                    Shop.address, Shop.lat, Shop.lon, Shop.phone, Shop.whatsapp, Shop.telegram, Shop.opening_hours,
+                    Shop.delivery]
+    form_choices = {"status": [(st, st) for st in SHOP_STATUSES],
+                    "category": [(c, label) for c, label in SHOP_CATEGORIES.items()],
+                    "origin": [(o, label) for o, label in SHOP_ORIGINS.items()]}
+    can_create = False
+
+    async def on_model_change(self, data, model, is_created, request):
+        request.state.status_changed = data.get("status") not in (None, model.status)
+        if data.get("status") == "rejected" and not (data.get("reject_reason") or "").strip():
+            raise ValueError("Write why the shop is rejected.")
+        if data.get("status") == "approved":
+            data["reject_reason"] = ""
+
+    async def after_model_change(self, data, model, is_created, request):
+        if getattr(request.state, "status_changed", False):
+            from app.db.session import SessionLocal
+            from app.services.market import tell_owner
+
+            async with SessionLocal() as db:
+                await tell_owner(db, await db.get(Shop, model.id))
+
+    async def on_model_delete(self, model, request):
+        from app.db.session import SessionLocal
+        from app.services.market import shop_files
+
+        async with SessionLocal() as db:
+            request.state.shop_files = await shop_files(db, model)
+
+    async def after_model_delete(self, model, request):
+        from app.services.market import delete_files
+
+        await delete_files(getattr(request.state, "shop_files", []))
+
+
+class ProductAdmin(Base, model=Product):
+    name, name_plural, icon, category = "Мол", "Молҳо", "fa-solid fa-basket-shopping", "Мағозаҳо"
+    column_list = [Product.name, Product.shop, Product.price, Product.unit, Product.in_stock, Product.created_at]
+    column_searchable_list = [Product.name]
+    column_sortable_list = [Product.name, Product.price, Product.created_at]
+    column_default_sort = [(Product.created_at, True)]
+    form_columns = [Product.name, Product.description, Product.price, Product.unit, Product.in_stock]
+    form_choices = {"unit": [(u, u) for u in PRODUCT_UNITS]}
+    can_create = False
+
+    async def after_model_delete(self, model, request):
+        from app.core.files import delete_image
+        from app.services.market import PHOTOS
+
+        await delete_image(model.photo, PHOTOS)
+
+
+class ShopReviewAdmin(Base, model=ShopReview):
+    name, name_plural, icon, category = "Шарҳи мағоза", "Шарҳҳо дар бораи мағозаҳо", "fa-solid fa-comment", "Мағозаҳо"
+    column_list = [ShopReview.shop, ShopReview.author, ShopReview.rating, ShopReview.text, ShopReview.created_at]
+    column_default_sort = [(ShopReview.created_at, True)]
+    can_create = can_edit = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -336,4 +406,5 @@ VIEWS = [
     EmployerAdmin, JobAdmin, EmployerReviewAdmin, BlacklistReportAdmin, JobAlertAdmin, SavedJobAdmin,
     HelpContactAdmin, LegalQuestionAdmin,
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
+    ShopAdmin, ProductAdmin, ShopReviewAdmin,
 ]

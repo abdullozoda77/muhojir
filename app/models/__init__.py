@@ -4,6 +4,7 @@ from app.models.documents import (
     add_months, law_news_document_types,
 )
 from app.models.jobs import INDUSTRIES, BlacklistReport, Employer, EmployerReview, Job, JobAlert, SavedJob
+from app.models.market import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_ORIGINS, SHOP_STATUSES, Product, Shop, ShopReview
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.support import HelpContact, LegalQuestion
 from app.models.travel import AIRLINES, Airport, FlightWatch
@@ -16,4 +17,5 @@ __all__ = [
     "HelpContact", "LegalQuestion",
     "AIRLINES", "Airport", "FlightWatch",
     "PLACE_CATEGORIES", "Place", "PlaceReview",
+    "SHOP_CATEGORIES", "SHOP_ORIGINS", "SHOP_STATUSES", "PRODUCT_UNITS", "Shop", "Product", "ShopReview",
 ]

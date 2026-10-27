@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Clock, FilePlus2, GraduationCap, MapPinned,
-  Plane, Plus, SearchCheck, ShieldCheck, Wallet,
+  LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { useApi, useDocuments } from "../hooks.js";
@@ -64,10 +64,13 @@ const SERVICES = [
   { to: "/calculator", icon: Calculator, title: () => t("Нархи патент"), text: () => t("Барои ҳамаи 83 минтақаи Русия, соли 2026 — ва маблағ барои 1–12 моҳ."), big: true },
   { to: "/jobs", icon: Briefcase, title: () => t("Ҷойи кор"), text: () => t("Вакансияҳои воқеӣ аз «Работа России» бо суроға.") },
   { to: "/tickets", icon: Plane, title: () => t("Чиптаҳо"), text: () => t("Тоҷикистон ⇄ Русия, арзонтарин рӯзҳо.") },
+  { to: "/shops", icon: Store, title: () => t("Мағозаҳои тоҷикӣ ва ӯзбекӣ"), text: () => t("Озуқа, гӯшти ҳалол, нон ва ошхонаҳо дар шаҳри шумо — бо нарх ва телефони фурӯшанда."), big: true, cta: () => t("Харид кардан") },
   { to: "/places", icon: MapPinned, title: () => t("Ҷойҳо дар харита"), text: () => t("Марказҳои муҳоҷират, масҷид, сафорат, ошхона.") },
   { to: "/guides", icon: BookOpen, title: () => t("Роҳнамо"), text: () => t("Қадам ба қадам: куҷо равед, чӣ баред.") },
   { to: "/exam", icon: GraduationCap, title: () => t("Имтиҳон"), text: () => t("100 саволи машқӣ бо шарҳ.") },
   { to: "/checks", icon: SearchCheck, title: () => t("Санҷиши ҳуҷҷатҳо"), text: () => t("Патент, манъи даромадан, қарз.") },
+  { to: "/help", icon: LifeBuoy, title: () => t("Ёрии ҳуқуқӣ"), text: () => t("Саволи худро ба ҳуқуқшинос диҳед.") },
+  { to: "/documents", icon: ShieldCheck, title: () => t("Ҳуҷҷатҳои ман"), text: () => t("Мӯҳлатҳо ва ёдраскунӣ ба почта.") },
 ];
 
 function TileIcon({ icon: Icon }) {
@@ -97,7 +100,7 @@ function ServicesGrid() {
                 <span className="text-body-sm text-on-surface-variant">{s.text()}</span>
                 {s.big && (
                   <span className="mt-3 inline-flex items-center gap-1.5 text-label-md text-primary">
-                    {t("Ҳисоб кардан")}
+                    {s.cta ? s.cta() : t("Ҳисоб кардан")}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                   </span>
                 )}

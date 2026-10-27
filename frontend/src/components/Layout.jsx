@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
-  PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Sun, UserRound, WifiOff, X,
+  PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -25,6 +25,7 @@ function sections(user) {
     { to: "/jobs", icon: Briefcase, label: t("Ҷойи кор"), short: t("Кор"), main: true, dock: user ? 3 : 2 },
     { to: "/tickets", icon: Plane, label: t("Чиптаҳо"), main: true, dock: user ? null : 3 },
     { to: "/places", icon: MapPinned, label: t("Ҷойҳо"), main: true, dock: 4 },
+    { to: "/shops", icon: Store, label: t("Мағозаҳо"), main: true },
     { to: "/calculator", icon: Calculator, label: t("Нархи патент"), main: true },
     { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо") },
     { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо") },

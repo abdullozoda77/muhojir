@@ -1,0 +1,102 @@
+from sqlalchemy import select
+
+from app.db.session import SessionLocal
+from app.models import Notification
+from tests.conftest import last_code, set_role
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
+
+SHOP = {"name": "Дӯкони Саид", "category": "grocery", "origin": "tj", "city": "Москва", "address": "Люблинская 10",
+        "phone": "8 999 123-45-67", "telegram": "https://t.me/dukoni_said", "delivery": True}
+
+
+async def sign_up(client, email):
+    await client.post("/api/auth/register/", json={"email": email, "password": "Strong-pass-2026"})
+    r = await client.post("/api/auth/verify-email/", json={"email": email, "code": last_code(email)})
+    return {"Authorization": f"Bearer {r.json()['access']}"}, r.json()["user"]["id"]
+
+
+async def test_shop_moderation_products_reviews(client, user):
+    owner, owner_data = user
+    r = await client.post("/api/market/shops/", headers=owner, json={**SHOP, "phone": "", "telegram": ""})
+    assert r.status_code == 400 and "non_field_errors" in r.json()
+    r = await client.post("/api/market/shops/", headers=owner, json={**SHOP, "telegram": "@a b"})
+    assert "telegram" in r.json()
+
+    r = await client.post("/api/market/shops/", headers=owner, json=SHOP)
+    assert r.status_code == 201, r.text
+    shop = r.json()
+    assert shop["status"] == "pending" and shop["phone"] == "+79991234567" and shop["telegram"] == "dukoni_said"
+    assert shop["is_mine"] and shop["reject_reason"] == ""
+
+    assert (await client.get(f"/api/market/shops/{shop['id']}/")).status_code == 404
+    assert (await client.get(f"/api/market/shops/{shop['id']}/", headers=owner)).status_code == 200
+    r = await client.get("/api/market/shops/", params={"mine": "true"}, headers=owner)
+    assert [x["id"] for x in r.json()["results"]] == [shop["id"]]
+
+    r = await client.post(f"/api/market/shops/{shop['id']}/products/", headers=owner,
+                          json={"name": "Курагаи Исфара", "price": 650, "unit": "kg"})
+    assert r.status_code == 201, r.text
+    product = r.json()
+    r = await client.post(f"/api/market/products/{product['id']}/photo/", headers=owner, files={"photo": ("a.png", PNG, "image/png")})
+    assert r.json()["photo"].startswith("/media/products/")
+    r = await client.post(f"/api/market/products/{product['id']}/photo/", headers=owner, files={"photo": ("a.png", b"text", "image/png")})
+    assert "photo" in r.json()
+    r = await client.post(f"/api/market/shops/{shop['id']}/logo/", headers=owner, files={"logo": ("l.png", PNG, "image/png")})
+    assert r.json()["logo"].startswith("/media/shops/")
+
+    editor, editor_id = await sign_up(client, "editor-market@example.com")
+    assert (await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=owner, json={"status": "approved"})).status_code == 403
+    await set_role(editor_id, "editor")
+
+    r = await client.get("/api/market/shops/", params={"status": "pending"}, headers=editor)
+    assert shop["id"] in [x["id"] for x in r.json()["results"]]
+    r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "rejected"})
+    assert "reason" in r.json()
+    r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "rejected", "reason": "Суроға нест"})
+    assert r.json()["status"] == "rejected"
+    r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"address": "Люблинская 12"})
+    assert r.json()["status"] == "pending"
+    r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "approved"})
+    assert r.json()["status"] == "approved" and r.json()["reject_reason"] == ""
+    async with SessionLocal() as db:
+        titles = (await db.scalars(select(Notification.title).where(Notification.user_id == owner_data["user"]["id"]))).all()
+    assert "Мағозаи шумо рад шуд" in titles and "Мағозаи шумо тасдиқ шуд" in titles
+
+    r = await client.get("/api/market/shops/", params={"search": "курага", "city": "моск", "origin": "tj", "delivery": "true"})
+    assert [x["id"] for x in r.json()["results"]] == [shop["id"]]
+    assert r.json()["results"][0]["products_count"] == 1 and "reject_reason" not in r.json()["results"][0]
+    r = await client.get("/api/market/shops/", params={"origin": "uz"})
+    assert shop["id"] not in [x["id"] for x in r.json()["results"]]
+    r = await client.get("/api/market/products/", params={"search": "курага", "max_price": 700})
+    assert r.json()["results"][0]["shop"]["name"] == "Дӯкони Саид"
+    r = await client.get("/api/market/shops/summary/")
+    assert r.json()["categories"]["grocery"] >= 1 and r.json()["products"] >= 1
+
+    r = await client.put(f"/api/market/shops/{shop['id']}/reviews/mine/", headers=owner, json={"rating": 5})
+    assert r.status_code == 400
+    r = await client.put(f"/api/market/shops/{shop['id']}/reviews/mine/", headers=editor, json={"rating": 4, "text": "Хуб"})
+    assert r.status_code == 200 and r.json()["is_mine"]
+    r = await client.get(f"/api/market/shops/{shop['id']}/")
+    assert r.json()["rating"] == 4.0 and r.json()["reviews_count"] == 1
+
+    r = await client.patch(f"/api/market/products/{product['id']}/", headers=editor, json={"in_stock": False})
+    assert r.json()["in_stock"] is False
+    r = await client.get(f"/api/market/shops/{shop['id']}/products/", params={"in_stock": "true"})
+    assert r.json()["count"] == 0
+
+    assert (await client.delete(f"/api/market/shops/{shop['id']}/", headers=owner)).status_code == 204
+    assert (await client.get(f"/api/market/products/{product['id']}/")).status_code == 404
+
+
+async def test_shop_limit_and_strangers(client, user):
+    headers, _ = user
+    for _ in range(3):
+        assert (await client.post("/api/market/shops/", headers=headers, json=SHOP)).status_code == 201
+    r = await client.post("/api/market/shops/", headers=headers, json=SHOP)
+    assert r.status_code == 400
+    shop_id = (await client.get("/api/market/shops/", params={"mine": "true"}, headers=headers)).json()["results"][0]["id"]
+    stranger, _ = await sign_up(client, "stranger-market@example.com")
+    assert (await client.patch(f"/api/market/shops/{shop_id}/", headers=stranger, json={"name": "Мой"})).status_code == 404
+    assert (await client.post(f"/api/market/shops/{shop_id}/products/", headers=stranger, json={"name": "Нон", "price": 50})).status_code == 404
+    assert (await client.post("/api/market/shops/", json=SHOP)).status_code == 401

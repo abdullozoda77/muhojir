@@ -5,7 +5,9 @@ step-by-step guides, real vacancies from «Работа России», exam pra
 notifications, an AI assistant that answers questions and opens pages of the site, **air tickets between
 Tajikistan and Russia** (both ways: prices from Aviasales, a calendar of prices, alerts when a ticket gets cheaper)
 and a **map of useful places** (migration centers, notaries, the embassy, mosques, Tajik cafes, halal shops... from
-OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places).
+OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places) and **Tajik and Uzbek shops**
+(owners add their shop, products, prices and photos; an editor approves the shop; buyers search and contact the
+seller by phone, WhatsApp or Telegram).
 
 Everything is async: FastAPI, the database (SQLAlchemy asyncio), email (aiosmtplib), outside APIs (httpx), files
 (anyio) and the AI models.
@@ -54,10 +56,10 @@ photos, payments, roles, jobs and alerts, reminders and the AI assistant's tools
 app/
   main.py            the FastAPI app: routers, errors, /media, the admin panel
   core/              settings, security (passwords, JWT), who is asking, pages, request limits, files
-  models/            SQLAlchemy tables: accounts, documents, jobs, help
+  models/            SQLAlchemy tables: accounts, documents, jobs, help, travel, places, shops
   schemas/           request and response shapes
-  routers/           /api/auth, /api/documents, /api/jobs, /api/flights, /api/places, /api/help, /api/assistant,
-                     /ws/notifications
+  routers/           /api/auth, /api/documents, /api/jobs, /api/flights, /api/places, /api/market, /api/help,
+                     /api/assistant, /ws/notifications
   services/          emails, notifications, live push, reminders, vacancy import, job alerts, ticket prices
                      (Travelpayouts), places import (OpenStreetMap / Overpass)
   assistant/         the AI assistant: what it knows, its tools, Gemini and Claude
