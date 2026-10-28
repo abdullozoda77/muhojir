@@ -1587,6 +1587,18 @@ A generic, single database configuration.
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. |
 | `Layout` | export function | — |
 
+### `frontend/src/components/Leaffall.jsx`
+
+**What it is for:** Autumn leaves slowly falling on a canvas (seasonal decoration of the login and registration page).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `COLORS` | const | Six autumn colors (light and deep shade of each): orange, yellow, red, rust, brown, amber. |
+| `MAPLE` | const | Outline of the right half of a maple leaf (unit coordinates); the left half is its mirror. |
+| `maplePath` / `ovalPath` | function | Draw a maple leaf or a simple oval leaf. |
+| `makeLeaf(shape, colors, dark)` | function | One ready-made leaf picture (sprite) with a color gradient and veins; a little dimmer in the dark theme. |
+| `Leaffall` | export function | 14–42 leaves (by screen size) fall slowly, sway side to side, turn and flip like real leaves, and are carried by a soft changing wind; near leaves are bigger and brighter. With "reduce motion" the leaves stand still. |
+
 ### `frontend/src/components/LiveToast.jsx`
 
 **What it is for:** The pop-up that shows a new notification arriving over the WebSocket.
@@ -1683,15 +1695,6 @@ A generic, single database configuration.
 | `Price` | export function | «650 ₽ / kg». |
 | `ProductCard` | export function | A product; with showShop it shows and links to its shop. |
 
-
-### `frontend/src/components/Snowfall.jsx`
-
-**What it is for:** Falling snow drawn on a canvas (winter decoration of the login page).
-
-| Name | Kind | What it does |
-|---|---|---|
-| `makeSprite` | function | Slowly falling snow drawn on a canvas. Far flakes are small and dim, near ones bigger and brighter, and a few big blurred flakes float right in front, like out of focus. Each flake rocks gently side to side and shimmers a little. With "reduce motion" on the phone the snow stands still. Every flake is a ready-made picture (sprite), so even 200 flakes cost little on a phone. |
-| `Snowfall` | export function | — |
 
 ### `frontend/src/components/SocialLogin.jsx`
 
@@ -1887,7 +1890,9 @@ A generic, single database configuration.
 | `PasswordInput` | function | A password box with a button to show what was typed (on a phone it is easy to mistype). |
 | `ICONS` | const | The screens of this page. "verify" and "reset" come after a code was emailed. |
 | `CodeBoxes` | function | — |
-| `WinterScene` | function | The winter sky behind the page (pale blue by day, deep blue at night) with slowly falling snow. |
+| `AutumnScene` | function | The autumn sky behind the page (warm cream by day, dark plum at night) with slowly falling leaves. |
+| `MAPLE` / `Leaf` | const / function | A maple leaf as SVG. |
+| `CardLeaves` | function | Three leaves resting on the top edge of the form card. |
 | `Login` | export function | — |
 
 ### `frontend/src/pages/MyShops.jsx`

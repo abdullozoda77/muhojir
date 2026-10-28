@@ -7,7 +7,7 @@ import { t } from "../i18n.js";
 import { Button, ErrorBox } from "../components/ui.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { LangSwitch, ThemeToggle } from "../components/Layout.jsx";
-import Snowfall from "../components/Snowfall.jsx";
+import Leaffall from "../components/Leaffall.jsx";
 import SocialLogin from "../components/SocialLogin.jsx";
 
 const RESEND_SECONDS = 60;
@@ -83,11 +83,34 @@ function CodeBoxes({ value, onChange, disabled }) {
   );
 }
 
-function WinterScene() {
+const MAPLE = "M12 1 L13.32 5.4 L15.96 3.64 L15.3 7.6 L20.36 5.84 L18.82 9.36 L22.56 10.9 L18.16 13.32 L19.04 15.96 L14.86 14.64 L12.88 16.84 L12 16.4 L11.12 16.84 L9.14 14.64 L4.96 15.96 L5.84 13.32 L1.44 10.9 L5.18 9.36 L3.64 5.84 L8.7 7.6 L8.04 3.64 L10.68 5.4Z";
+
+function Leaf({ className, color, deep }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <path d={MAPLE} fill={color} />
+      <path d="M12 2.5 L12 22.5 M12 14 L5.5 6.5 M12 14 L18.5 6.5 M12 15 L4.5 11.5 M12 15 L19.5 11.5" stroke={deep} strokeWidth="0.7" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CardLeaves() {
+  return (
+    <div className="pointer-events-none absolute -top-4 left-6 right-6 flex justify-between" aria-hidden>
+      <span className="flex items-end">
+        <Leaf className="h-8 w-8 -rotate-[28deg] drop-shadow-[0_3px_3px_rgba(120,50,10,0.25)]" color="#e8762a" deep="#9e3f14" />
+        <Leaf className="-ml-3 h-6 w-6 rotate-[35deg] drop-shadow-[0_3px_3px_rgba(120,50,10,0.25)]" color="#f4b23c" deep="#b9771a" />
+      </span>
+      <Leaf className="h-7 w-7 rotate-[18deg] drop-shadow-[0_3px_3px_rgba(120,50,10,0.25)]" color="#cf3f1e" deep="#8a2412" />
+    </div>
+  );
+}
+
+function AutumnScene() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#dfe7f3] via-[#eeebe4] to-[#f6f2ea] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]" />
-      <Snowfall className="absolute inset-0" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#f3e6d4] via-[#f6ecdd] to-[#f1dcc2] dark:from-[#0b0d24] dark:via-[#1a1530] dark:to-[#2b1a22]" />
+      <Leaffall className="absolute inset-0" />
     </div>
   );
 }
@@ -202,7 +225,7 @@ export default function Login() {
   return (
     <div className="relative isolate grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
-      <WinterScene />
+      <AutumnScene />
 
       <aside className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
         <Link to="/" className="flex items-center gap-2.5 self-start">
@@ -249,9 +272,7 @@ export default function Login() {
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
           <div className="relative rounded-3xl bg-white/75 p-6 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-8 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
-            <svg className="pointer-events-none absolute -top-[13px] left-5 right-5 h-[22px] w-[calc(100%-2.5rem)] drop-shadow-[0_2px_2px_rgba(60,90,160,0.18)]" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden>
-              <path className="fill-white dark:fill-[#e3ebfb]" d="M0 22 C10 22 12 12 26 11 C40 10 44 4 62 5 C80 6 84 13 102 12 C118 11 124 3 146 3 C168 3 172 12 192 12 C212 12 218 6 238 6 C256 6 262 14 282 13 C302 12 306 2 330 2 C352 2 356 12 372 13 C386 14 392 22 400 22Z" />
-            </svg>
+            <CardLeaves />
           <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#5b8def] text-white shadow-lg shadow-primary/30">
               <Icon className="h-5 w-5" aria-hidden />
