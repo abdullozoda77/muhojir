@@ -43,3 +43,26 @@ export function useDocuments() {
   }, [load]);
   return { ...state, reload: load };
 }
+
+let locks = 0;
+let savedY = 0;
+
+export function useScrollLock(active) {
+  useEffect(() => {
+    if (!active) return undefined;
+    if (locks++ === 0) {
+      savedY = window.scrollY;
+      const body = document.body.style;
+      Object.assign(body, { position: "fixed", top: `-${savedY}px`, left: "0", right: "0", width: "100%", overflow: "hidden" });
+      document.documentElement.style.overscrollBehavior = "none";
+    }
+    return () => {
+      if (--locks === 0) {
+        const body = document.body.style;
+        Object.assign(body, { position: "", top: "", left: "", right: "", width: "", overflow: "" });
+        document.documentElement.style.overscrollBehavior = "";
+        window.scrollTo(0, savedY);
+      }
+    };
+  }, [active]);
+}

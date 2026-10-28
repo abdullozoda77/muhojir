@@ -11,6 +11,7 @@ import { lang, setLang, t } from "../i18n.js";
 import { useTheme } from "../theme.js";
 import { useAppUpdate, useOnline } from "../pwa.js";
 import { useLiveNotifications } from "../live.js";
+import { useScrollLock } from "../hooks.js";
 import Footer from "./Footer.jsx";
 import LiveToast from "./LiveToast.jsx";
 import { InstallBanner, InstallHeaderButton, InstallMenuButton } from "./InstallApp.jsx";
@@ -176,12 +177,20 @@ function MoreMenu({ items, counts, user }) {
 }
 
 function MenuSheet({ open, onClose, items, counts, user }) {
+  useScrollLock(open);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   return (
     <AnimatePresence>
       {open && (
-        <m.div className="fixed inset-0 z-[70] lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
-          <m.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl bg-background p-5 ring-1 ring-outline-variant pb-[calc(env(safe-area-inset-bottom)+20px)]">
+        <m.div className="fixed inset-0 z-[70] touch-none lg:hidden" role="dialog" aria-modal="true" aria-label={t("Ҳамаи бахшҳо")} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={onClose} />
+          <m.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="absolute inset-x-0 bottom-0 max-h-[88vh] touch-pan-y overflow-y-auto overscroll-contain rounded-t-2xl bg-background p-5 ring-1 ring-outline-variant pb-[calc(env(safe-area-inset-bottom)+20px)]">
             <div className="mb-4 flex items-center justify-between">
               <span className="text-[18px] font-semibold">{t("Ҳамаи бахшҳо")}</span>
               <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-high">

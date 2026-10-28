@@ -6,6 +6,7 @@ import { t } from "../i18n.js";
 import { useIsDark } from "../theme.js";
 
 const FONT = ["Noto Sans Bold"];
+const TOUCH = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
 const THEMES = {
   light: {
@@ -169,6 +170,12 @@ export default function Map3D({ points, colors, region, regionView, selectedId, 
       bearing: -15,
       maxPitch: 75,
       attributionControl: { compact: true },
+      cooperativeGestures: TOUCH,
+      locale: {
+        "CooperativeGesturesHandler.WindowsHelpText": t("Барои калон кардани харита Ctrl + чархакро истифода баред"),
+        "CooperativeGesturesHandler.MacHelpText": t("Барои калон кардани харита ⌘ + чархакро истифода баред"),
+        "CooperativeGesturesHandler.MobileHelpText": t("Харитаро бо ду ангушт ҳаракат диҳед"),
+      },
     });
     mapRef.current = map;
     if (import.meta.env.DEV) window.__placesMap = map;

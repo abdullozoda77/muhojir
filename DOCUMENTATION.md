@@ -1392,6 +1392,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `useApi` | export function | const { data, error, loading, reload } = useApi("/jobs/jobs/"). Pass null as the path to skip loading. |
+| `useScrollLock(active)` | export function | While active the page behind a menu or drawer cannot scroll (also on iPhone: the body is fixed at its place); the scroll position comes back on close. Several open at once are counted. |
 | `useDocuments` | export function | Loads everything the documents screens need: the user's documents, document types and regions. |
 
 ### `frontend/src/i18n.js`
@@ -1584,7 +1585,7 @@ A generic, single database configuration.
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `MoreMenu` | function | "More": the sections that are not tabs, in a panel under the button. |
-| `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. |
+| `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | — |
 
 ### `frontend/src/components/Leaffall.jsx`
@@ -1635,6 +1636,7 @@ A generic, single database configuration.
 | `addLayers` | function | Our layers on top of the base map (added again whenever the theme, and so the base map, changes). |
 | `routeSummary` | function | "3,4 км · 46 дақ" for the route card. |
 | `Map3D` | export function | route: { geometry, distance (m), duration (s), mode: "foot" \| "car", from: {lat, lon, name}, to: {...} } or null. className: the map's size. inset: how many pixels on the left are covered (e.g. by a list over the map), so the buttons move right of it and places are framed in the part that is still seen. |
+| `TOUCH` | const | True on touch screens: there the map moves with two fingers (cooperativeGestures), so one finger still scrolls the page. |
 
 ### `frontend/src/components/Pattern.jsx`
 
@@ -1752,7 +1754,7 @@ A generic, single database configuration.
 | `Skeleton` | export function | — |
 | `EmptyState` | export function | — |
 | `Field` | export function | — |
-| `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Closes on Escape and on the dark backdrop. |
+| `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Closes on Escape and on the dark backdrop; the page behind is locked with useScrollLock. |
 | `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). |
 | `BackLink` | export function | "← Back" above a detail page: a quiet text link. |
 | `Switch` | export function | An on/off row with an icon, a title and a hint (role=switch); used for «we deliver» and «in stock». |
@@ -1958,7 +1960,7 @@ A generic, single database configuration.
 | `findRoute` | export function | — |
 | `myPosition` | function | The person's position, once (asks for permission the first time). |
 | `RouteBuilder` | function | "Route": from my position or from another place on the map to this place, on foot or by car. |
-| `useWide` | function | True on wide screens (Tailwind's xl), where the list floats over the map instead of having its own tab. |
+| `useWide` | function | True on wide screens (Tailwind's xl), where the list floats over the map. On phones and tablets the map (440 px on phones) is always shown above the list; building a route scrolls up to the map. |
 | `SHOP_KIND` | const | The «Tajik shops» chip and its red map color; the value "shop" is never sent to /api/places/. |
 | `shopIdOf` | function | "shop-5" -> 5, a place id -> null. |
 | `distanceKm` | function | Distance between two points in km (haversine). |

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Loader2, X, XCircle } from "lucide-react";
 import { t } from "../i18n.js";
 import { daysText } from "../format.js";
+import { useScrollLock } from "../hooks.js";
 import { Emblem } from "./Pattern.jsx";
 import { Intro, IntroItem, startShown } from "./motion.jsx";
 
@@ -106,15 +107,12 @@ export function Field({ label, required, error, children, hint }) {
 }
 
 export function Drawer({ open, onClose, title, subtitle, icon: Icon, children }) {
+  useScrollLock(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   return (
@@ -122,7 +120,7 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
       {open && (
         <m.div key="drawer" className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={title} exit={{ opacity: 1 }}>
           <m.div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
-          <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-background pb-[env(safe-area-inset-bottom)] shadow-2xl ring-1 ring-outline-variant md:my-3 md:pb-0 md:mr-3 md:h-[calc(100%-24px)] md:rounded-2xl" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
+          <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto overscroll-contain bg-background pb-[env(safe-area-inset-bottom)] shadow-2xl ring-1 ring-outline-variant md:my-3 md:pb-0 md:mr-3 md:h-[calc(100%-24px)] md:rounded-2xl" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 p-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] backdrop-blur md:px-6 md:pt-5">
               <div className="flex items-center gap-3">
                 {Icon && (

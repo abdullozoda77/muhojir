@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
+  Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, MapPin,
   Check, ImagePlus, MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShieldCheck, ShoppingBag, ShoppingBasket, Stamp, Store, Trash2, Truck, Utensils, X,
 } from "lucide-react";
 import { api } from "../api.js";
@@ -588,7 +588,8 @@ export default function Places() {
   const [search, setSearch] = useState(params.get("search") || "");
   const [near, setNear] = useState(null);
   const [locating, setLocating] = useState(false);
-  const [view, setView] = useState("list");
+  const mapBox = useRef(null);
+  const showMap = () => mapBox.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   const wide = useWide();
   const [panel, setPanel] = useState(true);
   const [openId, setOpenId] = useState(() => (params.get("shop") ? SHOP_PREFIX + params.get("shop") : null));
@@ -801,23 +802,14 @@ export default function Places() {
         </div>
       </div>
 
-      <div className="inline-flex self-start rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant xl:hidden" role="group">
-        {[["list", List, t("Рӯйхат")], ["map", MapIcon, t("Харита")]].map(([value, Icon, label]) => (
-          <button key={value} type="button" onClick={() => setView(value)} aria-pressed={view === value} className={`flex min-h-[40px] items-center gap-2 rounded-lg px-4 text-label-md transition-colors ${view === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
-            <Icon className="h-4 w-4" aria-hidden />
-            {label}
-          </button>
-        ))}
-      </div>
-
       <ErrorBox error={error} />
       <div className="flex flex-col gap-2">
         <div className="relative">
-          <div className={!wide && view === "list" ? "hidden" : ""}>
+          <div ref={mapBox} className="scroll-mt-24">
             <Map3D
               points={mapPoints} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]}
               selectedId={openId} onOpen={setOpenId} route={route} onClearRoute={() => setRoute(null)}
-              className="h-[560px] xl:h-[calc(100vh-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
+              className="h-[440px] sm:h-[560px] xl:h-[calc(100vh-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
             />
           </div>
           {wide && panel && (
@@ -843,8 +835,8 @@ export default function Places() {
               {!loading && <span className="text-[12px] tabular-nums text-on-surface-variant">{total}</span>}
             </button>
           )}
-          {!wide && view === "list" && (
-            <div className="flex flex-col gap-3">
+          {!wide && (
+            <div className="mt-6 flex flex-col gap-3">
               <div className="flex items-center gap-2 px-1">
                 <h2 className="text-[20px] font-semibold">{onlyShops ? SHOP_KIND.label() : near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
                 {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{total}</span>}
@@ -864,7 +856,7 @@ export default function Places() {
         onRoute={(r) => {
           setRoute(r);
           setOpenId(null);
-          setView("map");
+          showMap();
         }}
       />
       <ShopDetails
@@ -874,7 +866,7 @@ export default function Places() {
         onRoute={(r) => {
           setRoute(r);
           setOpenId(null);
-          setView("map");
+          showMap();
         }}
       />
       <SuggestPlace open={suggesting} onClose={() => setSuggesting(false)} regions={regions} onSaved={() => (setVersion((v) => v + 1), reloadSummary())} />
