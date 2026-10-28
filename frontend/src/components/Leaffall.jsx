@@ -69,7 +69,7 @@ function makeLeaf(shape, [light, deep], dark) {
   return c;
 }
 
-export default function Leaffall({ className = "" }) {
+export default function Leaffall({ className = "", density = 1 }) {
   const ref = useRef(null);
   const dark = useIsDark();
 
@@ -111,8 +111,9 @@ export default function Leaffall({ className = "" }) {
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.round(Math.min(42, Math.max(14, (w * h) / 36000)));
-      leaves = Array.from({ length: count }, () => leaf(true));
+      const count = Math.max(4, Math.round(Math.min(42, Math.max(14, (w * h) / 36000)) * density));
+      leaves = leaves.slice(0, count);
+      while (leaves.length < count) leaves.push(leaf(true));
     };
 
     const draw = (time) => {
@@ -159,7 +160,7 @@ export default function Leaffall({ className = "" }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [dark]);
+  }, [dark, density]);
 
   return <canvas ref={ref} aria-hidden className={`pointer-events-none h-full w-full ${className}`} />;
 }

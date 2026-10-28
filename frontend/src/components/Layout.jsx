@@ -13,6 +13,7 @@ import { useAppUpdate, useOnline } from "../pwa.js";
 import { useLiveNotifications } from "../live.js";
 import { useScrollLock } from "../hooks.js";
 import Footer from "./Footer.jsx";
+import SeasonFall from "./SeasonFall.jsx";
 import LiveToast from "./LiveToast.jsx";
 import { InstallBanner, InstallHeaderButton, InstallMenuButton } from "./InstallApp.jsx";
 import Assistant from "./Assistant.jsx";
@@ -254,6 +255,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <SeasonFall className="absolute inset-0" density={0.35} />
+      </div>
       <div className="fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-background" aria-hidden />
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
@@ -318,7 +322,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]">
+      <main className="relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]">
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {update.ready && (
             <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">

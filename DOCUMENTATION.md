@@ -1597,7 +1597,7 @@ A generic, single database configuration.
 | `ThemeToggle` | export function | — |
 | `MoreMenu` | function | "More": the sections that are not tabs, in a panel under the button. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
-| `Layout` | export function | — |
+| `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 
 ### `frontend/src/components/Leaffall.jsx`
 
@@ -1609,7 +1609,7 @@ A generic, single database configuration.
 | `MAPLE` | const | Outline of the right half of a maple leaf (unit coordinates); the left half is its mirror. |
 | `maplePath` / `ovalPath` | function | Draw a maple leaf or a simple oval leaf. |
 | `makeLeaf(shape, colors, dark)` | function | One ready-made leaf picture (sprite) with a color gradient and veins; a little dimmer in the dark theme. |
-| `Leaffall` | export function | 14–42 leaves (by screen size) fall slowly, sway side to side, turn and flip like real leaves, and are carried by a soft changing wind; near leaves are bigger and brighter. With "reduce motion" the leaves stand still. |
+| `Leaffall` | export function | 14–42 leaves (by screen size) fall slowly, sway side to side, turn and flip like real leaves, and are carried by a soft changing wind; near leaves are bigger and brighter. With "reduce motion" the leaves stand still. density scales the number (the site background uses 0.35, the login page 1). A resize (e.g. the phone's address bar hiding while scrolling) keeps the leaves that are already falling. |
 
 ### `frontend/src/components/LiveToast.jsx`
 
@@ -1690,6 +1690,15 @@ A generic, single database configuration.
 |---|---|---|
 | `RouteArt` | export function | — |
 
+### `frontend/src/components/SeasonFall.jsx`
+
+**What it is for:** The falling decoration of the current season.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `season(day)` | export function | "autumn" in September–November, "winter" in December–February, otherwise null. |
+| `SeasonFall` | export function | Leaffall in autumn, Snowfall in winter, nothing in spring and summer; density is passed on. |
+
 ### `frontend/src/components/Shop.jsx`
 
 **What it is for:** Parts of the shops pages: logo, badges, contact buttons, shop and product cards.
@@ -1708,6 +1717,15 @@ A generic, single database configuration.
 | `Price` | export function | «650 ₽ / kg». |
 | `ProductCard` | export function | A product; with showShop it shows and links to its shop. |
 
+
+### `frontend/src/components/Snowfall.jsx`
+
+**What it is for:** Falling snow drawn on a canvas (winter, December–February).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `makeSprite` | function | One snowflake picture (sprite): sharp or soft (out of focus), for light and dark theme. |
+| `Snowfall` | export function | Slow snow: far flakes small and dim, near ones bigger, a few big blurred ones in front; each rocks gently and shimmers. density scales the number of flakes; a resize keeps the flakes that are falling. With "reduce motion" it stands still. |
 
 ### `frontend/src/components/SocialLogin.jsx`
 
@@ -1903,9 +1921,10 @@ A generic, single database configuration.
 | `PasswordInput` | function | A password box with a button to show what was typed (on a phone it is easy to mistype). |
 | `ICONS` | const | The screens of this page. "verify" and "reset" come after a code was emailed. |
 | `CodeBoxes` | function | — |
-| `AutumnScene` | function | The autumn sky behind the page (warm cream by day, dark plum at night) with slowly falling leaves. |
+| `SKIES` | const | The sky gradient of the login page for autumn, winter and the rest of the year (day and night). |
+| `SeasonScene` | function | The sky of the current season behind the login page with SeasonFall at full density. |
 | `MAPLE` / `Leaf` | const / function | A maple leaf as SVG. |
-| `CardLeaves` | function | Three leaves resting on the top edge of the form card. |
+| `CardLeaves` | function | Three leaves resting on the top edge of the form card (only in autumn). |
 | `Login` | export function | — |
 
 ### `frontend/src/pages/MyShops.jsx`

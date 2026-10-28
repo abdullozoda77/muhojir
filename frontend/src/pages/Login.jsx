@@ -7,7 +7,7 @@ import { t } from "../i18n.js";
 import { Button, ErrorBox } from "../components/ui.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { LangSwitch, ThemeToggle } from "../components/Layout.jsx";
-import Leaffall from "../components/Leaffall.jsx";
+import SeasonFall, { season } from "../components/SeasonFall.jsx";
 import SocialLogin from "../components/SocialLogin.jsx";
 
 const RESEND_SECONDS = 60;
@@ -106,11 +106,17 @@ function CardLeaves() {
   );
 }
 
-function AutumnScene() {
+const SKIES = {
+  autumn: "from-[#f3e6d4] via-[#f6ecdd] to-[#f1dcc2] dark:from-[#0b0d24] dark:via-[#1a1530] dark:to-[#2b1a22]",
+  winter: "from-[#dfe7f3] via-[#eeebe4] to-[#f6f2ea] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]",
+  none: "from-[#e4edf6] via-[#f2f0ea] to-[#f6f2ea] dark:from-[#050b24] dark:via-[#0a1638] dark:to-[#10204f]",
+};
+
+function SeasonScene() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#f3e6d4] via-[#f6ecdd] to-[#f1dcc2] dark:from-[#0b0d24] dark:via-[#1a1530] dark:to-[#2b1a22]" />
-      <Leaffall className="absolute inset-0" />
+      <div className={`absolute inset-0 bg-gradient-to-b ${SKIES[season() || "none"]}`} />
+      <SeasonFall className="absolute inset-0" />
     </div>
   );
 }
@@ -225,7 +231,7 @@ export default function Login() {
   return (
     <div className="relative isolate grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
-      <AutumnScene />
+      <SeasonScene />
 
       <aside className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
         <Link to="/" className="flex items-center gap-2.5 self-start">
@@ -272,7 +278,7 @@ export default function Login() {
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
           <div className="relative rounded-3xl bg-white/75 p-6 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-8 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
-            <CardLeaves />
+            {season() === "autumn" && <CardLeaves />}
           <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#5b8def] text-white shadow-lg shadow-primary/30">
               <Icon className="h-5 w-5" aria-hidden />
