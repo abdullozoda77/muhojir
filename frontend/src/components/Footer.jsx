@@ -8,6 +8,7 @@ const MVD = "https://xn--b1aew.xn--p1ai/mvd/structure1/Glavnie_upravlenija/guvm/
 
 const COLUMNS = [
   {
+    id: "services",
     title: () => t("Хизматҳо"),
     links: [
       ["/documents", () => t("Ҳуҷҷатҳои ман")],
@@ -20,6 +21,7 @@ const COLUMNS = [
     ],
   },
   {
+    id: "info",
     title: () => t("Маълумот"),
     links: [
       ["/guides", () => t("Роҳнамо ва қонунҳо")],
@@ -59,7 +61,7 @@ export default function Footer() {
           </StaggerItem>
 
           {COLUMNS.map((col) => (
-            <StaggerItem as="nav" key={col.title()} aria-label={col.title()} className="flex flex-col gap-0.5">
+            <StaggerItem as="nav" key={col.id} aria-label={col.title()} className="flex flex-col gap-0.5">
               <h2 className="mb-2 font-sans text-label-md tracking-normal text-on-surface">{col.title()}</h2>
               {col.links.map(([to, label]) => (
                 <Link key={to} to={to} className={linkStyle}>
