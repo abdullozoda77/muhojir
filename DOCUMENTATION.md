@@ -897,7 +897,7 @@ A generic, single database configuration.
 
 ### `app/assistant/knowledge.py`
 
-**What it is for:** What the AI assistant is told: who it is, how to behave, and how the site is built (pages and what they do). It tells the model its name is Брат.
+**What it is for:** What the AI assistant is told: who it is, how to behave, and how the site is built (pages and what they do). It tells the model its name is Ошно.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1475,7 +1475,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Assistant.jsx`
 
-**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Брат (Brat).
+**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Ошно (Oshno, "friend").
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1583,7 +1583,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Layout.jsx`
 
-**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Брат button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
+**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
 
 | Name | Kind | What it does |
 |---|---|---|

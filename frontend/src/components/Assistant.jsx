@@ -95,7 +95,7 @@ export default function Assistant() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? t("Пӯшидани Брат") : t("Брат")}
+        aria-label={open ? t("Пӯшидани Ошно") : t("Ошно")}
         aria-expanded={open}
         className="group fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] right-4 z-[65] overflow-hidden rounded-full p-[2px] shadow-[0_14px_34px_-12px_rgb(29_78_216/0.75)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.97] lg:bottom-6 lg:right-6"
       >
@@ -113,7 +113,7 @@ export default function Assistant() {
               {open ? <X className="h-5 w-5" aria-hidden /> : <AssistantMark className="h-6 w-6 transition-transform duration-500 group-hover:scale-110" />}
             </m.span>
           </AnimatePresence>
-          <span className="hidden text-label-md sm:inline">{open ? t("Пӯшидан") : t("Брат")}</span>
+          <span className="hidden text-label-md sm:inline">{open ? t("Пӯшидан") : t("Ошно")}</span>
         </span>
       </button>
 
@@ -125,14 +125,14 @@ export default function Assistant() {
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 34 }}
             className="fixed bottom-[calc(env(safe-area-inset-bottom)+10rem)] left-4 right-4 z-[65] flex max-h-[min(70vh,620px)] flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant sm:left-auto sm:w-[400px] lg:bottom-24 lg:right-6"
-            aria-label={t("Брат")}
+            aria-label={t("Ошно")}
           >
             <header className="flex items-center gap-3 border-b border-outline-variant px-4 py-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#172f73] to-[#1d4ed8] text-white">
                 <AssistantMark className="h-5 w-5" />
               </span>
               <span className="flex-1">
-                <span className="block text-label-lg">{t("Брат")}</span>
+                <span className="block text-label-lg">{t("Ошно")}</span>
                 <span className="text-body-sm text-on-surface-variant">{t("Мепурсад, ҷавоб медиҳад ва саҳифаҳоро мекушояд")}</span>
               </span>
               {messages.length > 0 && (
@@ -144,7 +144,7 @@ export default function Assistant() {
 
             <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
               {enabled === false ? (
-                <p className="rounded-2xl bg-surface-container-low p-3 text-body-md text-on-surface-variant">{t("Брат ҳоло танзим нашудааст.")}</p>
+                <p className="rounded-2xl bg-surface-container-low p-3 text-body-md text-on-surface-variant">{t("Ошно ҳоло танзим нашудааст.")}</p>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col gap-2">
                   <p className="text-body-md text-on-surface-variant">{t("Салом! Ман дар бораи ҳуҷҷатҳо, патент ва кор ёрӣ медиҳам ва саҳифаи лозимиро мекушоям. Масалан:")}</p>
