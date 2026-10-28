@@ -16,7 +16,7 @@ from app.core.pagination import Paginate
 from app.models import PLACE_CATEGORIES, Place, PlaceReview, User
 from app.routers.documents import param
 from app.schemas.common import Form
-from app.services.notify import notify
+from app.services.notify import notify, notify_editors
 
 router = APIRouter(prefix="/api/places", tags=["places"])
 
@@ -208,6 +208,9 @@ async def suggest_place(request: Request, db: DB, user: CurrentUser):
                   is_approved=user.is_editor, created_by_id=user.id, proof=proof)
     db.add(place)
     await db.commit()
+    if not place.is_approved:
+        await notify_editors(db, "Ҷойи нав барои санҷиш",
+                             f"«{place.name}» ({place.region}, {place.address}) пешниҳод шуд. Аксро бо харита санҷед.", skip=user)
     return with_check(place_json(place), place, user)
 
 

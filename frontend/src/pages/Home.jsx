@@ -69,7 +69,7 @@ const SERVICES = [
   { to: "/guides", icon: BookOpen, title: () => t("Роҳнамо"), text: () => t("Қадам ба қадам: куҷо равед, чӣ баред.") },
   { to: "/exam", icon: GraduationCap, title: () => t("Имтиҳон"), text: () => t("100 саволи машқӣ бо шарҳ.") },
   { to: "/checks", icon: SearchCheck, title: () => t("Санҷиши ҳуҷҷатҳо"), text: () => t("Патент, манъи даромадан, қарз.") },
-  { to: "/help", icon: LifeBuoy, title: () => t("Ёрии ҳуқуқӣ"), text: () => t("Саволи худро ба ҳуқуқшинос диҳед.") },
+  { to: "/help", icon: LifeBuoy, title: () => t("Ёрии ҳуқуқӣ"), text: () => t("Рақамҳои сафорат, хати боварӣ ва ҳуқуқшиносон.") },
   { to: "/documents", icon: ShieldCheck, title: () => t("Ҳуҷҷатҳои ман"), text: () => t("Мӯҳлатҳо ва ёдраскунӣ ба почта.") },
 ];
 

@@ -376,12 +376,11 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/models/support.py`
 
-**Барои чӣ:** Ҷадвалҳои ёрӣ: сайтҳо/тамосҳои ёрӣ ва саволҳо ба ҳуқуқшинос.
+**Барои чӣ:** Ҷадвалҳои ёрӣ: сайтҳо ва тамосҳои ёрӣ (сафорат, хати боварӣ, ҳуқуқшиносон).
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
 | `HelpContact` | класс · ҷадвали `help_contacts` | Ҷое, ки муҳоҷир ёрӣ гирифта метавонад: сайтҳои расмӣ дар бораи патент, сафорат, хати боварӣ, ҳуқуқшинос ё саҳифаи расмии санҷиши ВКД. Муҳаррирон илова мекунанд (бо пайвандҳои воқеӣ ва санҷидашуда). |
-| `LegalQuestion` | класс · ҷадвали `legal_questions` | Саволи коргар ба ҳуқуқшинос. Админ ҷавоб менависад; коргар огоҳӣ мегирад. |
 
 ### `app/models/travel.py`
 
@@ -521,14 +520,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `use_code(db, email, code, purpose)` | функсияи async | Кодро месанҷад; коди дуруст танҳо як бор кор мекунад. Вақте нодуруст ё кӯҳна аст, ApiError медиҳад. |
 | `user_by_email(db, email)` | функсияи async | Корбарро аз рӯи почта меёбад. |
 | `register(data, db)` | функсияи async · `POST /api/auth/register/` | Қадами 1-и бақайдгирӣ: почта, парол ва ном. Ҳисоб то тасдиқи почта интизор мешавад. |
-| `verify_email(data, db)` | функсияи async · `POST /api/auth/verify-email/` | Қадами 2-и бақайдгирӣ: код аз почта. Почтаро тасдиқ мекунад ва ворид мешавад. |
+| `verify_email(data, db)` | функсияи async · `POST /api/auth/verify-email/` | Қадами 2-и бақайдгирӣ: код аз почта. Почтаро тасдиқ мекунад ва ворид мешавад. Ҳисоби нав хушомадгӯӣ мегирад. |
 | `resend_code(data, db)` | функсияи async · `POST /api/auth/resend-code/` | Коди бақайдгириро боз мефиристад (танҳо ба ҳисобҳои ҳанӯз тасдиқнашуда). |
 | `login(data, db)` | функсияи async · `POST /api/auth/login/` | Почта + парол. Ҳисобе, ки почтааш ҳанӯз тасдиқ нашудааст, ба ҷои токенҳо коди нав мегирад. |
-| `social_login(db, email, full_name)` | функсияи async | Ба ҳисоби дорои ин почта ворид мекунад ё ҳисоби нави бе парол месозад (201). Ҳисобе, ки почтааш тасдиқ нашуда буд, пароли кӯҳнаашро гум мекунад: онро соҳиби почта нагузошта буд. Баста — 403. |
+| `social_login(db, email, full_name)` | функсияи async | Ба ҳисоби дорои ин почта ворид мекунад ё ҳисоби нави бе парол месозад (201). Ҳисобе, ки почтааш тасдиқ нашуда буд, пароли кӯҳнаашро гум мекунад: онро соҳиби почта нагузошта буд. Баста — 403. Ҳисоби нав хушомадгӯӣ мегирад. |
 | `google_settings()` | функсияи async · `GET /api/auth/google/` | Client ID барои тугмаи Google; сатри холӣ — воридшавӣ бо Google хомӯш аст. |
 | `google_login(data, db)` | функсияи async · `POST /api/auth/google/` | Воридшавӣ бо Google: ID-токенро месанҷад, баъд social_login. GOOGLE_CLIENT_ID нест — 503, токени бад — 400. |
 | `forgot_password(data, db)` | функсияи async · `POST /api/auth/password/forgot/` | Код барои пароли нав мефиристад. Ҷавоб якхела аст, почта бақайд бошад ё не, то касе натавонад бо он фаҳмад, ки кӣ ҳисоб дорад. |
-| `reset_password(data, db)` | функсияи async · `POST /api/auth/password/reset/` | Код аз почта ва пароли нав. Инчунин почтаро тасдиқ мекунад ва ворид мешавад. |
+| `reset_password(data, db)` | функсияи async · `POST /api/auth/password/reset/` | Код аз почта ва пароли нав. Инчунин почтаро тасдиқ мекунад ва ворид мешавад. «Пароли шумо иваз шуд»-ро мефиристад. |
 | `revoke(db, payload)` | функсияи async | Токени refresh-ро баста мекунад. Агар аллакай баста бошад, False бармегардонад. |
 | `refresh_token(data, db)` | функсияи async · `POST /api/auth/token/refresh/` | Токени нави access ва токени нави refresh; refresh-и кӯҳна дигар кор намекунад. |
 | `logout(data, db)` | функсияи async · `POST /api/auth/logout/` | Баромадан: токени refresh ба рӯйхати сиёҳ меравад ва дигар истифода намешавад. |
@@ -670,7 +669,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `shop_answer(db, user, shop_id)` | функсияи async | Мағозаро аз нав хонда JSON-ашро медиҳад. |
 | `shop_detail(shop_id, db, user)` | функсияи async · `GET /api/market/shops/{shop_id}/` | Мағоза ва шарҳи ман. |
 | `create_shop(data, db, user)` | функсияи async · `POST /api/market/shops/` | Мағоза ҳамчун draft мекушояд (то 3 барои як корбар); мағозаи муҳаррир фавран тасдиқ. |
-| `update_shop(shop_id, data, db, user)` | функсияи async · `PATCH /api/market/shops/{shop_id}/` | Мағозаро тағйир медиҳад, инчунин ҷойгиршавӣ (lat, lon). Агар соҳиб (на муҳаррир) нишонаи мағозаи тасдиқшударо ҷойиваз кунад, мағоза боз «дар санҷиш» мешавад ва то санҷиши муҳаррир аз харита нест мешавад; ҷойи мағозаи тасдиқшударо пок кардан мумкин нест. |
+| `update_shop(shop_id, data, db, user)` | функсияи async · `PATCH /api/market/shops/{shop_id}/` | Мағозаро тағйир медиҳад, инчунин ҷойгиршавӣ (lat, lon). Агар соҳиб (на муҳаррир) нишонаи мағозаи тасдиқшударо ҷойиваз кунад, мағоза боз «дар санҷиш» мешавад ва то санҷиши муҳаррир аз харита нест мешавад; ҷойи мағозаи тасдиқшударо пок кардан мумкин нест. Он гоҳ муҳаррирон «Мағоза ҷояшро иваз кард» мегиранд. |
 | `delete_shop(shop_id, db, user)` | функсияи async · `DELETE /api/market/shops/{shop_id}/` | Мағоза, молҳо, шарҳҳо ва аксҳояшро нест мекунад. |
 | `moderate_shop(shop_id, data, db, user)` | функсияи async · `POST /api/market/shops/{shop_id}/moderate/` | Муҳаррир мағозаи фиристодаро (на draft) тасдиқ ё рад мекунад (бо сабаб); соҳиб огоҳӣ мегирад. |
 | `proof_kinds(db, shop_id)` | функсияи async | Кадом навъҳои исбот дар мағоза ҳаст. |
@@ -679,7 +678,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `get_proof(db, user, shop_id, proof_id)` | функсияи async | Як исботи мағозаи ман (ё ҳар кадом барои муҳаррир), вагарна 404/403. |
 | `proof_file(shop_id, proof_id, db, user)` | функсияи async · `GET /api/market/shops/{shop_id}/proofs/{proof_id}/` | Худи файли исбот, бе кэш. |
 | `delete_proof(shop_id, proof_id, db, user)` | функсияи async · `DELETE /api/market/shops/{shop_id}/proofs/{proof_id}/` | Исбот ва файлашро нест мекунад. |
-| `submit_shop(shop_id, db, user)` | функсияи async · `POST /api/market/shops/{shop_id}/submit/` | Мағозаи draft ё радшударо ба санҷиш мефиристад; акси ҷой ва молҳо ({"proofs"}) ва ҷойгиршавӣ ({"location"}) лозим. |
+| `submit_shop(shop_id, db, user)` | функсияи async · `POST /api/market/shops/{shop_id}/submit/` | Мағозаи draft ё радшударо ба санҷиш мефиристад; акси ҷой ва молҳо ({"proofs"}) ва ҷойгиршавӣ ({"location"}) лозим. Муҳаррирон «Мағозаи нав барои санҷиш» мегиранд. |
 | `upload_logo / remove_logo` | функсияи async · `POST/DELETE /api/market/shops/{shop_id}/logo/` | Логотипи мағоза (JPG, PNG, WEBP то 3 МБ). |
 | `product_filters(query, request)` | функсия | search, max_price, in_stock; тартиб price, created_at, name (бо пешфарз аввал молҳои ҳозир). |
 | `shop_products(shop_id, request, db, user, page)` | функсияи async · `GET /api/market/shops/{shop_id}/products/` | Молҳои як мағоза. |
@@ -711,7 +710,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `get_place(db, user, place_id)` | функсияи async | Як ҷой ё 404. |
 | `place_detail(place_id, db, user)` | функсияи async · `GET /api/places/{place_id}/` | Як ҷой бо баҳояш. |
 | `PlaceIn` | класс | Ҷойи пешниҳодшуда: категория, ном, минтақа, суроға, координатаҳо... |
-| `suggest_place(request, db, user)` | функсияи async · `POST /api/places/` | Формаи multipart. Корбар ҷой пешниҳод мекунад: lat/lon (нишона дар харита), акс (jpg, png, webp; пӯшида нигоҳ дошта мешавад) ва confirmed=true ҳатмӣ мебошанд; ба ҳар корбар на зиёда аз 5 пешниҳоди интизор. Баъди тасдиқи муҳаррир ба ҳама нишон дода мешавад (ҷойҳои муҳаррирон дарҳол, акс ихтиёрӣ). Форма дастӣ хонда мешавад, чунки FastAPI модели формаро дар паҳлӯи файл ҷудо намекунад. |
+| `suggest_place(request, db, user)` | функсияи async · `POST /api/places/` | Формаи multipart. Корбар ҷой пешниҳод мекунад: lat/lon (нишона дар харита), акс (jpg, png, webp; пӯшида нигоҳ дошта мешавад) ва confirmed=true ҳатмӣ мебошанд; ба ҳар корбар на зиёда аз 5 пешниҳоди интизор. Баъди тасдиқи муҳаррир ба ҳама нишон дода мешавад (ҷойҳои муҳаррирон дарҳол, акс ихтиёрӣ). Форма дастӣ хонда мешавад, чунки FastAPI модели формаро дар паҳлӯи файл ҷудо намекунад. Муҳаррирон «Ҷойи нав барои санҷиш» мегиранд. |
 | `with_check(data, place, user)` | функсия | Барои муаллиф ва муҳаррирон ба JSON-и ҷой reject_reason, has_proof ва is_mine илова мекунад. |
 | `tell_author(db, place)` | функсияи async | Огоҳӣ ба муаллиф: тасдиқ шуд (дар харита аст) ё бо сабаб рад шуд. |
 | `ModerateIn` | класс | status approved / rejected ва сабаб (барои рад ҳатмӣ). |
@@ -721,12 +720,12 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `review_json(review, viewer)` | функсия | JSON-и шарҳ дар бораи ҷой. |
 | `ReviewIn` | класс | Баҳо (1-5) ва матн. |
 | `place_reviews(place_id, db, user, page)` | функсияи async · `GET /api/places/{place_id}/reviews/` | Шарҳҳо дар бораи ҷой. |
-| `write_review(place_id, data, db, user)` | функсияи async · `PUT /api/places/{place_id}/reviews/mine/` | Шарҳи ман дар бораи ҷой: бори аввал навишта, баъд тағйир дода мешавад. |
+| `write_review(place_id, data, db, user)` | функсияи async · `PUT /api/places/{place_id}/reviews/mine/` | Шарҳи ман дар бораи ҷой: бори аввал навишта, баъд тағйир дода мешавад. Соҳиб барои шарҳи аввали ҳар кас «Шарҳи нав дар мағозаи шумо» мегирад. |
 | `delete_review(place_id, db, user)` | функсияи async · `DELETE /api/places/{place_id}/reviews/mine/` | Шарҳи маро нест мекунад. |
 
 ### `app/routers/support.py`
 
-**Барои чӣ:** /api/help/: ҷойҳои расмии гирифтани ёрӣ (муҳаррирон рӯйхатро нигоҳ медоранд) ва саволҳо ба ҳуқуқшинос (админҳо ҷавоб медиҳанд).
+**Барои чӣ:** /api/help/: ҷойҳои расмии гирифтани ёрӣ (муҳаррирон рӯйхатро нигоҳ медоранд).
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
@@ -734,18 +733,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `contact_json(c)` | функсия | JSON-и сайти ёрӣ. |
 | `contacts_query(request, user)` | функсия | Дархости сайтҳои ёрӣ. |
 | `check_contact(db, contact, data)` | функсияи async | Санҷиши сайти ёрӣ пеш аз сабт. |
-| `QuestionIn` | класс | Саволи коргар. |
-| `AnswerIn` | класс | Барои ҳуқуқшинос (админ): ҷавоб ё танҳо ҳолати нав (масалан, пӯшида). |
-| `question_json(q)` | функсия | JSON-и савол бо ҷавоб. |
-| `questions_query(user)` | функсия | Коргар саволҳои худашро мебинад, админ ҳамаро. |
-| `get_question(db, user, question_id)` | функсияи async | Як савол ё 404. |
-| `list_questions(request, db, user, page)` | функсияи async · `GET /api/help/questions/` | Саволҳо. |
-| `ask_question(data, db, user)` | функсияи async · `POST /api/help/questions/` | Саволи нав ба ҳуқуқшинос. |
-| `question_detail(question_id, db, user)` | функсияи async · `GET /api/help/questions/{question_id}/` | Як савол. |
-| `change_question(question_id, data, db, user)` | функсияи async · `PATCH /api/help/questions/{question_id}/` | Тағйири савол. |
-| `delete_question(question_id, db, user)` | функсияи async · `DELETE /api/help/questions/{question_id}/` | Нест кардани савол. |
-| `save_answer(db, question, answer, lawyer)` | функсияи async | Ҷавоби ҳуқуқшиносро сабт мекунад ва ба коргар хабар медиҳад. |
-| `answer_question(question_id, data, db, user)` | функсияи async · `POST /api/help/questions/{question_id}/answer/` | Ҷавоби админ ба савол. |
 
 ### `app/routers/ws.py`
 
@@ -848,7 +835,11 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
-| `notify(db, user, title, message, kind)` | функсияи async | Огоҳӣ месозад, онро зинда мефиристад ва агар корбар хоҳад, мактуб ҳам мефиристад. |
+| `notify(db, user, title, message, kind)` | функсияи async | Огоҳиро сабт мекунад, дарҳол дар ҷадвалҳои кушодаи корбар нишон медиҳад ва агар корбар иҷозат дода бошад, ба почта мефиристад. Ҳамаи огоҳиҳои сайт аз ин ҷо мегузаранд. |
+| `WELCOME_TITLE` / `WELCOME_TEXT` | const | Хушомадгӯӣ: сайт чӣ кор мекунад ва маслиҳат барои илова кардани ҳуҷҷатҳо. |
+| `PASSWORD_TITLE` / `PASSWORD_TEXT` | const | «Пароли шумо иваз шуд — агар шумо набошед, барқарор кунед». |
+| `welcome(db, user)` | функсияи async | Хушомадгӯиро мефиристад (баъди коди почта ё воридшавии аввал бо Google). |
+| `notify_editors(db, title, message, skip)` | функсияи async | Ҳамон огоҳӣ ба ҳамаи муҳаррирон ва админҳои фаъол (skip — касе, ки инро кард, агар муҳаррир бошад). |
 
 ### `app/services/places.py`
 
@@ -870,8 +861,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
-| `reminder_text(document, days)` | функсия | Матни ёдраскунӣ: кадом ҳуҷҷат ва чанд рӯз монд. |
-| `send_due_reminders(db, today)` | функсияи async | Ёдраскуниҳои имрӯзаро мефиристад: дар рӯзе, ки соҳиб интихоб кардааст (remind_days_before), ва як рӯз пеш аз анҷом. Дар як рӯз чанд бор иҷро кардан бехатар аст: ReminderLog фиристодашудаҳоро дар хотир дорад. Шумораи фиристодашудаҳоро бармегардонад. |
+| `reminder_text(document, days)` | функсия | Матни ёдраскунӣ: пас аз N рӯз, пагоҳ ё «имрӯз тамом шуд» (days = 0). |
+| `send_due_reminders(db, today)` | функсияи async | Ёдраскуниҳои имрӯзаро мефиристад: дар рӯзе, ки соҳиб интихоб кардааст (remind_days_before), ва як рӯз пеш аз анҷом. Дар як рӯз чанд бор иҷро кардан бехатар аст: ReminderLog фиристодашудаҳоро дар хотир дорад. Шумораи фиристодашудаҳоро бармегардонад. Инчунин дар худи рӯзи тамомшавӣ («имрӯз тамом шуд»). |
 
 ### `app/services/trudvsem.py`
 
@@ -992,7 +983,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `JobAlertAdmin` | класс | Огоҳиҳои кор. |
 | `SavedJobAdmin` | класс | Ҷойҳои захирашуда. |
 | `HelpContactAdmin` | класс | Сайтҳо ва тамосҳои ёрӣ. |
-| `LegalQuestionAdmin` | класс | Саволҳо ба ҳуқуқшинос. |
 | &nbsp;&nbsp;↳ `on_model_change(data, model, is_created, request)` | метод | Ҳангоми навиштани ҷавоб ҳолат ва санаро муқаррар мекунад. |
 | &nbsp;&nbsp;↳ `after_model_change(data, model, is_created, request)` | метод | Ба коргар дар бораи ҷавоб хабар медиҳад. |
 | `PlaceAdmin` | класс | Ҷойҳои харита. Тасдиқ (is_approved) ё сабаби нави рад (reject_reason) ба муаллиф огоҳӣ мефиристад; нест кардан акси шахсиро пок мекунад. |
@@ -1109,6 +1099,15 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `upgrade()` | функсия | Ду сутунро илова мекунад. |
 | `downgrade()` | функсия | Онҳоро нест мекунад. |
 
+### `alembic/versions/0009_drop_legal_questions.py`
+
+**Барои чӣ:** «Саволҳо ба ҳуқуқшинос»-ро нест мекунад: ҷадвали legal_questions. Revision ID: 0009 Revises: 0008
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `upgrade()` | функсия | legal_questions-ро нест мекунад. |
+| `downgrade()` | функсия | Онро аз нав месозад (холӣ). |
+
 ---
 
 ## `tests/` — санҷишҳои худкор (pytest)
@@ -1197,6 +1196,18 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `test_shop_limit_and_strangers(client, user)` | функсияи async | На зиёда аз 3 мағоза; корбари дигар мағозаи маро тағйир дода наметавонад. |
 | `test_geocode(client, user, monkeypatch)` | функсияи async | Ҷустуҷӯи суроға: воридшавӣ, дархости кӯтоҳ, шакли ҷавоб, кэш, хидмат кор намекунад. |
 
+
+### `tests/test_notifications.py`
+
+**Барои чӣ:** Санҷишҳои огоҳиҳое, ки ба як бахш тааллуқ надоранд.
+
+| Ном | Навъ | Чӣ кор мекунад |
+|---|---|---|
+| `titles(user_id)` | функсияи async | Сарлавҳаҳои огоҳиҳои корбар. |
+| `test_welcome_after_the_email_is_confirmed(client, user)` | функсияи async | Пас аз бақайдгирӣ маҳз як хушомадгӯӣ. |
+| `test_password_change_is_reported(client, user)` | функсияи async | Барқарори парол -> «Пароли шумо иваз шуд». |
+| `test_document_expired_today(client, user)` | функсияи async | Ҳуҷҷате, ки имрӯз тамом мешавад, ёдраскунии «имрӯз тамом шуд» мегирад. |
+| `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | функсияи async | Муҳаррирон дар бораи мағозаи фиристода, ҷойи пешниҳодшуда ва мағозаи ҷойивазкарда огоҳ мешаванд; соҳиб — танҳо дар бораи шарҳи аввал. |
 
 ### `tests/test_travel.py`
 
@@ -1822,7 +1833,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/pages/Help.jsx`
 
-**Барои чӣ:** /help — сайтҳои ёрӣ, хатҳои боварӣ ва саволҳо ба ҳуқуқшинос.
+**Барои чӣ:** /help — сайтҳои ёрӣ, хатҳои боварӣ ва телефонҳои ҳуқуқшиносон.
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|

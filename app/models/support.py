@@ -27,26 +27,3 @@ class HelpContact(Base):
 
     def __str__(self):
         return self.title
-
-
-class LegalQuestion(Base):
-
-    __tablename__ = "legal_questions"
-
-    STATUSES = ("new", "answered", "closed")
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    document_type_id: Mapped[int | None] = mapped_column(ForeignKey("document_types.id", ondelete="SET NULL"))
-    question: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(10), default="new")
-    answer: Mapped[str] = mapped_column(Text, default="")
-    answered_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
-    answered_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
-    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
-
-    user = relationship("User", foreign_keys=[user_id])
-    document_type = relationship("DocumentType", lazy="joined")
-
-    def __str__(self):
-        return self.question[:60]

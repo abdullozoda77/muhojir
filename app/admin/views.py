@@ -5,7 +5,7 @@ from wtforms.validators import Optional
 from app.core.security import hash_password, password_problems
 from app.models import (
     BlacklistReport, DocumentType, EmailCode, Employer, EmployerReview, ExamQuestion, GuideStep, HelpContact, Job, JobAlert, LawNews,
-    LegalQuestion, MigrationCenter, Notification, Payment, Region, ReminderLog, SavedJob, User, UserDocument,
+    MigrationCenter, Notification, Payment, Region, ReminderLog, SavedJob, User, UserDocument,
 )
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
 from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopReview
@@ -273,33 +273,6 @@ class HelpContactAdmin(Base, model=HelpContact):
     form_choices = {"kind": [(k, k) for k in HelpContact.KINDS]}
 
 
-class LegalQuestionAdmin(Base, model=LegalQuestion):
-    name, name_plural, icon, category = "Саволи ҳуқуқӣ", "Саволҳо ба ҳуқуқшинос", "fa-solid fa-scale-balanced", "Ёрӣ"
-    column_list = [LegalQuestion.question, LegalQuestion.user, LegalQuestion.status, LegalQuestion.created_at]
-    column_default_sort = [(LegalQuestion.created_at, True)]
-    form_columns = [LegalQuestion.status, LegalQuestion.answer]
-    form_choices = {"status": [(s, s) for s in LegalQuestion.STATUSES]}
-    can_create = False
-
-    async def on_model_change(self, data, model, is_created, request):
-        request.state.new_answer = (data.get("answer") or "").strip() and data.get("answer") != model.answer
-        if request.state.new_answer:
-            from app.db.types import utcnow
-
-            data["status"] = "answered"
-            model.answered_at = utcnow()
-            model.answered_by_id = request.state.admin_user.id
-
-    async def after_model_change(self, data, model, is_created, request):
-        if getattr(request.state, "new_answer", False):
-            from app.db.session import SessionLocal
-            from app.services.notify import notify
-
-            async with SessionLocal() as db:
-                user = await db.get(User, model.user_id)
-                await notify(db, user, "Ҷавоби ҳуқуқшинос", f"Ба саволи шумо ҷавоб доданд:\n\n{model.answer}", kind="system")
-
-
 class PlaceAdmin(Base, model=Place):
     name, name_plural, icon, category = "Ҷой", "Ҷойҳои муфид (харита)", "fa-solid fa-location-dot", "Ҷойҳо ва чиптаҳо"
     column_list = [Place.name, Place.category, Place.region, Place.address, Place.source, Place.is_approved]
@@ -428,7 +401,7 @@ VIEWS = [
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
     UserDocumentAdmin, PaymentAdmin, ReminderLogAdmin,
     EmployerAdmin, JobAdmin, EmployerReviewAdmin, BlacklistReportAdmin, JobAlertAdmin, SavedJobAdmin,
-    HelpContactAdmin, LegalQuestionAdmin,
+    HelpContactAdmin,
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
 ]

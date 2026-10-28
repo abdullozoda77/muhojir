@@ -373,12 +373,11 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/models/support.py`
 
-**Для чего:** Таблицы помощи: сайты/контакты помощи и вопросы юристу.
+**Для чего:** Таблицы помощи: сайты и контакты помощи (посольство, горячая линия, юристы).
 
 | Имя | Вид | Что делает |
 |---|---|---|
 | `HelpContact` | класс · таблица `help_contacts` | Где мигрант может получить помощь: официальные сайты о патенте, посольство, горячая линия, юрист или официальная страница проверки МВД. Добавляют редакторы (с настоящими проверенными ссылками). |
-| `LegalQuestion` | класс · таблица `legal_questions` | Вопрос работника юристу. Админ пишет ответ; работник получает уведомление. |
 
 ### `app/models/travel.py`
 
@@ -518,14 +517,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `use_code(db, email, code, purpose)` | async-функция | Проверяет код; верный код срабатывает только один раз. Бросает ApiError, если он неверный или старый. |
 | `user_by_email(db, email)` | async-функция | Находит пользователя по почте. |
 | `register(data, db)` | async-функция · `POST /api/auth/register/` | Шаг 1 регистрации: почта, пароль и имя. Аккаунт ждёт подтверждения почты. |
-| `verify_email(data, db)` | async-функция · `POST /api/auth/verify-email/` | Шаг 2 регистрации: код из письма. Подтверждает почту и выполняет вход. |
+| `verify_email(data, db)` | async-функция · `POST /api/auth/verify-email/` | Шаг 2 регистрации: код из письма. Подтверждает почту и выполняет вход. Новый аккаунт получает приветствие. |
 | `resend_code(data, db)` | async-функция · `POST /api/auth/resend-code/` | Снова отправляет код регистрации (только неподтверждённым аккаунтам). |
 | `login(data, db)` | async-функция · `POST /api/auth/login/` | Почта + пароль. Аккаунт с неподтверждённой почтой вместо токенов получает новый код. |
-| `social_login(db, email, full_name)` | async-функция | Входит в аккаунт с этой почтой или создаёт новый без пароля (201). У аккаунта, чья почта не была подтверждена, старый пароль стирается: его задал не владелец адреса. Заблокирован — 403. |
+| `social_login(db, email, full_name)` | async-функция | Входит в аккаунт с этой почтой или создаёт новый без пароля (201). У аккаунта, чья почта не была подтверждена, старый пароль стирается: его задал не владелец адреса. Заблокирован — 403. Новый аккаунт получает приветствие. |
 | `google_settings()` | async-функция · `GET /api/auth/google/` | Client ID для кнопки Google; пустая строка — вход через Google выключен. |
 | `google_login(data, db)` | async-функция · `POST /api/auth/google/` | Вход через Google: проверяет ID-токен, затем social_login. Нет GOOGLE_CLIENT_ID — 503, плохой токен — 400. |
 | `forgot_password(data, db)` | async-функция · `POST /api/auth/password/forgot/` | Отправляет код для нового пароля. Отвечает одинаково, зарегистрирована почта или нет, чтобы никто не мог так узнать, у кого есть аккаунт. |
-| `reset_password(data, db)` | async-функция · `POST /api/auth/password/reset/` | Код из письма и новый пароль. Также подтверждает почту и выполняет вход. |
+| `reset_password(data, db)` | async-функция · `POST /api/auth/password/reset/` | Код из письма и новый пароль. Также подтверждает почту и выполняет вход. Отправляет «Ваш пароль изменён». |
 | `revoke(db, payload)` | async-функция | Блокирует refresh-токен. Возвращает False, если он уже был заблокирован. |
 | `refresh_token(data, db)` | async-функция · `POST /api/auth/token/refresh/` | Новый access-токен и новый refresh-токен; старый refresh-токен перестаёт работать. |
 | `logout(data, db)` | async-функция · `POST /api/auth/logout/` | Выход: refresh-токен попадает в чёрный список и больше не может использоваться. |
@@ -667,7 +666,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `shop_answer(db, user, shop_id)` | async-функция | Перечитывает магазин и возвращает JSON. |
 | `shop_detail(shop_id, db, user)` | async-функция · `GET /api/market/shops/{shop_id}/` | Магазин и мой отзыв о нём. |
 | `create_shop(data, db, user)` | async-функция · `POST /api/market/shops/` | Открывает магазин черновиком (до 3 на пользователя); у редакторов сразу одобрен. |
-| `update_shop(shop_id, data, db, user)` | async-функция · `PATCH /api/market/shops/{shop_id}/` | Меняет магазин, в том числе место (lat, lon). Если владелец (не редактор) переносит метку одобренного магазина, магазин снова становится «на проверке» и пропадает с карты до проверки редактором; у одобренного магазина нельзя убрать место. |
+| `update_shop(shop_id, data, db, user)` | async-функция · `PATCH /api/market/shops/{shop_id}/` | Меняет магазин, в том числе место (lat, lon). Если владелец (не редактор) переносит метку одобренного магазина, магазин снова становится «на проверке» и пропадает с карты до проверки редактором; у одобренного магазина нельзя убрать место. Тогда редакторы получают «Магазин сменил место». |
 | `delete_shop(shop_id, db, user)` | async-функция · `DELETE /api/market/shops/{shop_id}/` | Удаляет магазин, товары, отзывы и фото. |
 | `moderate_shop(shop_id, data, db, user)` | async-функция · `POST /api/market/shops/{shop_id}/moderate/` | Редактор одобряет или отклоняет (с причиной) отправленный магазин, не черновик; владелец получает уведомление. |
 | `proof_kinds(db, shop_id)` | async-функция | Какие виды доказательств есть у магазина. |
@@ -676,7 +675,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `get_proof(db, user, shop_id, proof_id)` | async-функция | Одно доказательство моего магазина (или любое для редактора), иначе 404/403. |
 | `proof_file(shop_id, proof_id, db, user)` | async-функция · `GET /api/market/shops/{shop_id}/proofs/{proof_id}/` | Сам файл доказательства, без кэша. |
 | `delete_proof(shop_id, proof_id, db, user)` | async-функция · `DELETE /api/market/shops/{shop_id}/proofs/{proof_id}/` | Удаляет доказательство и файл. |
-| `submit_shop(shop_id, db, user)` | async-функция · `POST /api/market/shops/{shop_id}/submit/` | Отправляет черновик или отклонённый магазин на проверку; нужны фото места и товаров ({"proofs"}) и местоположение ({"location"}). |
+| `submit_shop(shop_id, db, user)` | async-функция · `POST /api/market/shops/{shop_id}/submit/` | Отправляет черновик или отклонённый магазин на проверку; нужны фото места и товаров ({"proofs"}) и местоположение ({"location"}). Редакторы получают «Новый магазин на проверку». |
 | `upload_logo / remove_logo` | async-функция · `POST/DELETE /api/market/shops/{shop_id}/logo/` | Логотип магазина (JPG, PNG, WEBP до 3 МБ). |
 | `product_filters(query, request)` | функция | search, max_price, in_stock; сортировка price, created_at, name (по умолчанию сначала в наличии). |
 | `shop_products(shop_id, request, db, user, page)` | async-функция · `GET /api/market/shops/{shop_id}/products/` | Товары одного магазина. |
@@ -708,7 +707,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `get_place(db, user, place_id)` | async-функция | Одно место или 404. |
 | `place_detail(place_id, db, user)` | async-функция · `GET /api/places/{place_id}/` | Одно место с оценкой. |
 | `PlaceIn` | класс | Предложенное место: категория, название, регион, адрес, координаты... |
-| `suggest_place(request, db, user)` | async-функция · `POST /api/places/` | multipart-форма. Пользователь предлагает место: обязательны lat/lon (метка на карте), фото (jpg, png, webp; хранится закрыто) и confirmed=true; не больше 5 ожидающих предложений на пользователя. Видно всем после одобрения редактором (места редакторов — сразу, фото необязательно). Форма читается вручную, потому что FastAPI не разбирает модель формы рядом с файлом. |
+| `suggest_place(request, db, user)` | async-функция · `POST /api/places/` | multipart-форма. Пользователь предлагает место: обязательны lat/lon (метка на карте), фото (jpg, png, webp; хранится закрыто) и confirmed=true; не больше 5 ожидающих предложений на пользователя. Видно всем после одобрения редактором (места редакторов — сразу, фото необязательно). Форма читается вручную, потому что FastAPI не разбирает модель формы рядом с файлом. Редакторы получают «Новое место на проверку». |
 | `with_check(data, place, user)` | функция | Для автора и редакторов добавляет в JSON места reject_reason, has_proof и is_mine. |
 | `tell_author(db, place)` | async-функция | Уведомление автору: одобрено (место на карте) или отклонено с причиной. |
 | `ModerateIn` | класс | status approved / rejected и причина (обязательна для отказа). |
@@ -718,12 +717,12 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `review_json(review, viewer)` | функция | JSON отзыва о месте. |
 | `ReviewIn` | класс | Оценка (1-5) и текст. |
 | `place_reviews(place_id, db, user, page)` | async-функция · `GET /api/places/{place_id}/reviews/` | Отзывы о месте. |
-| `write_review(place_id, data, db, user)` | async-функция · `PUT /api/places/{place_id}/reviews/mine/` | Мой отзыв о месте: в первый раз пишется, потом меняется. |
+| `write_review(place_id, data, db, user)` | async-функция · `PUT /api/places/{place_id}/reviews/mine/` | Мой отзыв о месте: в первый раз пишется, потом меняется. Владелец получает «Новый отзыв о вашем магазине» за первый отзыв каждого человека. |
 | `delete_review(place_id, db, user)` | async-функция · `DELETE /api/places/{place_id}/reviews/mine/` | Удаляет мой отзыв. |
 
 ### `app/routers/support.py`
 
-**Для чего:** /api/help/: официальные места, где получить помощь (список ведут редакторы), и вопросы юристу (отвечают админы).
+**Для чего:** /api/help/: официальные места, где получить помощь (список ведут редакторы).
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -731,18 +730,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `contact_json(c)` | функция | JSON сайта помощи. |
 | `contacts_query(request, user)` | функция | Запрос сайтов помощи. |
 | `check_contact(db, contact, data)` | async-функция | Проверка сайта помощи перед сохранением. |
-| `QuestionIn` | класс | Вопрос работника. |
-| `AnswerIn` | класс | Для юриста (админа): ответ или только новый статус (например, закрыт). |
-| `question_json(q)` | функция | JSON вопроса с ответом. |
-| `questions_query(user)` | функция | Работник видит свои вопросы, админ — все. |
-| `get_question(db, user, question_id)` | async-функция | Один вопрос или 404. |
-| `list_questions(request, db, user, page)` | async-функция · `GET /api/help/questions/` | Вопросы. |
-| `ask_question(data, db, user)` | async-функция · `POST /api/help/questions/` | Новый вопрос юристу. |
-| `question_detail(question_id, db, user)` | async-функция · `GET /api/help/questions/{question_id}/` | Один вопрос. |
-| `change_question(question_id, data, db, user)` | async-функция · `PATCH /api/help/questions/{question_id}/` | Изменение вопроса. |
-| `delete_question(question_id, db, user)` | async-функция · `DELETE /api/help/questions/{question_id}/` | Удаление вопроса. |
-| `save_answer(db, question, answer, lawyer)` | async-функция | Сохраняет ответ юриста и сообщает об этом работнику. |
-| `answer_question(question_id, data, db, user)` | async-функция · `POST /api/help/questions/{question_id}/answer/` | Ответ админа на вопрос. |
 
 ### `app/routers/ws.py`
 
@@ -845,7 +832,11 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Имя | Вид | Что делает |
 |---|---|---|
-| `notify(db, user, title, message, kind)` | async-функция | Создаёт уведомление, отправляет его в реальном времени и, если пользователь хочет, письмом. |
+| `notify(db, user, title, message, kind)` | async-функция | Сохраняет уведомление, сразу показывает его в открытых вкладках пользователя и отправляет на почту, если пользователь разрешил письма. Через неё проходят все уведомления сайта. |
+| `WELCOME_TITLE` / `WELCOME_TEXT` | const | Приветствие: что умеет сайт и совет добавить документы для напоминаний. |
+| `PASSWORD_TITLE` / `PASSWORD_TEXT` | const | «Ваш пароль изменён — если это были не вы, восстановите его». |
+| `welcome(db, user)` | async-функция | Отправляет приветствие (после кода из письма или первого входа через Google). |
+| `notify_editors(db, title, message, skip)` | async-функция | То же уведомление всем активным редакторам и админам (skip — тот, кто это сделал, если он редактор). |
 
 ### `app/services/places.py`
 
@@ -867,8 +858,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Имя | Вид | Что делает |
 |---|---|---|
-| `reminder_text(document, days)` | функция | Текст напоминания: какой документ и сколько дней осталось. |
-| `send_due_reminders(db, today)` | async-функция | Отправляет сегодняшние напоминания: в день, выбранный владельцем (remind_days_before), и за день до конца. Можно запускать много раз в день: ReminderLog помнит, что уже отправлено. Возвращает, сколько отправлено. |
+| `reminder_text(document, days)` | функция | Текст напоминания: через N дней, завтра или «срок закончился сегодня» (days = 0). |
+| `send_due_reminders(db, today)` | async-функция | Отправляет сегодняшние напоминания: в день, выбранный владельцем (remind_days_before), и за день до конца. Можно запускать много раз в день: ReminderLog помнит, что уже отправлено. Возвращает, сколько отправлено. Также в сам день окончания («закончился сегодня»). |
 
 ### `app/services/trudvsem.py`
 
@@ -989,7 +980,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `JobAlertAdmin` | класс | Оповещения о вакансиях. |
 | `SavedJobAdmin` | класс | Сохранённые вакансии. |
 | `HelpContactAdmin` | класс | Сайты и контакты помощи. |
-| `LegalQuestionAdmin` | класс | Вопросы юристу. |
 | &nbsp;&nbsp;↳ `on_model_change(data, model, is_created, request)` | метод | При записи ответа ставит статус и дату. |
 | &nbsp;&nbsp;↳ `after_model_change(data, model, is_created, request)` | метод | Сообщает работнику об ответе. |
 | `PlaceAdmin` | класс | Места на карте. Одобрение (is_approved) или новая причина отказа (reject_reason) отправляют уведомление автору; удаление стирает личное фото. |
@@ -1106,6 +1096,15 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `upgrade()` | функция | Добавляет два столбца. |
 | `downgrade()` | функция | Удаляет их. |
 
+### `alembic/versions/0009_drop_legal_questions.py`
+
+**Для чего:** Убирает «вопросы юристу»: удаляет таблицу legal_questions. Revision ID: 0009 Revises: 0008
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `upgrade()` | функция | Удаляет legal_questions. |
+| `downgrade()` | функция | Создаёт её снова (пустой). |
+
 ---
 
 ## `tests/` — автоматические тесты (pytest)
@@ -1194,6 +1193,18 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `test_shop_limit_and_strangers(client, user)` | async-функция | Не больше 3 магазинов; чужой пользователь не может менять мой магазин. |
 | `test_geocode(client, user, monkeypatch)` | async-функция | Поиск адреса: вход, короткий запрос, формат ответа, кэш, сервис не работает. |
 
+
+### `tests/test_notifications.py`
+
+**Для чего:** Тесты уведомлений, которые не относятся к одному разделу.
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `titles(user_id)` | async-функция | Заголовки уведомлений пользователя. |
+| `test_welcome_after_the_email_is_confirmed(client, user)` | async-функция | Ровно одно приветствие после регистрации. |
+| `test_password_change_is_reported(client, user)` | async-функция | Сброс пароля -> «Ваш пароль изменён». |
+| `test_document_expired_today(client, user)` | async-функция | Документ, который заканчивается сегодня, получает напоминание «закончился сегодня». |
+| `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | async-функция | Редакторы узнают об отправленном магазине, предложенном месте и перенесённом магазине; владелец — только о первом отзыве. |
 
 ### `tests/test_travel.py`
 
@@ -1819,7 +1830,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `frontend/src/pages/Help.jsx`
 
-**Для чего:** /help — сайты помощи, горячие линии и вопросы юристу.
+**Для чего:** /help — сайты помощи, горячие линии и телефоны юристов.
 
 | Имя | Вид | Что делает |
 |---|---|---|

@@ -21,6 +21,7 @@ from app.schemas.accounts import (
 from app.services.emails import send_code
 from app.services.google import verify_google_token
 from app.services.live import notification_json, push_count
+from app.services.notify import PASSWORD_TEXT, PASSWORD_TITLE, notify, welcome
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -107,8 +108,11 @@ async def verify_email(data: CodeIn, db: DB):
     await use_code(db, data.email, data.code, "verify")
     if not user.is_active:
         raise ApiError(BLOCKED, 403)
+    first = not user.email_verified
     user.email_verified = True
     await db.commit()
+    if first:
+        await welcome(db, user)
     return logged_in(user, 201)
 
 
@@ -155,6 +159,8 @@ async def social_login(db, email, full_name):
         user.password_hash = ""
         user.email_verified = True
     await db.commit()
+    if created:
+        await welcome(db, user)
     return logged_in(user, 201 if created else 200)
 
 
@@ -190,6 +196,7 @@ async def reset_password(data: ResetPasswordIn, db: DB):
     user.password_hash = hash_password(data.password)
     user.email_verified = True
     await db.commit()
+    await notify(db, user, PASSWORD_TITLE, PASSWORD_TEXT)
     return logged_in(user)
 
 

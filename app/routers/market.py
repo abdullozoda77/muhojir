@@ -10,12 +10,13 @@ from app.core.errors import ApiError, FieldError
 from app.core.files import delete_image, delete_private, private_path, save_image, save_private
 from app.core.pagination import Paginate
 from app.core.throttle import throttle
-from app.models import REQUIRED_PROOFS, SHOP_CATEGORIES, Product, Shop, ShopProof, ShopReview
+from app.models import REQUIRED_PROOFS, SHOP_CATEGORIES, Product, Shop, ShopProof, ShopReview, User
 from app.routers.documents import int_param, param
 from app.routers.jobs import bool_param
 from app.schemas import market as s
 from app.services import geocode
 from app.services.market import LOGOS, PHOTOS, PROOFS, delete_files, shop_files, tell_owner
+from app.services.notify import notify, notify_editors
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -156,11 +157,15 @@ async def update_shop(shop_id: int, data: s.ShopPatch, db: DB, user: CurrentUser
             setattr(shop, field, value)
     if not (shop.phone or shop.whatsapp or shop.telegram):
         raise ApiError({"non_field_errors": [s.NO_CONTACT]})
-    if shop.status == "approved" and not user.is_editor and (shop.lat, shop.lon) != where:
+    moved = shop.status == "approved" and not user.is_editor and (shop.lat, shop.lon) != where
+    if moved:
         if shop.lat is None or shop.lon is None:
             raise ApiError({"location": [NEED_LOCATION]})
         shop.status = "pending"
     await db.commit()
+    if moved:
+        await notify_editors(db, "Мағоза ҷояшро иваз кард",
+                             f"Мағозаи «{shop.name}» ҷояшро дар харита иваз кард ва боз ба санҷиш омад.", skip=user)
     return await shop_answer(db, user, shop_id)
 
 
@@ -247,6 +252,8 @@ async def submit_shop(shop_id: int, db: DB, user: CurrentUser):
         raise ApiError({"location": [NEED_LOCATION]})
     shop.status = "pending"
     await db.commit()
+    await notify_editors(db, "Мағозаи нав барои санҷиш",
+                         f"Мағозаи «{shop.name}» ({shop.city}) ба санҷиш фиристода шуд. Аксҳо ва ҷойро дар харита санҷед.", skip=user)
     return await shop_answer(db, user, shop_id)
 
 
@@ -380,11 +387,17 @@ async def write_review(shop_id: int, data: s.ReviewIn, db: DB, user: CurrentUser
     if shop.status != "approved":
         raise ApiError("No Shop matches the given query.", 404)
     review = await db.scalar(select(ShopReview).where(ShopReview.shop_id == shop.id, ShopReview.author_id == user.id))
-    if review is None:
+    new = review is None
+    if new:
         review = ShopReview(shop_id=shop.id, author_id=user.id)
         db.add(review)
     review.rating, review.text = data.rating, data.text
     await db.commit()
+    if new:
+        owner = await db.get(User, shop.owner_id)
+        if owner is not None:
+            text = f"Ба мағозаи «{shop.name}» баҳои {data.rating} аз 5 гузоштанд."
+            await notify(db, owner, "Шарҳи нав дар мағозаи шумо", f"{text}\n\n{data.text}" if data.text else text)
     await db.refresh(review, ["author"])
     return s.review_json(review, user)
 

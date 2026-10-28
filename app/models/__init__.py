@@ -8,7 +8,7 @@ from app.models.market import (
     PRODUCT_UNITS, PROOF_KINDS, REQUIRED_PROOFS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopProof, ShopReview,
 )
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
-from app.models.support import HelpContact, LegalQuestion
+from app.models.support import HelpContact
 from app.models.travel import AIRLINES, Airport, FlightWatch
 
 __all__ = [
@@ -16,7 +16,7 @@ __all__ = [
     "DocumentType", "GuideStep", "Region", "UserDocument", "Payment", "MigrationCenter", "ReminderLog", "LawNews",
     "ExamQuestion", "law_news_document_types",
     "INDUSTRIES", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
-    "HelpContact", "LegalQuestion",
+    "HelpContact",
     "AIRLINES", "Airport", "FlightWatch",
     "PLACE_CATEGORIES", "Place", "PlaceReview",
     "SHOP_CATEGORIES", "SHOP_STATUSES", "PRODUCT_UNITS", "PROOF_KINDS", "REQUIRED_PROOFS",

@@ -377,12 +377,11 @@ A generic, single database configuration.
 
 ### `app/models/support.py`
 
-**What it is for:** Database tables of help: help sites/contacts and questions to a lawyer.
+**What it is for:** Database tables of help: help sites and contacts (embassy, hotline, lawyers).
 
 | Name | Kind | What it does |
 |---|---|---|
 | `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
-| `LegalQuestion` | class · table `legal_questions` | A worker's question to a lawyer. An admin writes the answer; the worker gets a notification. |
 
 ### `app/models/travel.py`
 
@@ -531,14 +530,14 @@ A generic, single database configuration.
 | `use_code(db, email, code, purpose)` | async function | Checks the code; a right code works only once. Raises ApiError when it is wrong or old. |
 | `user_by_email(db, email)` | async function | — |
 | `register(data, db)` | async function · `POST /api/auth/register/` | Step 1 of sign-up: email, password and name. The account waits until the email is confirmed. |
-| `verify_email(data, db)` | async function · `POST /api/auth/verify-email/` | Step 2 of sign-up: the code from the email. Confirms the email and logs in. |
+| `verify_email(data, db)` | async function · `POST /api/auth/verify-email/` | Step 2 of sign-up: the code from the email. Confirms the email and logs in. A new account gets the welcome notification. |
 | `resend_code(data, db)` | async function · `POST /api/auth/resend-code/` | Sends the sign-up code again (only to accounts that are not confirmed yet). |
 | `login(data, db)` | async function · `POST /api/auth/login/` | Email + password. An account whose email is not confirmed yet gets a new code instead of tokens. |
-| `social_login(db, email, full_name)` | async function | Logs in the account with this email or makes a new one without a password (201). An account whose email was never confirmed loses its old password, because whoever set it did not own the address. Blocked = 403. |
+| `social_login(db, email, full_name)` | async function | Logs in the account with this email or makes a new one without a password (201). An account whose email was never confirmed loses its old password, because whoever set it did not own the address. Blocked = 403. A new account gets the welcome notification. |
 | `google_settings()` | async function · `GET /api/auth/google/` | The client ID for Google's button; an empty string means sign in with Google is off. |
 | `google_login(data, db)` | async function · `POST /api/auth/google/` | Sign in with Google: checks the ID token, then social_login. No GOOGLE_CLIENT_ID = 503, bad token = 400. |
 | `forgot_password(data, db)` | async function · `POST /api/auth/password/forgot/` | Sends a code for a new password. Answers the same whether the email is registered or not, so nobody can use it to find out who has an account. |
-| `reset_password(data, db)` | async function · `POST /api/auth/password/reset/` | The code from the email and a new password. Also confirms the email, and logs in. |
+| `reset_password(data, db)` | async function · `POST /api/auth/password/reset/` | The code from the email and a new password. Also confirms the email, and logs in. Sends «Your password was changed». |
 | `revoke(db, payload)` | async function | Blocks a refresh token. Returns False if it was blocked already. |
 | `refresh_token(data, db)` | async function · `POST /api/auth/token/refresh/` | A new access token and a new refresh token; the old refresh token stops working. |
 | `logout(data, db)` | async function · `POST /api/auth/logout/` | Log out: the refresh token goes on the blacklist, so it can not be used again. |
@@ -680,7 +679,7 @@ A generic, single database configuration.
 | `shop_answer(db, user, shop_id)` | async function | Reads the shop again and returns its JSON. |
 | `shop_detail(shop_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/` | A shop and my review of it. |
 | `create_shop(data, db, user)` | async function · `POST /api/market/shops/` | Opens a shop (at most 3 per user) as a draft; editors' shops are approved at once. |
-| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop, also its location (lat, lon). If the owner (not an editor) moves the pin of an approved shop, it goes back to «pending» and disappears from the map until an editor checks it again; an approved shop cannot lose its location. |
+| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop, also its location (lat, lon). If the owner (not an editor) moves the pin of an approved shop, it goes back to «pending» and disappears from the map until an editor checks it again; an approved shop cannot lose its location. Editors get «Shop moved» then. |
 | `delete_shop(shop_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/` | Deletes the shop, its products, reviews and photos. |
 | `moderate_shop(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/moderate/` | Editors approve or reject (with a reason) a sent shop, not a draft; the owner gets a notification. |
 | `proof_kinds(db, shop_id)` | async function | Which kinds of proof a shop has. |
@@ -689,7 +688,7 @@ A generic, single database configuration.
 | `get_proof(db, user, shop_id, proof_id)` | async function | One proof of my shop (or any for editors), otherwise 404/403. |
 | `proof_file(shop_id, proof_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/proofs/{proof_id}/` | The proof file itself, never cached. |
 | `delete_proof(shop_id, proof_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/proofs/{proof_id}/` | Deletes a proof and its file. |
-| `submit_shop(shop_id, db, user)` | async function · `POST /api/market/shops/{shop_id}/submit/` | Sends a draft or rejected shop for checking; needs the place and goods photos ({"proofs"}) and the location ({"location"}). |
+| `submit_shop(shop_id, db, user)` | async function · `POST /api/market/shops/{shop_id}/submit/` | Sends a draft or rejected shop for checking; needs the place and goods photos ({"proofs"}) and the location ({"location"}). Editors get «New shop for checking». |
 | `upload_logo / remove_logo` | async function · `POST/DELETE /api/market/shops/{shop_id}/logo/` | The shop logo (JPG, PNG, WEBP up to 3 MB). |
 | `product_filters(query, request)` | function | search, max_price, in_stock; ordering price, created_at, name (in stock first by default). |
 | `shop_products(shop_id, request, db, user, page)` | async function · `GET /api/market/shops/{shop_id}/products/` | Products of one shop. |
@@ -721,7 +720,7 @@ A generic, single database configuration.
 | `get_place(db, user, place_id)` | async function | — |
 | `place_detail(place_id, db, user)` | async function · `GET /api/places/{place_id}/` | — |
 | `PlaceIn` | class | — |
-| `suggest_place(request, db, user)` | async function · `POST /api/places/` | multipart form. A user suggests a place: lat/lon (pin on the map), a photo (jpg, png, webp; saved privately) and confirmed=true are required; at most 5 waiting suggestions per user. It is shown to everyone after an editor approves it (editors' places at once, photo optional). The form is read by hand because FastAPI does not unpack a form model next to a file. |
+| `suggest_place(request, db, user)` | async function · `POST /api/places/` | multipart form. A user suggests a place: lat/lon (pin on the map), a photo (jpg, png, webp; saved privately) and confirmed=true are required; at most 5 waiting suggestions per user. It is shown to everyone after an editor approves it (editors' places at once, photo optional). The form is read by hand because FastAPI does not unpack a form model next to a file. Editors get «New place for checking». |
 | `with_check(data, place, user)` | function | For the author and editors adds reject_reason, has_proof and is_mine to the place JSON. |
 | `tell_author(db, place)` | async function | Notification to the author: approved (it is on the map) or rejected with the reason. |
 | `ModerateIn` | class | status approved / rejected and the reason (required to reject). |
@@ -731,12 +730,12 @@ A generic, single database configuration.
 | `review_json(review, viewer)` | function | — |
 | `ReviewIn` | class | — |
 | `place_reviews(place_id, db, user, page)` | async function · `GET /api/places/{place_id}/reviews/` | — |
-| `write_review(place_id, data, db, user)` | async function · `PUT /api/places/{place_id}/reviews/mine/` | My review of the place: written the first time, changed after that. |
+| `write_review(place_id, data, db, user)` | async function · `PUT /api/places/{place_id}/reviews/mine/` | My review of the place: written the first time, changed after that. The owner gets «New review on your shop» for the first review of each person. |
 | `delete_review(place_id, db, user)` | async function · `DELETE /api/places/{place_id}/reviews/mine/` | — |
 
 ### `app/routers/support.py`
 
-**What it is for:** /api/help/: official places to get help (editors keep the list) and questions to a lawyer (answered by admins).
+**What it is for:** /api/help/: official places to get help (editors keep the list).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -745,18 +744,6 @@ A generic, single database configuration.
 | `contact_json(c)` | function | — |
 | `contacts_query(request, user)` | function | — |
 | `check_contact(db, contact, data)` | async function | — |
-| `QuestionIn` | class | — |
-| `AnswerIn` | class | For the lawyer (admin): the answer, or just a new status (e.g. closed). |
-| `question_json(q)` | function | — |
-| `questions_query(user)` | function | — |
-| `get_question(db, user, question_id)` | async function | — |
-| `list_questions(request, db, user, page)` | async function · `GET /api/help/questions/` | — |
-| `ask_question(data, db, user)` | async function · `POST /api/help/questions/` | — |
-| `question_detail(question_id, db, user)` | async function · `GET /api/help/questions/{question_id}/` | — |
-| `change_question(question_id, data, db, user)` | async function · `PATCH /api/help/questions/{question_id}/` | — |
-| `delete_question(question_id, db, user)` | async function · `DELETE /api/help/questions/{question_id}/` | — |
-| `save_answer(db, question, answer, lawyer)` | async function | Saves the lawyer's answer and tells the worker about it. |
-| `answer_question(question_id, data, db, user)` | async function · `POST /api/help/questions/{question_id}/answer/` | — |
 
 ### `app/routers/ws.py`
 
@@ -859,7 +846,11 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `notify(db, user, title, message, kind)` | async function | — |
+| `notify(db, user, title, message, kind)` | async function | Saves the notification, pushes it live to the user's open tabs and emails it if the user allows emails. Every notification of the site goes through here. |
+| `WELCOME_TITLE` / `WELCOME_TEXT` | const | The welcome notification: what the site does and to add documents for reminders. |
+| `PASSWORD_TITLE` / `PASSWORD_TEXT` | const | «Your password was changed — if it was not you, reset it». |
+| `welcome(db, user)` | async function | Sends the welcome notification (after the email code or the first Google sign-in). |
+| `notify_editors(db, title, message, skip)` | async function | The same notification to every active editor and admin (skip = the person who did it, if they are an editor). |
 
 ### `app/services/places.py`
 
@@ -881,8 +872,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `reminder_text(document, days)` | function | — |
-| `send_due_reminders(db, today)` | async function | Sends today's reminders: on the day the owner chose (remind_days_before) and the day before the end. Safe to run many times a day: ReminderLog remembers what was already sent. Returns how many were sent. |
+| `reminder_text(document, days)` | function | The reminder text: in N days, tomorrow, or «expired today» (days = 0). |
+| `send_due_reminders(db, today)` | async function | Sends today's reminders: on the day the owner chose (remind_days_before) and the day before the end. Safe to run many times a day: ReminderLog remembers what was already sent. Returns how many were sent. Also on the expiry day itself («expired today»). |
 
 ### `app/services/trudvsem.py`
 
@@ -1003,7 +994,6 @@ A generic, single database configuration.
 | `JobAlertAdmin` | class | — |
 | `SavedJobAdmin` | class | — |
 | `HelpContactAdmin` | class | — |
-| `LegalQuestionAdmin` | class | — |
 | &nbsp;&nbsp;↳ `on_model_change(data, model, is_created, request)` | method | — |
 | &nbsp;&nbsp;↳ `after_model_change(data, model, is_created, request)` | method | — |
 | `PlaceAdmin` | class | Places on the map. Approving (is_approved) or writing a new reject_reason notifies the author; deleting removes the private photo. |
@@ -1120,6 +1110,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Adds the two columns. |
 | `downgrade()` | function | Drops them. |
 
+### `alembic/versions/0009_drop_legal_questions.py`
+
+**What it is for:** Removes the «questions to a lawyer» feature: drops the table legal_questions. Revision ID: 0009 Revises: 0008
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Drops legal_questions. |
+| `downgrade()` | function | Creates it again (empty). |
+
 ---
 
 ## `tests/` — automated tests (pytest)
@@ -1208,6 +1207,18 @@ A generic, single database configuration.
 | `test_shop_limit_and_strangers(client, user)` | async function | At most 3 shops; another user cannot change my shop. |
 | `test_geocode(client, user, monkeypatch)` | async function | Address search: login, short query, result format, cache, service down. |
 
+
+### `tests/test_notifications.py`
+
+**What it is for:** Tests of the notifications that are not part of one section.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `titles(user_id)` | async function | Titles of a user's notifications. |
+| `test_welcome_after_the_email_is_confirmed(client, user)` | async function | Exactly one welcome after sign-up. |
+| `test_password_change_is_reported(client, user)` | async function | Reset password -> «Your password was changed». |
+| `test_document_expired_today(client, user)` | async function | A document ending today gets the «expired today» reminder. |
+| `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | async function | Editors hear about a submitted shop, a suggested place and a moved shop; the owner hears about the first review only. |
 
 ### `tests/test_travel.py`
 
@@ -1833,7 +1844,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Help.jsx`
 
-**What it is for:** /help — help sites, hotlines and questions to a lawyer.
+**What it is for:** /help — help sites, hotlines and the phones of lawyers.
 
 | Name | Kind | What it does |
 |---|---|---|

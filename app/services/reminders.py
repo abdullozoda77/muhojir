@@ -10,6 +10,8 @@ from app.services.notify import notify
 def reminder_text(document, days):
     title = document.document_type.title
     end = document.expires_at.strftime("%d.%m.%Y")
+    if days == 0:
+        return f"Мӯҳлати «{title}» имрӯз ({end}) тамом шуд. Ҳарчи зудтар нав кунед — бе ҳуҷҷати амалкунанда ҷарима гирифтан мумкин аст."
     if days == 1:
         return f"Мӯҳлати «{title}» пагоҳ ({end}) тамом мешавад. Онро сари вақт нав кунед."
     return f"Мӯҳлати «{title}» пас аз {days} рӯз ({end}) тамом мешавад. Онро сари вақт нав кунед."
@@ -20,11 +22,11 @@ async def send_due_reminders(db, today=None):
     sent = 0
     documents = (await db.scalars(
         select(UserDocument).join(User, User.id == UserDocument.user_id)
-        .where(UserDocument.expires_at > today, User.is_active.is_(True))
+        .where(UserDocument.expires_at >= today, User.is_active.is_(True))
     )).unique().all()
     for document in documents:
         days_left = (document.expires_at - today).days
-        if days_left not in (document.remind_days_before, 1):
+        if days_left not in (document.remind_days_before, 1, 0):
             continue
         db.add(ReminderLog(user_document_id=document.id, expires_at=document.expires_at, days_before=days_left))
         try:
