@@ -224,7 +224,7 @@ function Ring({ days, pct, tone, size = 112 }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <span className="text-[30px] font-semibold leading-none tracking-tight tabular-nums"><CountUp value={Math.abs(days)} /></span>
-        <span className="mt-1 text-body-sm text-on-surface-variant">{days < 0 ? t("рӯз пеш") : t("рӯз монд")}</span>
+        <span className="mt-1 max-w-[72px] text-[12px] leading-tight text-on-surface-variant">{days < 0 ? t("рӯз пеш") : t("рӯз монд")}</span>
       </div>
     </div>
   );
