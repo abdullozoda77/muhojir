@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Camera, ExternalLink, FileUp, ImagePlus, Package, PackageCheck, PackageOpen, Pencil, Plus, Send, ShieldCheck, Store, Trash2, Truck, X } from "lucide-react";
+import { Camera, ExternalLink, FileUp, ImagePlus, MapPinned, Package, PackageCheck, PackageOpen, Pencil, Plus, Send, ShieldCheck, Store, Trash2, Truck, X } from "lucide-react";
 import { api, apiAll } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
@@ -356,6 +356,56 @@ function ProductForm({ open, shopId, product, onClose, onSaved }) {
   );
 }
 
+function MapPanel({ shop, onChanged }) {
+  const [moving, setMoving] = useState(false);
+  const [point, setPoint] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const here = { lat: shop.lat, lon: shop.lon };
+
+  const save = async () => {
+    if (!window.confirm(t("Пас аз иваз кардани ҷой мағоза боз ба санҷиш меравад ва то тасдиқ дар сайт ва харита намоён нест. Идома диҳем?"))) return;
+    setSaving(true);
+    setError(null);
+    try {
+      onChanged(await api(`/market/shops/${shop.id}/`, { method: "PATCH", body: point }));
+      setMoving(false);
+      setPoint(null);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="card flex flex-col gap-3 p-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <MapPinned className="h-5 w-5 text-primary" aria-hidden />
+        <h3 className="flex-1 text-[19px] font-semibold">{t("Мағоза дар харита")}</h3>
+        <Link to={`/places?shop=${shop.id}`} className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low">
+          <ExternalLink className="h-4 w-4" aria-hidden />
+          {t("Дар харита дидан")}
+        </Link>
+        {!moving && <Button variant="plain" icon={Pencil} onClick={() => setMoving(true)}>{t("Ҷойро иваз кардан")}</Button>}
+      </div>
+      <p className="text-body-sm text-on-surface-variant">
+        {moving
+          ? t("Ҷойи навро дар харита қайд кунед. Муҳаррир онро боз месанҷад ва то тасдиқ мағоза дар сайт намоён нест.")
+          : t("Мағозаи шумо дар «Харитаи ҷойҳо» ба ҳама намоён аст: одамон онро меёбанд ва то он ҷо маршрут месозанд.")}
+      </p>
+      <LocationPicker value={moving ? point || here : here} onChange={setPoint} readOnly={!moving} query={[shop.city, shop.address].filter(Boolean).join(", ")} className="h-56" />
+      <ErrorBox error={error} />
+      {moving && (
+        <div className="flex flex-wrap gap-2">
+          <Button icon={Send} loading={saving} disabled={!point} onClick={save}>{t("Сабт ва ба санҷиш фиристодан")}</Button>
+          <Button variant="ghost" icon={X} onClick={() => (setMoving(false), setPoint(null))}>{t("Бекор кардан")}</Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ShopManager({ shop, onEdit, onChanged, onDeleted }) {
   const { data, reload } = useApi(`/market/shops/${shop.id}/products/?page_size=100`);
   const [productForm, setProductForm] = useState({ open: false, product: null });
@@ -436,6 +486,7 @@ function ShopManager({ shop, onEdit, onChanged, onDeleted }) {
       <ErrorBox error={error} />
 
       {shop.status !== "approved" && <ProofPanel shop={shop} onSubmitted={onChanged} />}
+      {shop.status === "approved" && shop.lat != null && <MapPanel shop={shop} onChanged={onChanged} />}
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">

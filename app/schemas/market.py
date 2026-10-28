@@ -39,6 +39,12 @@ def shop_json(shop, avg=None, n=None, products=None, viewer=None):
     return data
 
 
+def shop_map_json(shop):
+    return {"id": shop.id, "name": shop.name, "category": shop.category, "category_label": shop.category_label,
+            "city": shop.city, "address": shop.address, "lat": shop.lat, "lon": shop.lon,
+            "opening_hours": shop.opening_hours, "logo": media(shop.logo)}
+
+
 def shop_short_json(shop):
     return {"id": shop.id, "name": shop.name, "city": shop.city, "logo": media(shop.logo),
             "delivery": shop.delivery, "phone": shop.phone, "whatsapp": shop.whatsapp, "telegram": shop.telegram}

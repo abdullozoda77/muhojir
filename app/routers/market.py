@@ -101,6 +101,13 @@ async def summary(db: DB):
             "cities": [{"name": c, "count": n} for c, n in cities]}
 
 
+@router.get("/shops/map/")
+async def shops_map(db: DB):
+    query = (select(Shop).where(Shop.status == "approved", Shop.lat.is_not(None), Shop.lon.is_not(None))
+             .order_by(Shop.id))
+    return [s.shop_map_json(shop) for shop in (await db.scalars(query)).unique()]
+
+
 async def get_shop_row(db, user, shop_id):
     query = visible(shops_query(), user).where(Shop.id == shop_id).execution_options(populate_existing=True)
     row = (await db.execute(query)).unique().first()
@@ -143,11 +150,16 @@ async def create_shop(data: s.ShopIn, db: DB, user: CurrentUser):
 @router.patch("/shops/{shop_id}/")
 async def update_shop(shop_id: int, data: s.ShopPatch, db: DB, user: CurrentUser):
     shop = await own_shop(db, user, shop_id)
+    where = (shop.lat, shop.lon)
     for field, value in data.model_dump(exclude_unset=True).items():
         if value is not None or field in ("lat", "lon"):
             setattr(shop, field, value)
     if not (shop.phone or shop.whatsapp or shop.telegram):
         raise ApiError({"non_field_errors": [s.NO_CONTACT]})
+    if shop.status == "approved" and not user.is_editor and (shop.lat, shop.lon) != where:
+        if shop.lat is None or shop.lon is None:
+            raise ApiError({"location": [NEED_LOCATION]})
+        shop.status = "pending"
     await db.commit()
     return await shop_answer(db, user, shop_id)
 

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
-  MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShoppingBasket, Stamp, Store, Utensils,
+  MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShoppingBag, ShoppingBasket, Stamp, Store, Truck, Utensils,
 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
@@ -10,6 +10,8 @@ import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import Map3D from "../components/Map3D.jsx";
+import { ContactButtons, ShopLogo } from "../components/Shop.jsx";
+import { shopCategory } from "../constants.js";
 import { Stars, StarPicker } from "../components/Stars.jsx";
 import { EASE, Stagger, StaggerItem, m } from "../components/motion.jsx";
 import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton } from "../components/ui.jsx";
@@ -28,8 +30,28 @@ export const PLACE_KINDS = [
   { value: "market", label: () => t("Бозор"), icon: Store, color: "#f9a825" },
   { value: "photo", label: () => t("Акс барои ҳуҷҷат"), icon: Camera, color: "#546e7a" },
 ];
+const SHOP_KIND = { value: "shop", label: () => t("Мағозаҳои тоҷикӣ"), icon: ShoppingBag, color: "#e11d48" };
 const kind = (value) => PLACE_KINDS.find((k) => k.value === value) || { label: () => value, icon: Store, color: "#455a64" };
-const COLORS = Object.fromEntries(PLACE_KINDS.map((k) => [k.value, k.color]));
+const COLORS = { ...Object.fromEntries(PLACE_KINDS.map((k) => [k.value, k.color])), shop: SHOP_KIND.color };
+const SHOP_PREFIX = "shop-";
+const shopIdOf = (id) => (typeof id === "string" && id.startsWith(SHOP_PREFIX) ? Number(id.slice(SHOP_PREFIX.length)) : null);
+const ZOOM_KM = { 7: 500, 8: 220, 9: 110, 10: 45 };
+
+function distanceKm(a, b) {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad;
+  const dLon = (b.lon - a.lon) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function shopsAround(shops, center, km, words, pinned) {
+  const needle = words.trim().toLowerCase();
+  return shops
+    .map((shop) => ({ ...shop, shopId: shop.id, id: SHOP_PREFIX + shop.id, category: "shop", shopCategory: shop.category, distance: distanceKm(center, shop) }))
+    .filter((shop) => shop.shopId === pinned || (shop.distance <= km && (!needle || `${shop.name} ${shop.address}`.toLowerCase().includes(needle))))
+    .sort((a, b) => a.distance - b.distance);
+}
 
 const REGION_VIEW = {
   "Москва": [55.751, 37.618, 10],
@@ -169,6 +191,63 @@ function PlaceCard({ place, onOpen }) {
         </span>
       </span>
     </button>
+  );
+}
+
+function ShopPinCard({ shop, onOpen }) {
+  return (
+    <button type="button" onClick={() => onOpen(shop.id)} className="group flex w-full items-start gap-4 rounded-xl p-3.5 text-left transition-colors hover:bg-surface-container-low">
+      <span className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
+        <ShopLogo shop={{ ...shop, category: shop.shopCategory }} className="h-10 w-10" />
+        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface-container-lowest" style={{ backgroundColor: SHOP_KIND.color }} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate text-[16px] font-semibold leading-snug">{shop.name}</span>
+        <span className="line-clamp-2 text-body-sm text-on-surface-variant">{shopCategory(shop.shopCategory).label}{shop.address && ` · ${shop.address}`}</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-on-surface-variant">
+          <span className="rounded-md bg-primary-fixed px-1.5 py-0.5 font-medium text-on-primary-fixed">{t("{0} км", shop.distance.toLocaleString("ru-RU", { maximumFractionDigits: 1 }))}</span>
+          {shop.opening_hours && <span>{shop.opening_hours}</span>}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ShopDetails({ shopId, onClose, points, onRoute }) {
+  const { data: shop } = useApi(shopId ? `/market/shops/${shopId}/` : null);
+  return (
+    <Drawer open={Boolean(shopId)} onClose={onClose} title={shop?.name || "…"} subtitle={shop ? `${SHOP_KIND.label()} · ${shopCategory(shop.category).label}` : SHOP_KIND.label()} icon={ShoppingBag}>
+      {!shop ? (
+        <Skeleton className="h-60" />
+      ) : (
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 rounded-2xl p-5 ring-1 ring-outline-variant">
+            <div className="flex items-center gap-3">
+              <ShopLogo shop={shop} />
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-[17px] font-semibold">{shop.name}</span>
+                {shop.rating ? (
+                  <span className="inline-flex items-center gap-1 text-body-sm text-on-surface-variant"><Stars value={shop.rating} size="h-3.5 w-3.5" /> {shop.rating} ({shop.reviews_count})</span>
+                ) : (
+                  <span className="text-body-sm text-on-surface-variant">{t("Ҳоло баҳо нест")}</span>
+                )}
+              </span>
+            </div>
+            <span className="flex items-start gap-2 text-body-md"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{[shop.city, shop.address].filter(Boolean).join(", ")}</span>
+            {shop.opening_hours && <span className="flex items-start gap-2 text-body-md"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{shop.opening_hours}</span>}
+            {shop.delivery && <span className="flex items-start gap-2 text-body-md"><Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{t("Ба хона мерасонем")}</span>}
+            {shop.description && <p className="text-body-sm text-on-surface-variant">{shop.description}</p>}
+            <ContactButtons shop={shop} size="sm" />
+            <Link to={`/shops/${shop.id}`} className="mt-1 inline-flex min-h-[44px] items-center gap-2 self-start rounded-xl bg-ink px-4 text-label-md text-on-ink transition-colors hover:bg-ink/90">
+              {t("Молҳо ва саҳифаи мағоза")}
+              <ExternalLink className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+          {shop.lat != null && <RouteBuilder place={{ ...shop, id: SHOP_PREFIX + shop.id }} points={points} onRoute={onRoute} />}
+          <p className="text-label-sm text-on-surface-variant">{t("Ҷойи мағозаро соҳибаш гузоштааст ва муҳаррир санҷидааст.")}</p>
+        </div>
+      )}
+    </Drawer>
   );
 }
 
@@ -339,7 +418,7 @@ export default function Places() {
   const [view, setView] = useState("list");
   const wide = useWide();
   const [panel, setPanel] = useState(true);
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(() => (params.get("shop") ? SHOP_PREFIX + params.get("shop") : null));
   const [suggesting, setSuggesting] = useState(false);
   const [page, setPage] = useState({ results: [], count: 0, next: null });
   const [points, setPoints] = useState([]);
@@ -351,6 +430,8 @@ export default function Places() {
   const category = params.get("category") || "";
   const region = params.get("region") || (near ? "" : "Москва");
   const { data: summary, reload: reloadSummary } = useApi(`/places/summary/?region=${encodeURIComponent(region)}`);
+  const { data: allShops } = useApi("/market/shops/map/");
+  const onlyShops = category === SHOP_KIND.value;
 
   const update = useCallback((key, value) => {
     setParams((current) => {
@@ -375,6 +456,11 @@ export default function Places() {
   }, [category, region, params]);
 
   useEffect(() => {
+    if (onlyShops) {
+      setLoading(false);
+      setError(null);
+      return undefined;
+    }
     let alive = true;
     setLoading(true);
     setError(null);
@@ -392,7 +478,15 @@ export default function Places() {
     return () => {
       alive = false;
     };
-  }, [query, near]);
+  }, [query, near, onlyShops]);
+
+  const shops = useMemo(() => {
+    const [lat, lon, zoom] = REGION_VIEW[region] || REGION_VIEW["Москва"];
+    const center = near || { lat, lon };
+    return shopsAround(allShops || [], center, near ? 30 : ZOOM_KM[zoom] || 110, params.get("search") || "", Number(params.get("shop")) || null);
+  }, [allShops, region, near, params]);
+  const mapPoints = useMemo(() => (onlyShops ? shops : category ? points : [...points, ...shops]), [onlyShops, category, points, shops]);
+  const openShopId = shopIdOf(openId);
 
   const loadMore = async () => {
     setMore(true);
@@ -427,7 +521,34 @@ export default function Places() {
     );
   };
 
-  const listBody = loading ? (
+  const shopsHint = !onlyShops && !category && shops.length > 0 && (
+    <button type="button" onClick={() => update("category", SHOP_KIND.value)} className="m-1.5 flex items-center gap-2 rounded-xl bg-surface-container-low px-3.5 py-2.5 text-left text-body-sm transition-colors hover:bg-surface-container-high">
+      <ShoppingBag className="h-4 w-4 shrink-0" style={{ color: SHOP_KIND.color }} aria-hidden />
+      <span className="flex-1">{t("{0} мағозаи тоҷикӣ дар харита", shops.length)}</span>
+    </button>
+  );
+
+  const shopsBody = shops.length === 0 ? (
+    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+      <ShoppingBag className="h-6 w-6 text-on-surface-variant" aria-hidden />
+      <span className="text-[16px] font-semibold">{t("Дар ин минтақа ҳоло мағоза нест")}</span>
+      <span className="text-body-sm text-on-surface-variant">{t("Мағоза доред? Онро илова кунед — пас аз санҷиш дар харита пайдо мешавад.")}</span>
+      <Link to={user ? "/shops/my" : "/login"} state={user ? undefined : { from: "/shops/my" }} className="mt-2 inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-ink px-4 text-label-md text-on-ink hover:bg-ink/90">
+        <Plus className="h-4 w-4" aria-hidden />
+        {t("Мағозаи худро илова кунед")}
+      </Link>
+    </div>
+  ) : (
+    <Stagger key={region + (near ? "near" : "")} className="flex flex-col divide-y divide-outline-variant">
+      {shops.map((shop) => (
+        <StaggerItem key={shop.id}>
+          <ShopPinCard shop={shop} onOpen={setOpenId} />
+        </StaggerItem>
+      ))}
+    </Stagger>
+  );
+
+  const placesBody = loading ? (
     <div className="flex flex-col gap-2 p-1">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
   ) : page.results.length === 0 ? (
     <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
@@ -448,13 +569,22 @@ export default function Places() {
     </div>
   );
 
+  const listBody = onlyShops ? shopsBody : <>{shopsHint}{placesBody}</>;
+  const total = onlyShops ? shops.length : page.count;
+
   const regions = summary?.regions?.map((r) => r.name) || Object.keys(REGION_VIEW);
   const counts = summary?.categories || {};
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader eyebrow={t("Харитаи ҷойҳои муфид")} icon={MapPinned} title={t("Ҷойҳо дар Русия")} text={t("Марказҳои муҳоҷират, нотариус, сафорат, масҷидҳо, ошхонаҳои тоҷикӣ ва дигар ҷойҳо — бо суроға ва баҳои одамон.")}>
-        {user && <Button variant="accent" icon={Plus} onClick={() => setSuggesting(true)}>{t("Ҷойи нав")}</Button>}
+        <div className="flex flex-wrap gap-2">
+          <Link to={user ? "/shops/my" : "/login"} state={user ? undefined : { from: "/shops/my" }} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+            <ShoppingBag className="h-4 w-4" style={{ color: SHOP_KIND.color }} aria-hidden />
+            {t("Мағозаи ман дар харита")}
+          </Link>
+          {user && <Button variant="accent" icon={Plus} onClick={() => setSuggesting(true)}>{t("Ҷойи нав")}</Button>}
+        </div>
       </PageHeader>
 
       <div className="card flex flex-col gap-5 p-5 md:p-6">
@@ -480,11 +610,11 @@ export default function Places() {
           <button type="button" onClick={() => update("category", "")} aria-pressed={!category} className={`min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-4 text-label-md transition-colors ${!category ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
             {t("Ҳама")}
           </button>
-          {PLACE_KINDS.map((k) => (
+          {[SHOP_KIND, ...PLACE_KINDS].map((k) => (
             <button key={k.value} type="button" onClick={() => update("category", category === k.value ? "" : k.value)} aria-pressed={category === k.value} className={`flex min-h-[40px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${category === k.value ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: k.color }} aria-hidden />
               {k.label()}
-              {counts[k.value] > 0 && <span className="text-[12px] tabular-nums opacity-60">{counts[k.value]}</span>}
+              {(k === SHOP_KIND ? shops.length : counts[k.value]) > 0 && <span className="text-[12px] tabular-nums opacity-60">{k === SHOP_KIND ? shops.length : counts[k.value]}</span>}
             </button>
           ))}
         </div>
@@ -504,7 +634,7 @@ export default function Places() {
         <div className="relative">
           <div className={!wide && view === "list" ? "hidden" : ""}>
             <Map3D
-              points={points} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]}
+              points={mapPoints} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]}
               selectedId={openId} onOpen={setOpenId} route={route} onClearRoute={() => setRoute(null)}
               className="h-[560px] xl:h-[calc(100vh-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
             />
@@ -516,8 +646,8 @@ export default function Places() {
               style={{ width: PANEL }}
             >
               <header className="flex items-center gap-2 border-b border-outline-variant py-2.5 pl-4 pr-2">
-                <h2 className="text-[17px] font-semibold">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
-                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{page.count}</span>}
+                <h2 className="text-[17px] font-semibold">{onlyShops ? SHOP_KIND.label() : near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
+                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{total}</span>}
                 <button type="button" onClick={() => setPanel(false)} aria-label={t("Рӯйхатро пинҳон кардан")} title={t("Рӯйхатро пинҳон кардан")} className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface">
                   <PanelLeftClose className="h-4 w-4" aria-hidden />
                 </button>
@@ -529,14 +659,14 @@ export default function Places() {
             <button type="button" onClick={() => setPanel(true)} className="absolute left-3 top-[60px] z-10 flex h-9 items-center gap-2 rounded-lg bg-surface-container-lowest/90 px-3 text-label-md text-on-surface shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-surface-container-lowest">
               <List className="h-4 w-4" aria-hidden />
               {t("Рӯйхат")}
-              {!loading && <span className="text-[12px] tabular-nums text-on-surface-variant">{page.count}</span>}
+              {!loading && <span className="text-[12px] tabular-nums text-on-surface-variant">{total}</span>}
             </button>
           )}
           {!wide && view === "list" && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 px-1">
-                <h2 className="text-[20px] font-semibold">{near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
-                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{page.count}</span>}
+                <h2 className="text-[20px] font-semibold">{onlyShops ? SHOP_KIND.label() : near ? t("Дар наздикии шумо") : t("Ҷойҳо")}</h2>
+                {!loading && <span className="rounded-md bg-surface-container-high px-2 py-0.5 text-[12px] font-medium tabular-nums text-on-surface-variant">{total}</span>}
               </div>
               <div className="rounded-2xl bg-surface-container-lowest p-1.5 ring-1 ring-outline-variant">{listBody}</div>
             </div>
@@ -546,9 +676,19 @@ export default function Places() {
       </div>
 
       <PlaceDetails
-        placeId={openId}
+        placeId={openShopId ? null : openId}
         onClose={() => setOpenId(null)}
-        points={points}
+        points={mapPoints}
+        onRoute={(r) => {
+          setRoute(r);
+          setOpenId(null);
+          setView("map");
+        }}
+      />
+      <ShopDetails
+        shopId={openShopId}
+        onClose={() => (setOpenId(null), update("shop", ""))}
+        points={mapPoints}
         onRoute={(r) => {
           setRoute(r);
           setOpenId(null);

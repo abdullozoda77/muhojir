@@ -485,6 +485,7 @@ A generic, single database configuration.
 | `media(name)` | function | A stored file name -> its /media/ address (or None). |
 | `owner_name(user)` | function | Only the first name is shown to others. |
 | `shop_json(shop, avg, n, products, viewer)` | function | A shop with rating, number of reviews and products; reject_reason only for the owner and editors. |
+| `shop_map_json(shop)` | function | An approved shop as a pin on the places map: name, kind, city, address, lat, lon, hours, logo (no contacts). |
 | `shop_short_json(shop)` | function | A shop inside a product of the common product list. |
 | `product_json(product, with_shop)` | function | A product; with_shop adds its shop. |
 | `review_json(review, viewer)` | function | A shop review. |
@@ -673,12 +674,13 @@ A generic, single database configuration.
 | `find_address(request, user)` | async function · `GET /api/market/geocode/` | ?q=address -> matching places (logged-in users, 60 per hour); 503 when the search service is down. |
 | `list_shops(request, db, user, page)` | async function · `GET /api/market/shops/` | Approved shops with the filters; mine=true — my shops in any status; editors: status=pending. Ordering: rating, name, created_at. |
 | `summary(db)` | async function · `GET /api/market/shops/summary/` | Number of shops and products, shops per kind and the cities with shops. |
+| `shops_map(db)` | async function · `GET /api/market/shops/map/` | All approved shops that have a location, for the «Tajik shops» layer of the places map. Declared before /shops/{shop_id}/. |
 | `get_shop_row(db, user, shop_id)` | async function | One visible shop row or 404. |
 | `own_shop(db, user, shop_id)` | async function | The shop if the user is its owner or an editor, otherwise 403. |
 | `shop_answer(db, user, shop_id)` | async function | Reads the shop again and returns its JSON. |
 | `shop_detail(shop_id, db, user)` | async function · `GET /api/market/shops/{shop_id}/` | A shop and my review of it. |
 | `create_shop(data, db, user)` | async function · `POST /api/market/shops/` | Opens a shop (at most 3 per user) as a draft; editors' shops are approved at once. |
-| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop, also its location (lat, lon); the status does not change. |
+| `update_shop(shop_id, data, db, user)` | async function · `PATCH /api/market/shops/{shop_id}/` | Changes a shop, also its location (lat, lon). If the owner (not an editor) moves the pin of an approved shop, it goes back to «pending» and disappears from the map until an editor checks it again; an approved shop cannot lose its location. |
 | `delete_shop(shop_id, db, user)` | async function · `DELETE /api/market/shops/{shop_id}/` | Deletes the shop, its products, reviews and photos. |
 | `moderate_shop(shop_id, data, db, user)` | async function · `POST /api/market/shops/{shop_id}/moderate/` | Editors approve or reject (with a reason) a sent shop, not a draft; the owner gets a notification. |
 | `proof_kinds(db, shop_id)` | async function | Which kinds of proof a shop has. |
@@ -1600,7 +1602,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `THEMES` | const | Everything the map draws itself, for each theme. |
-| `geojson` | function | — |
+| `geojson` | function | Turns the points into GeoJSON; only numeric ids become feature ids (shop pins have string ids like "shop-5"). |
 | `routeData` | function | The route as map data: the line, and its two ends ("from" and "to"). |
 | `addLayers` | function | Our layers on top of the base map (added again whenever the theme, and so the base map, changes). |
 | `routeSummary` | function | "3,4 км · 46 дақ" for the route card. |
@@ -1886,6 +1888,7 @@ A generic, single database configuration.
 | `ProofPanel` | function | Proofs and location of a shop that is not approved yet (saved at once), and the «Send for checking» button. |
 | `ShopForm` | function | Drawer to create or edit a shop. |
 | `ProductForm` | function | Drawer to add or edit a product with its photo. |
+| `MapPanel` | function | For an approved shop: its pin (read only), «See on the map» (/places?shop=id) and «Change location» — the new pin is saved after a confirm and the shop goes back to checking. |
 | `ShopManager` | function | One shop: status, logo, buttons and the product list. |
 | `MyShops` | export function | The list of my shops and the chosen one. |
 
@@ -1924,7 +1927,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Places.jsx`
 
-**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones.
+**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones. Approved Tajik shops from /shops are a separate red layer: an owner puts the pin when opening the shop, and it appears here only after an editor approves the shop.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1935,7 +1938,13 @@ A generic, single database configuration.
 | `myPosition` | function | The person's position, once (asks for permission the first time). |
 | `RouteBuilder` | function | "Route": from my position or from another place on the map to this place, on foot or by car. |
 | `useWide` | function | True on wide screens (Tailwind's xl), where the list floats over the map instead of having its own tab. |
+| `SHOP_KIND` | const | The «Tajik shops» chip and its red map color; the value "shop" is never sent to /api/places/. |
+| `shopIdOf` | function | "shop-5" -> 5, a place id -> null. |
+| `distanceKm` | function | Distance between two points in km (haversine). |
+| `shopsAround(shops, center, km, words, pinned)` | function | Shops of /api/market/shops/map/ near the chosen region (radius by its zoom in ZOOM_KM, 30 km near me), nearest first, filtered by the search; ?shop=id is always kept. |
 | `PlaceCard` | function | — |
+| `ShopPinCard` | function | A shop in the list: logo, kind, address, distance, hours. |
+| `ShopDetails` | function | Drawer of a shop: rating, address, hours, delivery, contacts, «Products and shop page», route. |
 | `PlaceDetails` | function | — |
 | `SuggestPlace` | function | — |
 | `Places` | export function | — |

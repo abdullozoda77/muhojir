@@ -89,6 +89,19 @@ async def test_shop_moderation_products_reviews(client, user):
         titles = (await db.scalars(select(Notification.title).where(Notification.user_id == owner_data["user"]["id"]))).all()
     assert "Мағозаи шумо рад шуд" in titles and "Мағозаи шумо тасдиқ шуд" in titles
 
+    r = await client.get("/api/market/shops/map/")
+    pin = next(x for x in r.json() if x["id"] == shop["id"])
+    assert pin["lat"] == 55.68 and pin["lon"] == 37.76 and "phone" not in pin
+    r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"opening_hours": "08:00–22:00"})
+    assert r.json()["status"] == "approved"
+    r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"lat": None, "lon": None})
+    assert "location" in r.json()
+    r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"lat": 55.69, "lon": 37.77})
+    assert r.json()["status"] == "pending"
+    assert shop["id"] not in [x["id"] for x in (await client.get("/api/market/shops/map/")).json()]
+    r = await client.post(f"/api/market/shops/{shop['id']}/moderate/", headers=editor, json={"status": "approved"})
+    assert r.json()["status"] == "approved" and r.json()["lat"] == 55.69
+
     r = await client.get("/api/market/shops/", params={"search": "курага", "city": "моск", "delivery": "true"})
     assert [x["id"] for x in r.json()["results"]] == [shop["id"]]
     assert r.json()["results"][0]["products_count"] == 1 and "reject_reason" not in r.json()["results"][0]

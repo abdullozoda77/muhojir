@@ -33,7 +33,7 @@ function geojson(points, colors) {
     type: "FeatureCollection",
     features: points.map((p) => ({
       type: "Feature",
-      id: p.id,
+      id: typeof p.id === "number" ? p.id : undefined,
       geometry: { type: "Point", coordinates: [p.lon, p.lat] },
       properties: { id: p.id, name: p.name, category: p.category, color: colors[p.category] || "#455a64" },
     })),
@@ -264,7 +264,10 @@ export default function Map3D({ points, colors, region, regionView, selectedId, 
 
   useEffect(() => {
     refresh();
-    if (!data.current.route) fit(points);
+    const chosen = points.find((p) => p.id === data.current.selectedId);
+    if (chosen && mapRef.current && ready.current) {
+      mapRef.current.flyTo({ center: [chosen.lon, chosen.lat], zoom: 17, pitch: 65, offset: [data.current.inset / 2, 0], duration: 2200, essential: true });
+    } else if (!data.current.route) fit(points);
   }, [points]);
 
   useEffect(() => {
