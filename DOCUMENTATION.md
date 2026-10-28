@@ -372,7 +372,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `Place` | class · table `places` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user"), which appear after an editor approves them. |
+| `Place` | class · table `places` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user") with a pin on the map and a photo; they appear after an editor approves them. proof is the private photo (place-proofs/), reject_reason is set when an editor rejects the suggestion. |
 | `PlaceReview` | class · table `place_reviews` | A visitor's rating (1-5) and words about a place; one per person per place. |
 
 ### `app/models/support.py`
@@ -713,7 +713,7 @@ A generic, single database configuration.
 |---|---|---|
 | `place_json(place, avg, n, distance)` | function | — |
 | `visible(query, user)` | function | Guests see approved places; a user also sees their own suggestions; editors see everything. |
-| `filtered(query, request)` | function | — |
+| `filtered(query, request)` | function | Category, region, city, search and bbox filters. ?waiting=true — only places that are not approved (editors' «For checking» list). |
 | `near(request)` | function | ?near=55.75,37.61 -> (lat, lon) to sort by distance. |
 | `list_places(request, db, user, page)` | async function · `GET /api/places/` | Filters: category (one or several, comma-separated), region, city, search, bbox; near=lat,lon sorts by distance; ordering=rating or name (by default the best rated first). |
 | `map_points(request, db, user)` | async function · `GET /api/places/map/` | Light points for the map (id, category, name, lat, lon), with the same filters as the list. |
@@ -721,7 +721,13 @@ A generic, single database configuration.
 | `get_place(db, user, place_id)` | async function | — |
 | `place_detail(place_id, db, user)` | async function · `GET /api/places/{place_id}/` | — |
 | `PlaceIn` | class | — |
-| `suggest_place(data, db, user)` | async function · `POST /api/places/` | A user suggests a place: it is shown to everyone after an editor approves it (editors' places at once). |
+| `suggest_place(request, db, user)` | async function · `POST /api/places/` | multipart form. A user suggests a place: lat/lon (pin on the map), a photo (jpg, png, webp; saved privately) and confirmed=true are required; at most 5 waiting suggestions per user. It is shown to everyone after an editor approves it (editors' places at once, photo optional). The form is read by hand because FastAPI does not unpack a form model next to a file. |
+| `with_check(data, place, user)` | function | For the author and editors adds reject_reason, has_proof and is_mine to the place JSON. |
+| `tell_author(db, place)` | async function | Notification to the author: approved (it is on the map) or rejected with the reason. |
+| `ModerateIn` | class | status approved / rejected and the reason (required to reject). |
+| `place_proof(place_id, db, user)` | async function · `GET /api/places/{place_id}/proof/` | The private photo of a suggestion; only its author and editors. |
+| `moderate_place(place_id, data, db, user)` | async function · `POST /api/places/{place_id}/moderate/` | Editor: approves (the place becomes public) or rejects with a reason, and tells the author. |
+| `delete_place(place_id, db, user)` | async function · `DELETE /api/places/{place_id}/` | Editors delete any place; an author deletes their own place while it is not approved. Removes the photo. |
 | `review_json(review, viewer)` | function | — |
 | `ReviewIn` | class | — |
 | `place_reviews(place_id, db, user, page)` | async function · `GET /api/places/{place_id}/reviews/` | — |
@@ -1000,7 +1006,7 @@ A generic, single database configuration.
 | `LegalQuestionAdmin` | class | — |
 | &nbsp;&nbsp;↳ `on_model_change(data, model, is_created, request)` | method | — |
 | &nbsp;&nbsp;↳ `after_model_change(data, model, is_created, request)` | method | — |
-| `PlaceAdmin` | class | — |
+| `PlaceAdmin` | class | Places on the map. Approving (is_approved) or writing a new reject_reason notifies the author; deleting removes the private photo. |
 | `PlaceReviewAdmin` | class | — |
 | `AirportAdmin` | class | — |
 | `FlightWatchAdmin` | class | — |
@@ -1109,6 +1115,15 @@ A generic, single database configuration.
 
 ## `tests/` — automated tests (pytest)
 
+### `alembic/versions/0008_place_proof.py`
+
+**What it is for:** Proof of a suggested place: places.proof (private photo) and places.reject_reason. Revision ID: 0008 Revises: 0007
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Adds the two columns. |
+| `downgrade()` | function | Drops them. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox.
@@ -1208,7 +1223,7 @@ A generic, single database configuration.
 | `test_price_watch_tells_once(client, user, aviasales)` | async function | — |
 | `add_places()` | async function | — |
 | `test_places_filters_map_and_reviews(client, user)` | async function | — |
-| `test_suggested_place_waits_for_an_editor(client, user)` | async function | — |
+| `test_suggested_place_needs_proof_and_an_editor(client, user)` | async function | A suggestion needs a pin, the confirmation and a photo; it is hidden until an editor approves it; the photo is seen only by the author and editors; reject needs a reason; the author gets notifications. |
 | `test_assistant_tools_for_travel()` | async function | — |
 
 
@@ -1591,8 +1606,9 @@ A generic, single database configuration.
 | `satelliteUrl(lat, lon)` | export function | Yandex Maps satellite view with a pin at the point. |
 | `distanceText(meters)` | export function | «240 м» or «305 км». |
 | `geoProblem(error)` | function | The message for a failed location request, by its error code. |
+| `WORDS` / `words(subject)` | const / function | The texts that differ for a shop and for a suggested place (GPS button, address search, hints). |
 | `AddressSearch` | function | The address box above the map (pre-filled with the shop's city and address): one match moves the pin at once, several are shown as a list to choose from. |
-| `LocationPicker` | export function | The map; query is the starting address text; readOnly shows the pin only (for editors). |
+| `LocationPicker` | export function | The map; query is the starting address text; readOnly shows the pin only (for editors); subject is "shop" (default) or "place" for the words of the buttons and hints. |
 
 
 ### `frontend/src/components/Map3D.jsx`
@@ -1927,7 +1943,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Places.jsx`
 
-**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones. Approved Tajik shops from /shops are a separate red layer: an owner puts the pin when opening the shop, and it appears here only after an editor approves the shop.
+**What it is for:** Useful places on a map: migration centers, clinics, notaries, translators, the embassy, mosques, Tajik cafes, halal shops, money transfers. The data is from OpenStreetMap; people rate places and suggest new ones. Approved Tajik shops from /shops are a separate red layer: an owner puts the pin when opening the shop, and it appears here only after an editor approves the shop. Editors have a «For checking» button (?waiting=true) that lists the suggestions of every region.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1945,8 +1961,10 @@ A generic, single database configuration.
 | `PlaceCard` | function | — |
 | `ShopPinCard` | function | A shop in the list: logo, kind, address, distance, hours. |
 | `ShopDetails` | function | Drawer of a shop: rating, address, hours, delivery, contacts, «Products and shop page», route. |
+| `PrivatePhoto` | function | Loads a private photo with the token and shows it (opens full size on click). |
+| `PlaceCheck` | function | Inside a place that is not approved: «Waiting for checking» or the reject reason; the photo; for editors the map with satellite/panorama links, «Approve» and «Reject» (needs a reason); author and editors can delete. |
 | `PlaceDetails` | function | — |
-| `SuggestPlace` | function | — |
+| `SuggestPlace` | function | Form to suggest a place: kind, name, region, address, a required pin on the map, a required photo (shrunk to 1600 px WEBP) and the «I confirm the place really exists» box; the button works only when all three are given. Editors see «added» at once. |
 | `Places` | export function | — |
 
 ### `frontend/src/pages/Profile.jsx`

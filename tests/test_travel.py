@@ -2,6 +2,7 @@ from datetime import date
 
 import httpx
 import pytest
+from sqlalchemy import select
 
 from app.core import cache
 from app.db.session import SessionLocal
@@ -126,14 +127,51 @@ async def test_places_filters_map_and_reviews(client, user):
     assert r.status_code == 401
 
 
-async def test_suggested_place_waits_for_an_editor(client, user):
+async def test_suggested_place_needs_proof_and_an_editor(client, user):
+    from tests.test_market import PNG, sign_up
+    from app.models import Notification
+    from tests.conftest import set_role
+
     headers, data = user
-    r = await client.post("/api/places/", headers=headers, json={"category": "halal", "name": "Халял маркет",
-                                                                  "region": "Москва", "address": "улица Мира 5"})
-    assert r.status_code == 201 and r.json()["is_approved"] is False
+    form = {"category": "halal", "name": "Халял маркет", "region": "Москва", "address": "улица Мира 5"}
+    photo = {"photo": ("p.png", PNG, "image/png")}
+    r = await client.post("/api/places/", headers=headers, data=form, files=photo)
+    assert "location" in r.json()
+    form |= {"lat": "55.78", "lon": "37.63"}
+    r = await client.post("/api/places/", headers=headers, data=form, files=photo)
+    assert "confirmed" in r.json()
+    form |= {"confirmed": "true"}
+    r = await client.post("/api/places/", headers=headers, data=form)
+    assert "photo" in r.json()
+    r = await client.post("/api/places/", headers=headers, data=form, files={"photo": ("p.pdf", PNG, "application/pdf")})
+    assert "photo" in r.json()
+    r = await client.post("/api/places/", headers=headers, data=form, files=photo)
+    assert r.status_code == 201 and r.json()["is_approved"] is False and r.json()["has_proof"]
     place_id = r.json()["id"]
     assert (await client.get(f"/api/places/{place_id}/")).status_code == 404
     assert (await client.get(f"/api/places/{place_id}/", headers=headers)).status_code == 200
+    assert (await client.get(f"/api/places/{place_id}/proof/", headers=headers)).content == PNG
+
+    stranger, _ = await sign_up(client, "place-stranger@example.com")
+    assert (await client.get(f"/api/places/{place_id}/proof/", headers=stranger)).status_code == 404
+    editor, editor_id = await sign_up(client, "place-editor@example.com")
+    assert (await client.post(f"/api/places/{place_id}/moderate/", headers=editor, json={"status": "approved"})).status_code == 403
+    await set_role(editor_id, "editor")
+    r = await client.get("/api/places/", params={"waiting": "true"}, headers=editor)
+    assert place_id in [p["id"] for p in r.json()["results"]]
+    assert (await client.get(f"/api/places/{place_id}/proof/", headers=editor)).content == PNG
+    r = await client.post(f"/api/places/{place_id}/moderate/", headers=editor, json={"status": "rejected"})
+    assert "reason" in r.json()
+    r = await client.post(f"/api/places/{place_id}/moderate/", headers=editor, json={"status": "rejected", "reason": "Дар ин суроға нест"})
+    assert r.json()["reject_reason"] == "Дар ин суроға нест"
+    r = await client.post(f"/api/places/{place_id}/moderate/", headers=editor, json={"status": "approved"})
+    assert r.json()["is_approved"] and r.json()["reject_reason"] == ""
+    assert (await client.get(f"/api/places/{place_id}/")).status_code == 200
+    async with SessionLocal() as db:
+        titles = (await db.scalars(select(Notification.title).where(Notification.user_id == data["user"]["id"]))).all()
+    assert "Ҷойи шумо рад шуд" in titles and "Ҷойи шумо тасдиқ шуд" in titles
+    assert (await client.delete(f"/api/places/{place_id}/", headers=headers)).status_code == 403
+    assert (await client.delete(f"/api/places/{place_id}/", headers=editor)).status_code == 204
 
 
 async def test_assistant_tools_for_travel():

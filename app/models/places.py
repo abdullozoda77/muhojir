@@ -41,6 +41,8 @@ class Place(Base):
     source: Mapped[str] = mapped_column(String(10), default="osm")
     external_id: Mapped[str | None] = mapped_column(String(40), unique=True)
     is_approved: Mapped[bool] = mapped_column(Boolean, default=True)
+    proof: Mapped[str] = mapped_column(String(100), default="")
+    reject_reason: Mapped[str] = mapped_column(Text, default="")
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)

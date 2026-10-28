@@ -307,8 +307,33 @@ class PlaceAdmin(Base, model=Place):
     column_sortable_list = [Place.name, Place.region, Place.created_at]
     column_default_sort = [(Place.is_approved, False), (Place.created_at, True)]
     form_columns = [Place.category, Place.name, Place.region, Place.city, Place.address, Place.lat, Place.lon,
-                    Place.phone, Place.website, Place.opening_hours, Place.description, Place.is_approved]
+                    Place.phone, Place.website, Place.opening_hours, Place.description, Place.is_approved,
+                    Place.reject_reason]
     form_choices = {"category": [(c, c) for c in PLACE_CATEGORIES]}
+
+    async def on_model_change(self, data, model, is_created, request):
+        approved = data.get("is_approved")
+        reason = (data.get("reject_reason") or "").strip()
+        request.state.tell_author = not is_created and model.created_by_id and (
+            (approved and not model.is_approved) or (not approved and reason and reason != model.reject_reason))
+        if approved:
+            data["reject_reason"] = ""
+
+    async def after_model_change(self, data, model, is_created, request):
+        if getattr(request.state, "tell_author", False):
+            from app.db.session import SessionLocal
+            from app.routers.places import tell_author
+
+            async with SessionLocal() as db:
+                await tell_author(db, await db.get(Place, model.id))
+
+    async def on_model_delete(self, model, request):
+        request.state.place_proof = model.proof
+
+    async def after_model_delete(self, model, request):
+        from app.core.files import delete_private
+
+        await delete_private(getattr(request.state, "place_proof", ""))
 
 
 class PlaceReviewAdmin(Base, model=PlaceReview):

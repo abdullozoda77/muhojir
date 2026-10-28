@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, Map as MapIcon, MapPin,
-  MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShoppingBag, ShoppingBasket, Stamp, Store, Truck, Utensils,
+  Check, ImagePlus, MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShieldCheck, ShoppingBag, ShoppingBasket, Stamp, Store, Trash2, Truck, Utensils, X,
 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
@@ -10,7 +10,9 @@ import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import Map3D from "../components/Map3D.jsx";
-import { ContactButtons, ShopLogo } from "../components/Shop.jsx";
+import { canEdit } from "../components/Layout.jsx";
+import LocationPicker from "../components/LocationPicker.jsx";
+import { ContactButtons, ShopLogo, fitPhoto } from "../components/Shop.jsx";
 import { shopCategory } from "../constants.js";
 import { Stars, StarPicker } from "../components/Stars.jsx";
 import { EASE, Stagger, StaggerItem, m } from "../components/motion.jsx";
@@ -187,7 +189,11 @@ function PlaceCard({ place, onOpen }) {
             <span>{t("Ҳоло баҳо нест")}</span>
           )}
           {place.distance_km != null && <span className="rounded-md bg-primary-fixed px-1.5 py-0.5 font-medium text-on-primary-fixed">{t("{0} км", place.distance_km)}</span>}
-          {!place.is_approved && <span className="rounded-md bg-warning-fixed px-1.5 py-0.5 font-medium text-on-warning-fixed">{t("Интизори санҷиш")}</span>}
+          {!place.is_approved && (place.reject_reason ? (
+            <span className="rounded-md bg-error-container px-1.5 py-0.5 font-medium text-error">{t("Рад шуд")}</span>
+          ) : (
+            <span className="rounded-md bg-warning-fixed px-1.5 py-0.5 font-medium text-on-warning-fixed">{t("Интизори санҷиш")}</span>
+          ))}
         </span>
       </span>
     </button>
@@ -251,7 +257,96 @@ function ShopDetails({ shopId, onClose, points, onRoute }) {
   );
 }
 
-function PlaceDetails({ placeId, onClose, points, onRoute }) {
+function PrivatePhoto({ path, className = "h-48 w-full" }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    let made = null;
+    api(path, { raw: true })
+      .then((res) => res.blob())
+      .then((blob) => {
+        made = URL.createObjectURL(blob);
+        if (alive) setUrl(made);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [path]);
+  if (!url) return <Skeleton className={className} />;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt={t("Акси ҷой")} className={`${className} rounded-xl object-cover ring-1 ring-outline-variant`} />
+    </a>
+  );
+}
+
+function PlaceCheck({ place, onDone, onDeleted }) {
+  const { user } = useAuth();
+  const editor = canEdit(user);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
+
+  const run = async (key, fn) => {
+    setBusy(key);
+    setError(null);
+    try {
+      await fn();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+  const decide = (status) => run(status, async () => {
+    await api(`/places/${place.id}/moderate/`, { method: "POST", body: { status, reason: reason.trim() } });
+    setReason("");
+    onDone();
+  });
+  const remove = () => {
+    if (!window.confirm(t("«{0}» нест карда шавад?", place.name))) return;
+    run("delete", async () => {
+      await api(`/places/${place.id}/`, { method: "DELETE" });
+      onDeleted();
+    });
+  };
+
+  const rejected = Boolean(place.reject_reason);
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl p-5 ring-1 ring-warning/40">
+      <span className="flex items-center gap-2 text-[17px] font-semibold">
+        <ShieldCheck className="h-5 w-5 text-primary" aria-hidden />
+        {rejected ? t("Ҷой рад шуд") : t("Интизори санҷиш")}
+      </span>
+      {rejected ? (
+        <ErrorBox error={{ message: t("Сабаби рад: {0}", place.reject_reason) }} />
+      ) : (
+        <span className="text-body-sm text-on-surface-variant">
+          {editor ? t("Аксро бо харита ва панорамаи кӯча муқоиса кунед. Пас аз тасдиқ ҷой ба ҳама намоён мешавад.") : t("Муҳаррир аксро бо харита месанҷад. Пас аз тасдиқ ҷой ба ҳама намоён мешавад ва ба шумо хабар медиҳем.")}
+        </span>
+      )}
+      {place.has_proof && <PrivatePhoto path={`/places/${place.id}/proof/`} />}
+      {editor && place.lat != null && <LocationPicker value={{ lat: place.lat, lon: place.lon }} readOnly subject="place" className="h-48" />}
+      {editor && (
+        <>
+          <textarea className="input h-20 py-3" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} placeholder={t("Сабаби рад (барои рад кардан ҳатмӣ)")} />
+          <div className="flex flex-wrap gap-2">
+            <Button icon={Check} loading={busy === "approved"} onClick={() => decide("approved")}>{t("Тасдиқ кардан")}</Button>
+            <Button variant="plain" icon={X} loading={busy === "rejected"} disabled={!reason.trim()} onClick={() => decide("rejected")}>{t("Рад кардан")}</Button>
+          </div>
+        </>
+      )}
+      <ErrorBox error={error} />
+      {(editor || place.is_mine) && (
+        <Button variant="ghost" icon={Trash2} loading={busy === "delete"} onClick={remove} className="self-start text-error">{t("Нест кардан")}</Button>
+      )}
+    </div>
+  );
+}
+
+function PlaceDetails({ placeId, onClose, points, onRoute, onChanged }) {
   const { user } = useAuth();
   const { data: place, reload } = useApi(placeId ? `/places/${placeId}/` : null);
   const { data: reviews, reload: reloadReviews } = useApi(placeId ? `/places/${placeId}/reviews/?page_size=50` : null);
@@ -301,6 +396,14 @@ function PlaceDetails({ placeId, onClose, points, onRoute }) {
             )}
           </div>
 
+          {!place.is_approved && (
+            <PlaceCheck
+              place={place}
+              onDone={() => (reload(), onChanged())}
+              onDeleted={() => (onClose(), onChanged())}
+            />
+          )}
+
           {place.lat != null && <RouteBuilder place={place} points={points} onRoute={onRoute} />}
 
           <div className="flex items-center gap-2">
@@ -342,19 +445,55 @@ function PlaceDetails({ placeId, onClose, points, onRoute }) {
 function SuggestPlace({ open, onClose, regions, onSaved }) {
   const empty = { category: "food", name: "", region: "Москва", city: "", address: "", phone: "", website: "", opening_hours: "", description: "" };
   const [form, setForm] = useState(empty);
+  const [location, setLocation] = useState(null);
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const hasLocation = location && location.lat != null;
+  const ready = hasLocation && photo && confirmed;
+
+  useEffect(() => {
+    if (!photo) {
+      setPreview(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(photo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
+
+  const pickPhoto = async (file) => {
+    if (!file) return;
+    setError(null);
+    try {
+      setPhoto(await fitPhoto(file, 1600));
+    } catch {
+      setError(new Error(t("Ин аксро кушода натавонистем. Акси дигар интихоб кунед.")));
+    }
+  };
 
   const save = async (e) => {
     e.preventDefault();
+    if (!ready) return;
     setBusy(true);
     setError(null);
     try {
-      await api("/places/", { method: "POST", body: form });
-      setDone(true);
+      const body = new FormData();
+      Object.entries(form).forEach(([key, value]) => body.append(key, value));
+      body.append("lat", String(location.lat));
+      body.append("lon", String(location.lon));
+      body.append("confirmed", "true");
+      body.append("photo", photo, "place.webp");
+      const saved = await api("/places/", { method: "POST", body });
+      setDone(saved.is_approved ? "added" : "sent");
       setForm(empty);
+      setLocation(null);
+      setPhoto(null);
+      setConfirmed(false);
       onSaved();
     } catch (err) {
       setError(err);
@@ -370,11 +509,15 @@ function SuggestPlace({ open, onClose, regions, onSaved }) {
   return (
     <Drawer open={open} onClose={close} title={t("Ҷойи навро пешниҳод кунед")} subtitle={t("Пас аз санҷиши муҳаррир ба ҳама нишон дода мешавад")} icon={Plus}>
       {done ? (
-        <EmptyState icon={Plus} title={t("Ташаккур!")} text={t("Пешниҳоди шумо сабт шуд. Пас аз санҷиш дар харита пайдо мешавад.")}>
+        <EmptyState icon={ShieldCheck} title={t("Ташаккур!")} text={done === "added" ? t("Ҷой илова шуд ва дар харита намоён аст.") : t("Пешниҳоди шумо ба санҷиш рафт. Муҳаррир аксро бо харита месанҷад ва пас аз тасдиқ ҷой дар харита пайдо мешавад — ба шумо хабар медиҳем.")}>
           <Button onClick={close}>{t("Пӯшидан")}</Button>
         </EmptyState>
       ) : (
         <form onSubmit={save} className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 rounded-xl bg-primary-fixed/60 p-4 ring-1 ring-inset ring-primary/15">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
+            <span className="text-body-sm text-on-surface-variant">{t("То касе ҷойи бофта илова накунад: ҷойро дар харита қайд кунед, акси онро гузоред ва тасдиқ кунед, ки ҷой воқеан ҳаст. Аксро танҳо муҳаррир мебинад.")}</span>
+          </div>
           <Field label={t("Намуд")} required>
             <select className="input" value={form.category} onChange={set("category")}>
               {PLACE_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label()}</option>)}
@@ -395,14 +538,44 @@ function SuggestPlace({ open, onClose, regions, onSaved }) {
           <Field label={t("Суроға")} required error={error?.data?.address}>
             <input className="input" value={form.address} onChange={set("address")} required minLength={3} placeholder={t("Кӯча, хона")} />
           </Field>
+          <div className="flex flex-col gap-2 rounded-xl bg-surface-container-lowest p-3 ring-1 ring-inset ring-outline-variant">
+            <span className="text-body-md font-medium">
+              {t("Ҷой дар харита")} <span className="text-error">*</span>
+              {hasLocation && <span className="ml-2 text-label-sm font-normal text-tertiary">✓ {t("Қайд шуд")}</span>}
+            </span>
+            <span className="text-body-sm text-on-surface-variant">{t("Суроғаро ҷустуҷӯ кунед ё ба харита пахш кунед. Муҳаррир ҷойро дар харита ва панорамаи кӯча месанҷад.")}</span>
+            <LocationPicker value={location} onChange={setLocation} subject="place" query={[form.city || form.region, form.address].filter(Boolean).join(", ")} />
+            {error?.data?.location && <span className="text-body-sm text-error">{error.data.location[0]}</span>}
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl bg-surface-container-lowest p-3 ring-1 ring-inset ring-outline-variant">
+            <span className="text-body-md font-medium">
+              {t("Акси ҷой")} <span className="text-error">*</span>
+            </span>
+            <span className="text-body-sm text-on-surface-variant">{t("Даромадгоҳ ё лавҳаи ҷой, ки номаш намоён бошад.")}</span>
+            <label className="flex cursor-pointer items-center gap-3">
+              {preview ? (
+                <img src={preview} alt="" className="h-24 w-24 rounded-xl object-cover ring-1 ring-outline-variant" />
+              ) : (
+                <span className="flex h-24 w-24 items-center justify-center rounded-xl bg-surface-container text-on-surface-variant ring-1 ring-outline-variant"><ImagePlus className="h-7 w-7" aria-hidden /></span>
+              )}
+              <span className="text-label-md text-primary">{photo ? t("Акси дигар") : t("Акс интихоб кунед")}</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={(e) => pickPhoto(e.target.files?.[0])} />
+            </label>
+            {error?.data?.photo && <span className="text-body-sm text-error">{error.data.photo[0]}</span>}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t("Телефон")}><input className="input" value={form.phone} onChange={set("phone")} /></Field>
             <Field label={t("Вақти корӣ")}><input className="input" value={form.opening_hours} onChange={set("opening_hours")} placeholder="Пн–Сб 09:00–20:00" /></Field>
           </div>
           <Field label={t("Сайт")}><input className="input" value={form.website} onChange={set("website")} placeholder="https://" /></Field>
           <Field label={t("Тавсиф")}><textarea className="input h-24 py-3" value={form.description} onChange={set("description")} maxLength={1000} /></Field>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl p-3 ring-1 ring-inset ring-outline-variant">
+            <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-primary,#1447a8)]" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+            <span className="text-body-sm">{t("Тасдиқ мекунам, ки ин ҷой воқеан ҳаст ва маълумот дуруст аст.")}</span>
+          </label>
           <ErrorBox error={error} />
-          <Button type="submit" loading={busy} icon={Plus}>{t("Пешниҳод кардан")}</Button>
+          {!ready && <span className="text-body-sm text-on-surface-variant">{t("Барои фиристодан: ҷой дар харита, акс ва тасдиқ лозим аст.")}</span>}
+          <Button type="submit" loading={busy} disabled={!ready} icon={ShieldCheck}>{t("Ба санҷиш фиристодан")}</Button>
         </form>
       )}
     </Drawer>
@@ -432,6 +605,8 @@ export default function Places() {
   const { data: summary, reload: reloadSummary } = useApi(`/places/summary/?region=${encodeURIComponent(region)}`);
   const { data: allShops } = useApi("/market/shops/map/");
   const onlyShops = category === SHOP_KIND.value;
+  const waiting = canEdit(user) && params.get("waiting") === "true";
+  const [version, setVersion] = useState(0);
 
   const update = useCallback((key, value) => {
     setParams((current) => {
@@ -450,10 +625,11 @@ export default function Places() {
   const query = useMemo(() => {
     const q = new URLSearchParams();
     if (category) q.set("category", category);
-    if (region) q.set("region", region);
+    if (region && !waiting) q.set("region", region);
     if (params.get("search")) q.set("search", params.get("search"));
+    if (waiting) q.set("waiting", "true");
     return q.toString();
-  }, [category, region, params]);
+  }, [category, region, params, waiting]);
 
   useEffect(() => {
     if (onlyShops) {
@@ -478,14 +654,14 @@ export default function Places() {
     return () => {
       alive = false;
     };
-  }, [query, near, onlyShops]);
+  }, [query, near, onlyShops, version]);
 
   const shops = useMemo(() => {
     const [lat, lon, zoom] = REGION_VIEW[region] || REGION_VIEW["Москва"];
     const center = near || { lat, lon };
     return shopsAround(allShops || [], center, near ? 30 : ZOOM_KM[zoom] || 110, params.get("search") || "", Number(params.get("shop")) || null);
   }, [allShops, region, near, params]);
-  const mapPoints = useMemo(() => (onlyShops ? shops : category ? points : [...points, ...shops]), [onlyShops, category, points, shops]);
+  const mapPoints = useMemo(() => (onlyShops ? shops : category || waiting ? points : [...points, ...shops]), [onlyShops, category, waiting, points, shops]);
   const openShopId = shopIdOf(openId);
 
   const loadMore = async () => {
@@ -583,6 +759,11 @@ export default function Places() {
             <ShoppingBag className="h-4 w-4" style={{ color: SHOP_KIND.color }} aria-hidden />
             {t("Мағозаи ман дар харита")}
           </Link>
+          {canEdit(user) && (
+            <Button variant={waiting ? "primary" : "plain"} icon={ShieldCheck} onClick={() => update("waiting", waiting ? "" : "true")}>
+              {t("Барои санҷиш")}
+            </Button>
+          )}
           {user && <Button variant="accent" icon={Plus} onClick={() => setSuggesting(true)}>{t("Ҷойи нав")}</Button>}
         </div>
       </PageHeader>
@@ -678,6 +859,7 @@ export default function Places() {
       <PlaceDetails
         placeId={openShopId ? null : openId}
         onClose={() => setOpenId(null)}
+        onChanged={() => (setVersion((v) => v + 1), reloadSummary())}
         points={mapPoints}
         onRoute={(r) => {
           setRoute(r);
@@ -695,7 +877,7 @@ export default function Places() {
           setView("map");
         }}
       />
-      <SuggestPlace open={suggesting} onClose={() => setSuggesting(false)} regions={regions} onSaved={reloadSummary} />
+      <SuggestPlace open={suggesting} onClose={() => setSuggesting(false)} regions={regions} onSaved={() => (setVersion((v) => v + 1), reloadSummary())} />
     </div>
   );
 }

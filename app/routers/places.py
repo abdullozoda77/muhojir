@@ -1,21 +1,33 @@
 import math
+import os
 from typing import Literal
 
 from fastapi import APIRouter, Request, Response
-from pydantic import Field
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse
+from pydantic import Field, ValidationError
+from starlette.datastructures import UploadFile as StarletteUpload
 from sqlalchemy import and_, func, or_, select
 
-from app.core.deps import DB, CurrentUser, OptionalUser
+from app.core.deps import DB, CurrentUser, EditorUser, OptionalUser
 from app.core.errors import ApiError, FieldError
+from app.core.files import delete_private, private_path, save_private
 from app.core.pagination import Paginate
-from app.models import PLACE_CATEGORIES, Place, PlaceReview
+from app.models import PLACE_CATEGORIES, Place, PlaceReview, User
 from app.routers.documents import param
 from app.schemas.common import Form
+from app.services.notify import notify
 
 router = APIRouter(prefix="/api/places", tags=["places"])
 
 Category = Literal[PLACE_CATEGORIES]
 MAP_LIMIT = 3000
+PROOFS = "place-proofs"
+PHOTO_TYPES = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_WAITING = 5
+NEED_LOCATION = "Mark where the place is on the map."
+NEED_PHOTO = "Add a photo of the place."
+NEED_CONFIRM = "Confirm that the place really exists."
 
 ratings = (select(PlaceReview.place_id, func.avg(PlaceReview.rating).label("avg"), func.count().label("n"))
            .group_by(PlaceReview.place_id).subquery())
@@ -31,6 +43,14 @@ def place_json(place, avg=None, n=None, distance=None):
     }
 
 
+def with_check(data, place, user):
+    if user and (user.is_editor or place.created_by_id == user.id):
+        data["reject_reason"] = place.reject_reason
+        data["has_proof"] = bool(place.proof)
+        data["is_mine"] = place.created_by_id == user.id
+    return data
+
+
 def visible(query, user):
     if user and user.is_editor:
         return query
@@ -44,6 +64,8 @@ def filtered(query, request):
         query = query.where(Place.category.in_(category.split(",")))
     if region := param(request, "region"):
         query = query.where(Place.region == region)
+    if param(request, "waiting") in ("1", "true"):
+        query = query.where(Place.is_approved.is_(False))
     if city := param(request, "city"):
         query = query.where(Place.city.ilike(f"%{city}%"))
     if words := param(request, "search"):
@@ -86,7 +108,7 @@ async def list_places(request: Request, db: DB, user: OptionalUser, page: Pagina
         query = query.order_by(Place.name)
     else:
         query = query.order_by(ratings.c.n.desc().nulls_last(), ratings.c.avg.desc().nulls_last(), Place.name)
-    return await page.respond(db, query, place_json)
+    return await page.respond(db, query, lambda place, *rest: with_check(place_json(place, *rest), place, user))
 
 
 @router.get("/map/")
@@ -120,7 +142,7 @@ async def get_place(db, user, place_id):
 @router.get("/{place_id}/")
 async def place_detail(place_id: int, db: DB, user: OptionalUser):
     place, avg, n = await get_place(db, user, place_id)
-    data = place_json(place, avg, n)
+    data = with_check(place_json(place, avg, n), place, user)
     mine = await db.scalar(select(PlaceReview).where(PlaceReview.place_id == place.id, PlaceReview.author_id == user.id)) if user else None
     data["my_review"] = review_json(mine, user) if mine else None
     return data
@@ -134,19 +156,94 @@ class PlaceIn(Form):
     address: str = Field(min_length=3, max_length=255)
     lat: float | None = Field(None, ge=-90, le=90)
     lon: float | None = Field(None, ge=-180, le=180)
+    confirmed: bool = False
     phone: str = Field("", max_length=60)
     website: str = Field("", max_length=300)
     opening_hours: str = Field("", max_length=200)
     description: str = Field("", max_length=1000)
 
 
+async def tell_author(db, place):
+    author = await db.get(User, place.created_by_id) if place.created_by_id else None
+    if author is None:
+        return
+    if place.is_approved:
+        title, text = "Ҷойи шумо тасдиқ шуд", f"Ҷойи «{place.name}» санҷида шуд ва акнун дар «Харитаи ҷойҳо» ба ҳама намоён аст."
+    else:
+        title, text = "Ҷойи шумо рад шуд", f"Ҷойи «{place.name}» қабул нашуд.\n\nСабаб: {place.reject_reason}"
+    await notify(db, author, title, text, kind="system")
+
+
+class ModerateIn(Form):
+    status: Literal["approved", "rejected"]
+    reason: str = Field("", max_length=1000)
+
+
 @router.post("/", status_code=201)
-async def suggest_place(data: PlaceIn, db: DB, user: CurrentUser):
-    place = Place(**data.model_dump(), source="editor" if user.is_editor else "user", is_approved=user.is_editor,
-                  created_by_id=user.id)
+async def suggest_place(request: Request, db: DB, user: CurrentUser):
+    form = await request.form()
+    photo = form.get("photo")
+    photo = photo if isinstance(photo, StarletteUpload) else None
+    try:
+        data = PlaceIn(**{k: v for k, v in form.items() if isinstance(v, str)})
+    except ValidationError as error:
+        raise RequestValidationError(error.errors(include_url=False))
+    if data.lat is None or data.lon is None:
+        raise FieldError("location", NEED_LOCATION)
+    if not user.is_editor:
+        if not data.confirmed:
+            raise FieldError("confirmed", NEED_CONFIRM)
+        if photo is None or not photo.filename:
+            raise FieldError("photo", NEED_PHOTO)
+        waiting = await db.scalar(select(func.count()).select_from(Place).where(
+            Place.created_by_id == user.id, Place.is_approved.is_(False), Place.reject_reason == ""))
+        if waiting >= MAX_WAITING:
+            raise ApiError({"detail": [f"You already have {MAX_WAITING} places waiting for checking."]})
+    proof = ""
+    if photo is not None and photo.filename:
+        if os.path.splitext(photo.filename)[1].lower() not in PHOTO_TYPES:
+            raise FieldError("photo", "Send a photo: jpg, png or webp.")
+        proof = await save_private(photo, PROOFS, "photo")
+    place = Place(**data.model_dump(exclude={"confirmed"}), source="editor" if user.is_editor else "user",
+                  is_approved=user.is_editor, created_by_id=user.id, proof=proof)
     db.add(place)
     await db.commit()
-    return place_json(place)
+    return with_check(place_json(place), place, user)
+
+
+@router.get("/{place_id}/proof/")
+async def place_proof(place_id: int, db: DB, user: CurrentUser):
+    place = (await get_place(db, user, place_id))[0]
+    if not (user.is_editor or place.created_by_id == user.id):
+        raise ApiError("No Place matches the given query.", 404)
+    path = private_path(place.proof)
+    if path is None or not path.exists():
+        raise ApiError("File not found.", 404)
+    return FileResponse(path, headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/{place_id}/moderate/")
+async def moderate_place(place_id: int, data: ModerateIn, db: DB, user: EditorUser):
+    place, avg, n = await get_place(db, user, place_id)
+    if data.status == "rejected" and not data.reason:
+        raise FieldError("reason", "Write why the place is rejected.")
+    place.is_approved = data.status == "approved"
+    place.reject_reason = "" if place.is_approved else data.reason
+    await db.commit()
+    await tell_author(db, place)
+    return with_check(place_json(place, avg, n), place, user)
+
+
+@router.delete("/{place_id}/", status_code=204)
+async def delete_place(place_id: int, db: DB, user: CurrentUser):
+    place = (await get_place(db, user, place_id))[0]
+    if not (user.is_editor or (place.created_by_id == user.id and not place.is_approved)):
+        raise ApiError("У вас недостаточно прав для выполнения данного действия.", 403)
+    proof = place.proof
+    await db.delete(place)
+    await db.commit()
+    await delete_private(proof)
+    return Response(status_code=204)
 
 
 def review_json(review, viewer=None):

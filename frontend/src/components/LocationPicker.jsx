@@ -34,7 +34,30 @@ function geoProblem(error) {
   return t("Ҷойи шумо ёфт нашуд. GPS-ро дар телефон фаъол кунед ё ҷойро дар харита пахш кунед.");
 }
 
-function AddressSearch({ query, onFound }) {
+const WORDS = {
+  shop: () => ({
+    search: t("Суроғаи мағоза"),
+    unavailable: t("Ҷустуҷӯи суроға ҳоло кор намекунад. Мағозаро дар харита пахш кунед."),
+    notFound: t("Чунин суроға ёфт нашуд. Шаҳр, кӯча ва рақами хонаро санҷед ё мағозаро дар харита пахш кунед."),
+    here: t("Ман ҳозир дар мағоза ҳастам — ҷойи маро гиред"),
+    click: t("Ё ҷойи мағозаро дар харита пахш кунед. Нишонаро кашида ислоҳ кардан мумкин."),
+    rough: (m) => t("Ҷой тахминӣ аст (±{0}). Нишонаи сурхро ба ҷойи дақиқи мағоза кашед ё дар харита пахш кунед.", m),
+    noGps: (m) => t("Ин дастгоҳ GPS надорад, бинобар ин браузер ҷойро танҳо аз рӯи интернет тахмин кард (±{0}) — барои мағоза ин дақиқ нест. Сайтро дар телефон дар худи мағоза кушоед ва тугмаро пахш кунед, ё ҷойи мағозаро дар харита ёфта пахш кунед.", m),
+  }),
+  place: () => ({
+    search: t("Суроғаи ҷой"),
+    unavailable: t("Ҷустуҷӯи суроға ҳоло кор намекунад. Ҷойро дар харита пахш кунед."),
+    notFound: t("Чунин суроға ёфт нашуд. Шаҳр, кӯча ва рақами хонаро санҷед ё ҷойро дар харита пахш кунед."),
+    here: t("Ман ҳозир дар ҳамин ҷо ҳастам — ҷойи маро гиред"),
+    click: t("Ё ҷойро дар харита пахш кунед. Нишонаро кашида ислоҳ кардан мумкин."),
+    rough: (m) => t("Ҷой тахминӣ аст (±{0}). Нишонаи сурхро ба ҷойи дақиқ кашед ё дар харита пахш кунед.", m),
+    noGps: (m) => t("Ин дастгоҳ GPS надорад, бинобар ин браузер ҷойро танҳо аз рӯи интернет тахмин кард (±{0}) — ин дақиқ нест. Суроғаро ҷустуҷӯ кунед ё ҷойро дар харита ёфта пахш кунед.", m),
+  }),
+};
+
+const words = (subject) => (WORDS[subject] || WORDS.shop)();
+
+function AddressSearch({ query, onFound, subject }) {
   const [text, setText] = useState(query || "");
   const [results, setResults] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -61,7 +84,7 @@ function AddressSearch({ query, onFound }) {
         setResults(null);
       }
     } catch (err) {
-      setProblem(err.status === 503 ? t("Ҷустуҷӯи суроға ҳоло кор намекунад. Мағозаро дар харита пахш кунед.") : err.message);
+      setProblem(err.status === 503 ? words(subject).unavailable : err.message);
     } finally {
       setBusy(false);
     }
@@ -84,7 +107,7 @@ function AddressSearch({ query, onFound }) {
               }
             }}
             placeholder={t("Масалан: Москва, Люблинская 10")}
-            aria-label={t("Суроғаи мағоза")}
+            aria-label={words(subject).search}
           />
         </label>
         <button type="button" onClick={find} disabled={busy} className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:opacity-60">
@@ -94,7 +117,7 @@ function AddressSearch({ query, onFound }) {
       </div>
       {problem && <span className="text-body-sm text-error">{problem}</span>}
       {results && (results.length === 0 ? (
-        <span className="text-body-sm text-on-surface-variant">{t("Чунин суроға ёфт нашуд. Шаҳр, кӯча ва рақами хонаро санҷед ё мағозаро дар харита пахш кунед.")}</span>
+        <span className="text-body-sm text-on-surface-variant">{words(subject).notFound}</span>
       ) : (
         <div className="flex flex-col overflow-hidden rounded-xl ring-1 ring-outline-variant">
           <span className="bg-surface-container-low px-3 py-2 text-label-sm text-on-surface-variant">{t("Суроғаи дурустро интихоб кунед:")}</span>
@@ -110,7 +133,7 @@ function AddressSearch({ query, onFound }) {
   );
 }
 
-export default function LocationPicker({ value, onChange, readOnly = false, query = "", className = "h-72" }) {
+export default function LocationPicker({ value, onChange, readOnly = false, query = "", className = "h-72", subject = "shop" }) {
   const box = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -182,7 +205,7 @@ export default function LocationPicker({ value, onChange, readOnly = false, quer
     }
     const zoom = Math.max(5, Math.min(14, 16 - Math.log2(meters / 100)));
     if (!has) map.current?.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom });
-    setProblem(t("Ин дастгоҳ GPS надорад, бинобар ин браузер ҷойро танҳо аз рӯи интернет тахмин кард (±{0}) — барои мағоза ин дақиқ нест. Сайтро дар телефон дар худи мағоза кушоед ва тугмаро пахш кунед, ё ҷойи мағозаро дар харита ёфта пахш кунед.", distanceText(meters)));
+    setProblem(words(subject).noGps(distanceText(meters)));
   };
 
   const locate = () => {
@@ -232,10 +255,10 @@ export default function LocationPicker({ value, onChange, readOnly = false, quer
       {!readOnly && (
         <button type="button" onClick={locate} disabled={locating} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-ink px-4 text-label-md text-on-ink transition-colors hover:bg-ink/90 disabled:opacity-60">
           {locating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Crosshair className="h-4 w-4" aria-hidden />}
-          {locating ? t("Ҷойи шуморо меҷӯем…") : t("Ман ҳозир дар мағоза ҳастам — ҷойи маро гиред")}
+          {locating ? t("Ҷойи шуморо меҷӯем…") : words(subject).here}
         </button>
       )}
-      {!readOnly && <AddressSearch query={query} onFound={(r) => pick(point(r.lat, r.lon), null, r.name)} />}
+      {!readOnly && <AddressSearch query={query} subject={subject} onFound={(r) => pick(point(r.lat, r.lon), null, r.name)} />}
       <div ref={box} className={`${className} w-full overflow-hidden rounded-xl ring-1 ring-outline-variant`} />
       {problem && (
         <span role="alert" className="flex items-start gap-1.5 text-body-sm text-error">
@@ -250,7 +273,7 @@ export default function LocationPicker({ value, onChange, readOnly = false, quer
         <span className={`flex items-start gap-1.5 text-body-sm ${rough ? "text-warning" : "text-tertiary"}`}>
           {rough && <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
           {rough
-            ? t("Ҷой тахминӣ аст (±{0}). Нишонаи сурхро ба ҷойи дақиқи мағоза кашед ё дар харита пахш кунед.", distanceText(accuracy))
+            ? words(subject).rough(distanceText(accuracy))
             : t("Ҷой бо GPS ёфт шуд (±{0}). Агар лозим бошад, нишонаро кашида ислоҳ кунед.", distanceText(accuracy))}
         </span>
       )}
@@ -270,7 +293,7 @@ export default function LocationPicker({ value, onChange, readOnly = false, quer
           </a>
         </div>
       ) : (
-        !readOnly && <span className="text-body-sm text-on-surface-variant">{t("Ё ҷойи мағозаро дар харита пахш кунед. Нишонаро кашида ислоҳ кардан мумкин.")}</span>
+        !readOnly && <span className="text-body-sm text-on-surface-variant">{words(subject).click}</span>
       )}
     </div>
   );
