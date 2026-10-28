@@ -1111,10 +1111,6 @@ A generic, single database configuration.
 | `downgrade()` | function | Brings origin back (as tj) and drops shop_proofs. |
 
 
----
-
-## `tests/` — automated tests (pytest)
-
 ### `alembic/versions/0008_place_proof.py`
 
 **What it is for:** Proof of a suggested place: places.proof (private photo) and places.reject_reason. Revision ID: 0008 Revises: 0007
@@ -1123,6 +1119,10 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade()` | function | Adds the two columns. |
 | `downgrade()` | function | Drops them. |
+
+---
+
+## `tests/` — automated tests (pytest)
 
 ### `tests/conftest.py`
 

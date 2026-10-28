@@ -1097,10 +1097,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `downgrade()` | функция | Возвращает origin (как tj) и удаляет shop_proofs. |
 
 
----
-
-## `tests/` — автоматические тесты (pytest)
-
 ### `alembic/versions/0008_place_proof.py`
 
 **Для чего:** Доказательство предложенного места: places.proof (личное фото) и places.reject_reason. Revision ID: 0008 Revises: 0007
@@ -1109,6 +1105,10 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 |---|---|---|
 | `upgrade()` | функция | Добавляет два столбца. |
 | `downgrade()` | функция | Удаляет их. |
+
+---
+
+## `tests/` — автоматические тесты (pytest)
 
 ### `tests/conftest.py`
 

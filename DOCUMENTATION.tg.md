@@ -1100,10 +1100,6 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | `downgrade()` | функсия | origin-ро бармегардонад (tj) ва shop_proofs-ро нест мекунад. |
 
 
----
-
-## `tests/` — санҷишҳои худкор (pytest)
-
 ### `alembic/versions/0008_place_proof.py`
 
 **Барои чӣ:** Исботи ҷойи пешниҳодшуда: places.proof (акси шахсӣ) ва places.reject_reason. Revision ID: 0008 Revises: 0007
@@ -1112,6 +1108,10 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 |---|---|---|
 | `upgrade()` | функсия | Ду сутунро илова мекунад. |
 | `downgrade()` | функсия | Онҳоро нест мекунад. |
+
+---
+
+## `tests/` — санҷишҳои худкор (pytest)
 
 ### `tests/conftest.py`
 
