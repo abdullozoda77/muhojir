@@ -1,18 +1,15 @@
 import asyncio
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
 from app.admin import setup_admin
 from app.core.config import MEDIA_ROOT, settings
 from app.core.errors import ApiError, api_error_handler, http_error_handler, validation_error_handler
-from app.routers import assistant, auth, documents, flights, jobs, market, places, support, ws
+from app.routers import assistant, auth, course, documents, flights, jobs, market, places, support, ws
 from app.services.live import hub
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,7 +37,7 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_error_handler)
 
-for module in (auth, documents, jobs, flights, places, market, support, assistant, ws):
+for module in (auth, documents, jobs, flights, places, market, course, support, assistant, ws):
     app.include_router(module.router)
 
 MEDIA_ROOT.mkdir(exist_ok=True)

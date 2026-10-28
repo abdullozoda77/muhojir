@@ -9,6 +9,7 @@ from app.models import (
 )
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
 from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopReview
+from app.models import Certificate, ExamAttempt, LessonProgress
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -25,6 +26,8 @@ EDITOR_VIEWS = {
     "shop": ("list", "details", "edit", "delete"),
     "product": ("list", "details", "edit", "delete"),
     "shop-review": ("list", "details", "delete"),
+    "certificate": ("list", "details", "edit"),
+    "exam-attempt": ("list", "details"),
 }
 
 
@@ -396,6 +399,32 @@ class ShopReviewAdmin(Base, model=ShopReview):
     can_create = can_edit = False
 
 
+class CertificateAdmin(Base, model=Certificate):
+    name, name_plural, icon, category = "Сертификат", "Сертификатҳо", "fa-solid fa-award", "Курси забони русӣ"
+    column_list = [Certificate.number, Certificate.full_name, Certificate.level, Certificate.percent,
+                   Certificate.issued_at, Certificate.is_revoked]
+    column_searchable_list = [Certificate.number, Certificate.full_name, Certificate.code]
+    column_default_sort = [(Certificate.issued_at, True)]
+    form_columns = [Certificate.full_name, Certificate.is_revoked]
+    can_create = False
+
+
+class ExamAttemptAdmin(Base, model=ExamAttempt):
+    name, name_plural, icon, category = "Имтиҳон", "Имтиҳонҳо", "fa-solid fa-file-pen", "Курси забони русӣ"
+    column_list = [ExamAttempt.user, ExamAttempt.level, ExamAttempt.score, ExamAttempt.passed, ExamAttempt.started_at,
+                   ExamAttempt.finished_at]
+    column_default_sort = [(ExamAttempt.started_at, True)]
+    can_create = can_edit = False
+
+
+class LessonProgressAdmin(Base, model=LessonProgress):
+    name, name_plural, icon, category = "Дарси хатмшуда", "Дарсҳои хатмшуда", "fa-solid fa-book-open", "Курси забони русӣ"
+    column_list = [LessonProgress.user, LessonProgress.level, LessonProgress.number, LessonProgress.score,
+                   LessonProgress.completed_at]
+    column_default_sort = [(LessonProgress.completed_at, True)]
+    can_create = can_edit = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -404,4 +433,5 @@ VIEWS = [
     HelpContactAdmin,
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
+    CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
 ]
