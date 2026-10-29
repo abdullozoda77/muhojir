@@ -11,6 +11,7 @@ from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceRevie
 from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopReview
 from app.models import Certificate, ExamAttempt, LessonProgress
 from app.models import RATE_SOURCES, ExchangeRate
+from app.models import FEEDBACK_STATUSES, Feedback
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -30,6 +31,7 @@ EDITOR_VIEWS = {
     "certificate": ("list", "details", "edit"),
     "exam-attempt": ("list", "details"),
     "exchange-rate": ("list", "details"),
+    "feedback": ("list", "details", "edit", "delete"),
 }
 
 
@@ -436,6 +438,29 @@ class ExchangeRateAdmin(Base, model=ExchangeRate):
     can_create = can_edit = False
 
 
+class FeedbackAdmin(Base, model=Feedback):
+    name, name_plural, icon, category = "Фикр", "Фикру мулоҳизаҳо", "fa-solid fa-comments", "Корбарон"
+    column_list = [Feedback.kind, Feedback.rating, Feedback.message, Feedback.user, Feedback.status, Feedback.created_at]
+    column_searchable_list = [Feedback.message]
+    column_sortable_list = [Feedback.created_at, Feedback.status, Feedback.rating]
+    column_default_sort = [(Feedback.created_at, True)]
+    column_formatters = {"kind": lambda m, a: m.kind_label, "message": lambda m, a: m.message[:120]}
+    form_columns = [Feedback.status, Feedback.reply]
+    form_choices = {"status": [(st, st) for st in FEEDBACK_STATUSES]}
+    can_create = False
+
+    async def on_model_change(self, data, model, is_created, request):
+        request.state.new_reply = bool((data.get("reply") or "").strip()) and data.get("reply") != model.reply
+
+    async def after_model_change(self, data, model, is_created, request):
+        if getattr(request.state, "new_reply", False):
+            from app.db.session import SessionLocal
+            from app.services.feedback import send_reply
+
+            async with SessionLocal() as db:
+                await send_reply(db, await db.get(Feedback, model.id))
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -445,5 +470,5 @@ VIEWS = [
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
-    ExchangeRateAdmin,
+    ExchangeRateAdmin, FeedbackAdmin,
 ]

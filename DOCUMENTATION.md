@@ -56,22 +56,22 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - Backend — the FastAPI application (`app/`) — 4 files
 - `app/core/` — settings, security, request helpers — 9 files
 - `app/db/` — database connection and column types — 3 files
-- `app/models/` — database tables (SQLAlchemy) — 10 files
+- `app/models/` — database tables (SQLAlchemy) — 11 files
 - `app/schemas/` — request bodies and JSON answers — 5 files
-- `app/routers/` — the API endpoints — 11 files
-- `app/services/` — business logic used by routers and background tasks — 13 files
+- `app/routers/` — the API endpoints — 12 files
+- `app/services/` — business logic used by routers and background tasks — 14 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
-- `alembic/versions/` — the migrations, in order — 11 files
-- `tests/` — automated tests (pytest) — 11 files
+- `alembic/versions/` — the migrations, in order — 12 files
+- `tests/` — automated tests (pytest) — 12 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 14 files
-- `frontend/src/components/` — reusable parts of pages — 26 files
+- `frontend/src/components/` — reusable parts of pages — 27 files
 - `frontend/src/pages/` — one file per page of the site — 27 files
 
 
@@ -334,6 +334,16 @@ A generic, single database configuration.
 | `ReminderLog` | class · table `reminder_logs` | Remembers which reminders were already sent, so the daily job never sends the same one twice. The end date is part of the key: after the user renews a document, its reminders start again. |
 | `LawNews` | class · table `law_news` | News about migration law, written in Tajik. |
 | `ExamQuestion` | class · table `exam_questions` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. A listening question has listen_text: the site reads it aloud in Russian before the question. |
+
+### `app/models/feedback.py`
+
+**What it is for:** Table of users' feedback about the site.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `FEEDBACK_KINDS` | const | Kinds of feedback: idea, bug (something broken on the site), praise, other. |
+| `FEEDBACK_STATUSES` | const | new (not read yet), read, done (answered). |
+| `Feedback` | class · table `feedback` | Feedback of a logged-in user: kind, rating 1-5 (optional), message, the page it was sent from, status, an editor's reply and when it was sent. |
 
 ### `app/models/jobs.py`
 
@@ -633,6 +643,20 @@ A generic, single database configuration.
 | `delete_payment(payment_id, user, db)` | async function · `DELETE /api/documents/payments/{payment_id}/` | Deleting a payment does not move the document's end date back. |
 | `payment_receipt(payment_id, user, db)` | async function · `GET /api/documents/payments/{payment_id}/receipt/` | — |
 
+### `app/routers/feedback.py`
+
+**What it is for:** /api/feedback/: users send feedback about the site (logged in only), editors read and answer it.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `FeedbackIn` | class | kind, rating (1-5 or empty), message (5-3000 characters), page. |
+| `FeedbackPatch` | class | status and/or reply (editors). |
+| `feedback_json(f, viewer)` | function | JSON of feedback; editors also see the name, email and page of the author. |
+| `send_feedback(data, db, user)` | async function · `POST /api/feedback/` | Saves the feedback and notifies editors. 10 per hour per user. |
+| `my_feedback(db, user)` | async function · `GET /api/feedback/mine/` | The user's own feedback with the replies. |
+| `list_feedback(request, db, user, page)` | async function · `GET /api/feedback/` | Editors: all feedback, newest first; ?status= and ?kind=. |
+| `update_feedback(feedback_id, data, db, user)` | async function · `PATCH /api/feedback/{feedback_id}/` | Editors: change the status or reply; a reply notifies the author. |
+
 ### `app/routers/flights.py`
 
 **What it is for:** /api/flights/: air tickets between Tajikistan and Russia (both ways): airports, prices for a month with the cheapest price of every day, and price alerts ("tell me when it is cheaper than ...").
@@ -832,6 +856,15 @@ A generic, single database configuration.
 | `send_plain(subject, body, to)` | async function | Sends the email through the SMTP server from .env (async). Without SMTP settings it is only printed. |
 | `queue_email(subject, body, to)` | async function | Sends the email in the background (Celery). Without a queue (development), or when the queue itself is unreachable (Redis down), it is sent right here, so codes keep working. Raises OSError if SMTP fails then. |
 | `send_code(db, email, purpose)` | async function | Makes a new code, saves its hash (replacing any older code for this email) and emails the code. |
+
+### `app/services/feedback.py`
+
+**What it is for:** Answering feedback, shared by the API and the admin panel.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `send_reply(db, feedback)` | async function | Marks the feedback done with the time of the reply and notifies the author (site + email). |
+| `REPLY_TITLE` | const | Title of the reply notification. |
 
 ### `app/services/flights.py`
 
@@ -1080,6 +1113,7 @@ A generic, single database configuration.
 | `ProductAdmin` | class | Products of the shops. |
 | `ShopReviewAdmin` | class | Shop reviews (delete only). |
 | `ExchangeRateAdmin` | class | Official rates (view only). |
+| `FeedbackAdmin` | class | Feedback: editors set the status and write a reply; a new reply notifies the author. |
 
 
 ---
@@ -1214,6 +1248,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0012_feedback.py`
+
+**What it is for:** Table feedback. Revision ID: 0012 Revises: 0011
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
+
 ---
 
 ## `tests/` — automated tests (pytest)
@@ -1259,6 +1302,16 @@ A generic, single database configuration.
 
 **What it is for:** Tests of the course: every level file is complete, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check.
 
+
+### `tests/test_feedback.py`
+
+**What it is for:** Tests of feedback.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `register(client, email, name)` | async function | A new confirmed user, returns the auth header. |
+| `test_only_logged_in_users_send_feedback(client)` | async function | Guests get 401. |
+| `test_feedback_reaches_editors_and_the_reply_comes_back(client, user)` | async function | Too short is refused; editors are notified; only editors see the list (with email and page); a reply marks it done and notifies the author; /mine/ shows the reply. |
 
 ### `tests/test_google.py`
 
@@ -1640,6 +1693,18 @@ A generic, single database configuration.
 | `addDays` | function | Pure date math in UTC: local midnight in Moscow (UTC+3) would turn into the previous day in toISOString(). |
 | `DocForm` | export function | Add or edit one of the user's documents. doc = null: closed, {}: new, a document: edit it. |
 
+### `frontend/src/components/Feedback.jsx`
+
+**What it is for:** A large block at the top of the footer: «Don't like something? Tell us.» with five faces (from angry to delighted) and a «I found a bug» link; a face opens the side panel with that rating already chosen: kind (idea, bug, praise, other), stars, the message; guests see a login button. After sending: thanks, and below the user's earlier feedback with Muhojir's replies.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `KINDS` | const | The four kinds with icons. |
+| `MyFeedback` | function | The user's feedback and replies (GET /feedback/mine/). |
+| `FeedbackForm` | function | The form; sends the current page too. |
+| `FACES` | const | Five ratings 1-5 with face icons, labels and the kind they start with (1 → bug, 5 → praise). |
+| `FeedbackBanner` | export function | The block and the panel (rendered into document.body so it is above the header). |
+
 ### `frontend/src/components/FlagRibbons.jsx`
 
 **What it is for:** A Tajik flag made of three waving silk ribbons (red, white, green in the flag's 2:3:2 proportions) with a soft blue glow and moving folds. In the footer it fills the empty space under the site description, 40% opaque; in a box lower than 90px it is hidden (.ribbons-box). Stops moving when the visitor asked for less motion.
@@ -1652,7 +1717,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Footer.jsx`
 
-**What it is for:** The site footer: official links, sections and contacts.
+**What it is for:** The site footer: official links, sections and contacts. At the top: the feedback block (FeedbackBanner).
 
 | Name | Kind | What it does |
 |---|---|---|
