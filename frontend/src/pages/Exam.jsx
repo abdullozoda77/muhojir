@@ -4,6 +4,7 @@ import { apiAll } from "../api.js";
 import { t } from "../i18n.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
+import { canSpeak, speak } from "../speech.js";
 
 const SECTIONS = [
   { key: "mixed", icon: Shuffle, title: () => t("Санҷиши омехта"), text: () => t("15 саволи тасодуфӣ аз ҳамаи қисмҳо") },
@@ -41,18 +42,6 @@ function saveBest(section, percent) {
     if ((best[section] ?? -1) < percent) localStorage.setItem(BEST_KEY, JSON.stringify({ ...best, [section]: percent }));
   } catch {
   }
-}
-
-const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
-
-function speak(text) {
-  window.speechSynthesis.cancel();
-  const phrase = new SpeechSynthesisUtterance(text);
-  phrase.lang = "ru-RU";
-  phrase.rate = 0.85;
-  const voice = window.speechSynthesis.getVoices().find((v) => v.lang?.toLowerCase().startsWith("ru"));
-  if (voice) phrase.voice = voice;
-  window.speechSynthesis.speak(phrase);
 }
 
 function Listen({ text }) {

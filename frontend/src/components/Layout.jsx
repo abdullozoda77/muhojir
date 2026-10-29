@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
+  Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
   PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -31,6 +31,7 @@ function sections(user) {
     { to: "/calculator", icon: Calculator, label: t("Нархи патент") },
     { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо") },
     { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо") },
+    { to: "/course", icon: Languages, label: t("Курси забони русӣ") },
     { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон") },
     { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ") },
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо") },

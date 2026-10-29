@@ -12,6 +12,10 @@ const BlacklistPage = lazy(() => import("./pages/BlacklistPage.jsx"));
 const Calculator = lazy(() => import("./pages/Calculator.jsx"));
 const Checks = lazy(() => import("./pages/Checks.jsx"));
 const Exam = lazy(() => import("./pages/Exam.jsx"));
+const Course = lazy(() => import("./pages/Course.jsx"));
+const Lesson = lazy(() => import("./pages/Lesson.jsx"));
+const CourseExam = lazy(() => import("./pages/CourseExam.jsx"));
+const Certificate = lazy(() => import("./pages/Certificate.jsx"));
 const SavedJobs = lazy(() => import("./pages/SavedJobs.jsx"));
 const Documents = lazy(() => import("./pages/Documents.jsx"));
 const EmployerPage = lazy(() => import("./pages/EmployerPage.jsx"));
@@ -60,6 +64,10 @@ export default function App() {
         <Route path="help" element={<Help />} />
         <Route path="checks" element={<Checks />} />
         <Route path="exam" element={<Exam />} />
+        <Route path="course" element={<Course />} />
+        <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
+        <Route path="course/:level/:number" element={<Lesson />} />
+        <Route path="certificates/:code" element={<Certificate />} />
         <Route path="tickets" element={<Tickets />} />
         <Route path="places" element={<Places />} />
         <Route path="shops" element={<Shops />} />
