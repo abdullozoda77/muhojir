@@ -90,7 +90,7 @@ function FeedbackForm({ start, onSent }) {
         <StarPicker value={rating} onChange={setRating} />
       </div>
       <Field label={t("Фикри шумо")} required error={error?.data?.message}>
-        <textarea className="input" rows={5} maxLength={3000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={kind === "bug" ? t("Чӣ кор кардед ва чӣ шуд? Масалан: тугмаи «Захира» дар саҳифаи ҳуҷҷатҳо кор намекунад.") : t("Чӣ хуб аст, чӣ намерасад, чиро илова кунем?")} />
+        <textarea className="input min-h-[180px] resize-y" rows={6} maxLength={3000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={kind === "bug" ? t("Чӣ кор кардед ва чӣ шуд? Масалан: тугмаи «Захира» дар саҳифаи ҳуҷҷатҳо кор намекунад.") : t("Чӣ хуб аст, чӣ намерасад, чиро илова кунем?")} />
       </Field>
       <ErrorBox error={error && !error.data?.message ? error : null} />
       <Button type="submit" loading={saving} disabled={message.trim().length < 5} icon={MessagesSquare}>
