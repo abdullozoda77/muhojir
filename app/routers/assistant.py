@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 
 from app.assistant.knowledge import system_prompt
 from app.assistant.providers import AssistantError, active_provider, ask
-from app.core.deps import DB, OptionalUser
+from app.core.deps import DB, CurrentUser
 from app.core.throttle import throttle
 from app.schemas.common import Form
 
@@ -51,7 +51,7 @@ async def status():
 
 
 @router.post("/", dependencies=[Depends(throttle("assistant"))])
-async def chat(data: Chat, request: Request, db: DB, user: OptionalUser):
+async def chat(data: Chat, request: Request, db: DB, user: CurrentUser):
     if active_provider() is None:
         return JSONResponse({"code": "not_configured", "detail": "The AI assistant is not set up yet."}, status_code=503)
     visitor_note = (

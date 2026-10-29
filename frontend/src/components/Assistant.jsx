@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, m } from "motion/react";
-import { Loader2, Send, Trash2, X } from "lucide-react";
+import { Loader2, LogIn, Send, Trash2, X } from "lucide-react";
 import { api } from "../api.js";
+import { useAuth } from "../auth.jsx";
 import { lang, t } from "../i18n.js";
 
 const STORE = "muhojir-assistant";
@@ -45,6 +46,7 @@ function AssistantMark({ className = "h-6 w-6" }) {
 }
 
 export default function Assistant() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const [open, setOpen] = useState(false);
@@ -143,7 +145,15 @@ export default function Assistant() {
             </header>
 
             <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
-              {enabled === false ? (
+              {!user ? (
+                <div className="flex flex-col items-start gap-3">
+                  <p className="text-body-md text-on-surface-variant">{t("Барои гуфтугӯ бо Ошно ворид шавед.")}</p>
+                  <Link to="/login" state={{ from: pathname + search }} onClick={() => setOpen(false)} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-lg text-on-ink">
+                    <LogIn className="h-4 w-4" aria-hidden />
+                    {t("Ворид шудан")}
+                  </Link>
+                </div>
+              ) : enabled === false ? (
                 <p className="rounded-2xl bg-surface-container-low p-3 text-body-md text-on-surface-variant">{t("Ошно ҳоло танзим нашудааст.")}</p>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col gap-2">
@@ -170,6 +180,7 @@ export default function Assistant() {
               {error && <p role="alert" className="rounded-xl bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}
             </div>
 
+            {user && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -190,6 +201,7 @@ export default function Assistant() {
                 <Send className="h-5 w-5" aria-hidden />
               </button>
             </form>
+            )}
           </m.section>
         )}
       </AnimatePresence>

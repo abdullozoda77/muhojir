@@ -5,14 +5,21 @@ from app.assistant.tools import run_tool
 from app.db.session import SessionLocal
 
 
-async def test_not_configured(client):
-    assert (await client.get("/api/assistant/")).json() == {"enabled": False}
+async def test_guests_cannot_chat(client):
     r = await client.post("/api/assistant/", json={"messages": [{"role": "user", "content": "Салом"}]})
+    assert r.status_code == 401
+
+
+async def test_not_configured(client, user):
+    headers, _ = user
+    assert (await client.get("/api/assistant/")).json() == {"enabled": False}
+    r = await client.post("/api/assistant/", headers=headers, json={"messages": [{"role": "user", "content": "Салом"}]})
     assert r.status_code == 503 and r.json()["code"] == "not_configured"
 
 
-async def test_last_message_must_be_from_user(client):
-    r = await client.post("/api/assistant/", json={"messages": [{"role": "assistant", "content": "Салом"}]})
+async def test_last_message_must_be_from_user(client, user):
+    headers, _ = user
+    r = await client.post("/api/assistant/", headers=headers, json={"messages": [{"role": "assistant", "content": "Салом"}]})
     assert r.status_code == 400
 
 
@@ -30,7 +37,8 @@ async def test_tools():
         assert json.loads(text)["steps"]
 
 
-async def test_answer_opens_a_page(client, monkeypatch):
+async def test_answer_opens_a_page(client, user, monkeypatch):
+    headers, _ = user
     async def fake_gemini(system_text, visitor_note, messages, run):
         assert "Never use rude words" in system_text and "Tajik" in visitor_note
         await run.tool("navigate", {"page": "calculator"})
@@ -38,5 +46,6 @@ async def test_answer_opens_a_page(client, monkeypatch):
 
     monkeypatch.setattr(providers.settings, "gemini_api_key", "test-key")
     monkeypatch.setattr(providers, "_ask_gemini", fake_gemini)
-    r = await client.post("/api/assistant/", json={"messages": [{"role": "user", "content": "Калкуляторро кушо"}], "page": "/"})
+    r = await client.post("/api/assistant/", headers=headers,
+                          json={"messages": [{"role": "user", "content": "Калкуляторро кушо"}], "page": "/"})
     assert r.json() == {"reply": "Калкулятор кушода шуд.", "refused": False, "truncated": False, "navigate": "/calculator"}

@@ -43,7 +43,7 @@ function Private({ children }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search + location.hash }} />;
   return children;
 }
 
@@ -54,25 +54,25 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="jobs" element={<Jobs />} />
-        <Route path="jobs/:id" element={<JobDetail />} />
-        <Route path="employers/:id" element={<EmployerPage />} />
-        <Route path="blacklist" element={<BlacklistPage />} />
-        <Route path="calculator" element={<Calculator />} />
-        <Route path="guides" element={<Guides />} />
-        <Route path="news/:id" element={<NewsDetail />} />
-        <Route path="help" element={<Help />} />
-        <Route path="checks" element={<Checks />} />
-        <Route path="exam" element={<Exam />} />
-        <Route path="course" element={<Course />} />
+        <Route path="jobs" element={<Private><Jobs /></Private>} />
+        <Route path="jobs/:id" element={<Private><JobDetail /></Private>} />
+        <Route path="employers/:id" element={<Private><EmployerPage /></Private>} />
+        <Route path="blacklist" element={<Private><BlacklistPage /></Private>} />
+        <Route path="calculator" element={<Private><Calculator /></Private>} />
+        <Route path="guides" element={<Private><Guides /></Private>} />
+        <Route path="news/:id" element={<Private><NewsDetail /></Private>} />
+        <Route path="help" element={<Private><Help /></Private>} />
+        <Route path="checks" element={<Private><Checks /></Private>} />
+        <Route path="exam" element={<Private><Exam /></Private>} />
+        <Route path="course" element={<Private><Course /></Private>} />
         <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
-        <Route path="course/:level/:number" element={<Lesson />} />
+        <Route path="course/:level/:number" element={<Private><Lesson /></Private>} />
         <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />
-        <Route path="tickets" element={<Tickets />} />
-        <Route path="places" element={<Places />} />
-        <Route path="shops" element={<Shops />} />
-        <Route path="shops/:id" element={<ShopPage />} />
+        <Route path="tickets" element={<Private><Tickets /></Private>} />
+        <Route path="places" element={<Private><Places /></Private>} />
+        <Route path="shops" element={<Private><Shops /></Private>} />
+        <Route path="shops/:id" element={<Private><ShopPage /></Private>} />
 
         <Route path="documents" element={<Private><Documents /></Private>} />
         <Route path="payments" element={<Private><Payments /></Private>} />

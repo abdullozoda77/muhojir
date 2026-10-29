@@ -537,7 +537,7 @@ A generic, single database configuration.
 
 ### `app/routers/assistant.py`
 
-**What it is for:** AI assistant of the site: answers about migration and the site, and opens pages for the visitor. GET tells whether the assistant is set up; POST sends the conversation and returns {"reply", "navigate" (a page address to open, or null), "refused", "truncated"}.
+**What it is for:** AI assistant of the site: answers about migration and the site, and opens pages for the visitor. GET tells whether the assistant is set up; POST sends the conversation and returns {"reply", "navigate" (a page address to open, or null), "refused", "truncated"}. POST /api/assistant/ needs login since 2026-10-29 (guests get 401).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1280,6 +1280,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `test_guests_cannot_chat(client)` | async function | Guests get 401. |
 | `test_not_configured(client)` | async function | — |
 | `test_last_message_must_be_from_user(client)` | async function | — |
 | `test_tools()` | async function | — |
@@ -1495,7 +1496,7 @@ A generic, single database configuration.
 
 ### `frontend/src/App.jsx`
 
-**What it is for:** All routes of the site (react-router); every page except Home/Login is loaded lazily; private pages need a login.
+**What it is for:** All routes of the site (react-router); every page except Home/Login is loaded lazily; private pages need a login. Since 2026-10-29 almost every page needs login (Private): only the home page, /login and the certificate pages (/certificates/sample, /certificates/:code, opened from the QR code) are open to guests; a guest is sent to /login and comes back to the same page after logging in.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1649,7 +1650,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Assistant.jsx`
 
-**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Ошно (Oshno, "friend").
+**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Ошно (Oshno, "friend"). Guests see a «log in» button instead of the chat.
 
 | Name | Kind | What it does |
 |---|---|---|
