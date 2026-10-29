@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import date
 
@@ -44,15 +45,11 @@ def _ticket(item):
     }
 
 
-async def prices(origin, destination, month=None, direct=False):
-    key = f"flights:{origin}:{destination}:{month or 'any'}:{int(direct)}"
-    cached = await cache.get(key)
-    if cached is not None:
-        return cached
+async def _fetch(origin, destination, departure_at=None, direct=False, limit=200):
     params = {"origin": origin, "destination": destination, "currency": "rub", "one_way": "true",
-              "direct": "true" if direct else "false", "sorting": "price", "limit": 200, "unique": "false"}
-    if month:
-        params["departure_at"] = month
+              "direct": "true" if direct else "false", "sorting": "price", "limit": limit, "unique": "false"}
+    if departure_at:
+        params["departure_at"] = departure_at
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             response = await client.get(API, params=params, headers={"X-Access-Token": settings.travelpayouts_token,
@@ -66,13 +63,52 @@ async def prices(origin, destination, month=None, direct=False):
     if response.status_code != 200:
         logger.warning("Travelpayouts: HTTP %s %s", response.status_code, response.text[:200])
         raise FlightsUnavailable
-    tickets = [_ticket(item) for item in response.json().get("data") or [] if item.get("price")]
+    return [_ticket(item) for item in response.json().get("data") or [] if item.get("price")]
+
+
+async def prices(origin, destination, month=None, direct=False):
+    key = f"flights:{origin}:{destination}:{month or 'any'}:{int(direct)}"
+    cached = await cache.get(key)
+    if cached is not None:
+        return cached
+    tickets = await _fetch(origin, destination, month, direct)
     calendar = {}
     for ticket in tickets:
         day = ticket["departure_at"][:10]
         if day and (day not in calendar or ticket["price"] < calendar[day]):
             calendar[day] = ticket["price"]
     result = {"results": tickets, "calendar": dict(sorted(calendar.items()))}
+    await cache.put(key, result, CACHE_SECONDS)
+    return result
+
+
+def _same_flight(ticket):
+    return (ticket["airline"], ticket["flight_number"], ticket["departure_at"][:16], ticket["transfers"])
+
+
+async def day_prices(origins, destinations, day, direct=False):
+    key = f"flights:day:{','.join(origins)}:{','.join(destinations)}:{day}:{int(direct)}"
+    cached = await cache.get(key)
+    if cached is not None:
+        return cached
+    jobs = [(o, d, only_direct) for o in origins for d in destinations for only_direct in ((True,) if direct else (False, True))]
+    answers = await asyncio.gather(*(_fetch(o, d, day, only_direct, limit=1000) for o, d, only_direct in jobs),
+                                   return_exceptions=True)
+    found = {}
+    for tickets in answers:
+        if isinstance(tickets, FlightsUnavailable):
+            continue
+        if isinstance(tickets, BaseException):
+            raise tickets
+        for ticket in tickets:
+            if not ticket["departure_at"].startswith(day):
+                continue
+            same = _same_flight(ticket)
+            if same not in found or ticket["price"] < found[same]["price"]:
+                found[same] = ticket
+    if all(isinstance(a, BaseException) for a in answers):
+        raise FlightsUnavailable
+    result = sorted(found.values(), key=lambda t: (t["price"], t["departure_at"]))
     await cache.put(key, result, CACHE_SECONDS)
     return result
 

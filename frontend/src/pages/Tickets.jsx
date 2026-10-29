@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeftRight, BellPlus, BookOpen, CalendarDays, Check, ChevronDown, ExternalLink, Info, Minus, Plane, PlaneLanding, PlaneTakeoff, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
+import { ArrowLeftRight, BellPlus, BookOpen, CalendarDays, Check, ChevronDown, ExternalLink, Info, Loader2, Minus, Plane, PlaneLanding, PlaneTakeoff, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -526,6 +526,8 @@ export default function Tickets() {
   const months = useMemo(nextMonths, []);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [dayResult, setDayResult] = useState(null);
+  const [dayLoading, setDayLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const tj = useMemo(() => (airports || []).filter((a) => a.country === "TJ"), [airports]);
@@ -589,21 +591,36 @@ export default function Tickets() {
     };
   }, [airports, from, to, month, direct]);
 
+  useEffect(() => {
+    setDayResult(null);
+    if (!airports || !day || !result?.enabled) return;
+    let alive = true;
+    setDayLoading(true);
+    const q = new URLSearchParams({ origin: from, destination: to, day });
+    if (direct) q.set("direct", "true");
+    api(`/flights/day/?${q}`)
+      .then((data) => alive && setDayResult({ key: `${from}${to}${day}${direct}`, results: data.results }))
+      .catch(() => {})
+      .finally(() => alive && setDayLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [airports, from, to, day, direct, result?.enabled]);
+
   const fromOptions = places(toRussia ? tj : ru);
   const toOptions = places(toRussia ? ru : tj);
   const cheapest = result?.results?.length ? Math.min(...result.results.map((r) => r.price)) : null;
   const all = result?.results || [];
 
-  const airlines = useMemo(() => [...new Map(all.map((r) => [r.airline, r.airline_name])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [all]);
+  const airlines = useMemo(() => [...new Map([...all, ...(dayResult?.results || [])].map((r) => [r.airline, r.airline_name])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [all, dayResult]);
   const priceRange = all.length ? [Math.floor(Math.min(...all.map((r) => r.price)) / 100) * 100, Math.ceil(Math.max(...all.map((r) => r.price)) / 100) * 100] : [0, 0];
 
-  const fitting = all.filter(
-    (r) =>
-      (f.stops !== "1" || r.transfers <= 1) &&
-      (!f.times.length || TIMES.some(([key, from_, to_]) => f.times.includes(key) && hourOf(r) >= from_ && hourOf(r) < to_)) &&
-      (!f.airlines.length || f.airlines.includes(r.airline)) &&
-      (!f.max || r.price <= f.max),
-  );
+  const fits = (r) =>
+    (f.stops !== "1" || r.transfers <= 1) &&
+    (!f.times.length || TIMES.some(([key, from_, to_]) => f.times.includes(key) && hourOf(r) >= from_ && hourOf(r) < to_)) &&
+    (!f.airlines.length || f.airlines.includes(r.airline)) &&
+    (!f.max || r.price <= f.max);
+  const fitting = all.filter(fits);
   const calendar = {};
   for (const r of fitting) {
     const d = r.departure_at.slice(0, 10);
@@ -614,7 +631,12 @@ export default function Tickets() {
     early: (a, b) => a.departure_at.localeCompare(b.departure_at),
     fast: (a, b) => (a.duration || 1e9) - (b.duration || 1e9) || a.price - b.price,
   };
-  const matching = fitting
+  const sameFlight = (r) => `${r.airline}|${r.flight_number}|${r.departure_at.slice(0, 16)}|${r.transfers}`;
+  const dayTickets = day && dayResult?.key === `${from}${to}${day}${direct}` ? dayResult.results : [];
+  const pool = day
+    ? [...new Map([...dayTickets, ...all.filter((r) => r.departure_at.startsWith(day))].map((r) => [sameFlight(r), r])).values()]
+    : all;
+  const matching = (day ? pool.filter(fits) : fitting)
     .filter((r) => (day ? r.departure_at.startsWith(day) : !f.weekdays.length || f.weekdays.includes(String(weekdayOf(r)))))
     .sort(day && f.sort === "price" ? order.early : order[f.sort] || order.price);
   const shown = matching.slice(0, limit);
@@ -692,6 +714,7 @@ export default function Tickets() {
                 <h2 className="flex flex-wrap items-baseline gap-x-2 text-[19px] font-semibold">
                   {day ? t("Чиптаҳо барои {0}", dayLabel(day, true)) : activeFilters ? t("Чиптаҳои ёфтшуда") : t("Арзонтарин чиптаҳо")}
                   <span className="text-body-sm font-normal tabular-nums text-on-surface-variant">{matching.length}</span>
+                  {dayLoading && <Loader2 className="h-4 w-4 animate-spin self-center text-on-surface-variant" aria-label={t("Боз чиптаҳо ҷустуҷӯ мешаванд…")} />}
                 </h2>
                 <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-label-md text-primary">
                   {t("Ҳама дар Aviasales")}

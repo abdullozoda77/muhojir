@@ -669,6 +669,8 @@ A generic, single database configuration.
 | `check_route(db, origin, destination)` | async function | — |
 | `check_month(month)` | function | — |
 | `prices(db, origin, destination, month, direct)` | async function · `GET /api/flights/prices/` | The one-way tickets of the month (cheapest first) and a calendar {day: cheapest price}. enabled=false means no TRAVELPAYOUTS_TOKEN: then only search_url (aviasales.ru) is given. |
+| `codes_of(db, code)` | async function | A city code (MOW) → the city and all its airports (MOW, SVO, DME, VKO, ZIA); an airport → itself. |
+| `day_prices(db, origin, destination, day, direct)` | async function · `GET /api/flights/day/` | All tickets of one day: every airport of both cities, direct and with transfers, merged without repeats, cheapest first. ?day=YYYY-MM-DD. |
 | `WatchIn` | class | — |
 | &nbsp;&nbsp;↳ `upper(value)` | method | — |
 | `watch_json(w)` | function | — |
@@ -876,7 +878,10 @@ A generic, single database configuration.
 | `enabled()` | function | — |
 | `search_url(origin, destination, day)` | function | The search page on aviasales.ru: /search/DYU0112MOW1 = from DYU on 1 December to MOW, 1 passenger. |
 | `_ticket(item)` | function | — |
+| `_fetch(origin, destination, departure_at, direct, limit)` | async function | One request to prices_for_dates (limit up to 1000). |
 | `prices(origin, destination, month, direct)` | async function | The one-way tickets of the month (or the nearest ones), cheapest first (up to 200, so every day has its flights), and the cheapest price of every day. |
+| `_same_flight(ticket)` | function | What makes two tickets the same flight: airline, number, departure time, transfers. |
+| `day_prices(origins, destinations, day, direct)` | async function | Tickets of one day from all airport pairs, asked at the same time; repeats keep the cheaper price; cached 30 minutes. |
 | `check_watches(db, today)` | async function | Every day: tells users whose watched route got cheaper than their price. Returns how many were told. |
 
 ### `app/services/geocode.py`
@@ -1401,6 +1406,7 @@ A generic, single database configuration.
 | `test_places_filters_map_and_reviews(client, user)` | async function | — |
 | `test_suggested_place_needs_proof_and_an_editor(client, user)` | async function | A suggestion needs a pin, the confirmation and a photo; it is hidden until an editor approves it; the photo is seen only by the author and editors; reject needs a reason; the author gets notifications. |
 | `test_assistant_tools_for_travel()` | async function | — |
+| `test_day_search_asks_every_airport_and_merges(client, monkeypatch)` | async function | The day search asks every airport (10 requests for DYU→Moscow), drops other days, merges repeats, sorts by price and caches. |
 
 
 ---
@@ -2288,7 +2294,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Tickets.jsx`
 
-**What it is for:** Air tickets between Tajikistan and Russia, both ways. Prices come from Aviasales (the cheapest found in the last days); the ticket is bought on aviasales.ru or on the airlines' own sites (Somon Air, Tajik Air). Logged-in visitors can ask to be told when a route gets cheaper.
+**What it is for:** Air tickets between Tajikistan and Russia, both ways. Prices come from Aviasales (the cheapest found in the last days); the ticket is bought on aviasales.ru or on the airlines' own sites (Somon Air, Tajik Air). Logged-in visitors can ask to be told when a route gets cheaper. When a day is picked, the list also loads /flights/day/ (more flights of that day from every airport) and merges it with the month's tickets.
 
 | Name | Kind | What it does |
 |---|---|---|

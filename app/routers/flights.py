@@ -79,6 +79,36 @@ async def prices(
     return answer
 
 
+async def codes_of(db, code):
+    airports = (await db.scalars(select(Airport.code).where(Airport.city_code == code, Airport.is_active.is_(True))
+                                 .order_by(Airport.order))).all()
+    return list(dict.fromkeys([code, *airports]))
+
+
+@router.get("/day/")
+async def day_prices(
+    db: DB,
+    origin: Annotated[str, Query(min_length=3, max_length=3)],
+    destination: Annotated[str, Query(min_length=3, max_length=3)],
+    day: date,
+    direct: bool = False,
+):
+    origin, destination = origin.upper(), destination.upper()
+    await check_route(db, origin, destination)
+    if day < date.today():
+        raise FieldError("day", "This day is already over.")
+    answer = {"enabled": flights.enabled(), "currency": "RUB", "day": day,
+              "search_url": flights.search_url(origin, destination, day), "results": []}
+    if not flights.enabled():
+        return answer
+    try:
+        answer["results"] = await flights.day_prices(await codes_of(db, origin), await codes_of(db, destination),
+                                                     day.isoformat(), direct)
+    except flights.FlightsUnavailable:
+        raise ApiError("Ticket prices are not available right now. Try again later.", 503, code="unavailable")
+    return answer
+
+
 class WatchIn(Form):
     origin: str = Field(min_length=3, max_length=3)
     destination: str = Field(min_length=3, max_length=3)

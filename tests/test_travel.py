@@ -184,3 +184,41 @@ async def test_assistant_tools_for_travel():
         assert path.startswith("/places?category=mosque&region=")
         text, error, _ = await run_tool(db, "flight_prices", {"origin": "MOW", "destination": "LED"})
         assert error
+
+
+async def test_day_search_asks_every_airport_and_merges(client, monkeypatch):
+    asked = []
+    day = f"{NEXT_MONTH}-05"
+
+    def answer(request):
+        q = request.url.params
+        asked.append((q["origin"], q["destination"], q["direct"], q["departure_at"]))
+        flight = {"SVO": ("SU", "1873", "08:00", 21000), "VKO": ("SZ", "201", "06:10", 15400),
+                  "ZIA": ("U6", "2428", "18:40", 13997), "MOW": ("SZ", "201", "06:10", 15900)}.get(q["destination"])
+        data = []
+        if flight:
+            airline, number, time, price = flight
+            data.append({"origin": "DYU", "destination": "MOW", "destination_airport": q["destination"], "price": price,
+                         "airline": airline, "flight_number": number, "departure_at": f"{day}T{time}:00+05:00",
+                         "transfers": 0, "link": "/search/x"})
+        if q["destination"] == "DME" and q["direct"] == "false":
+            data.append({"origin": "DYU", "destination": "MOW", "price": 11000, "airline": "HY", "flight_number": "7",
+                         "departure_at": f"{day}T03:00:00+05:00", "transfers": 1, "link": "/search/y"})
+            data.append({"origin": "DYU", "destination": "MOW", "price": 9000, "airline": "HY", "flight_number": "8",
+                         "departure_at": f"{NEXT_MONTH}-06T03:00:00+05:00", "transfers": 1, "link": "/search/z"})
+        return httpx.Response(200, json={"success": True, "data": data})
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(flights.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(answer), **kw))
+    monkeypatch.setattr(flights.settings, "travelpayouts_token", "tp-test")
+    cache._memory.clear()
+    r = await client.get("/api/flights/day/", params={"origin": "DYU", "destination": "MOW", "day": day})
+    assert r.status_code == 200, r.text
+    tickets = r.json()["results"]
+    assert [(t["airline"], t["price"]) for t in tickets] == [("HY", 11000), ("U6", 13997), ("SZ", 15400), ("SU", 21000)]
+    assert {d for _, d, _, _ in asked} == {"MOW", "SVO", "DME", "VKO", "ZIA"} and len(asked) == 10
+    assert all(at == day for *_, at in asked)
+    await client.get("/api/flights/day/", params={"origin": "DYU", "destination": "MOW", "day": day})
+    assert len(asked) == 10
+    r = await client.get("/api/flights/day/", params={"origin": "DYU", "destination": "MOW", "day": "2020-01-01"})
+    assert "day" in r.json()
