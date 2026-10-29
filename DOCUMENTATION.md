@@ -1696,7 +1696,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Feedback.jsx`
 
-**What it is for:** A large block at the top of the footer: «Don't like something? Tell us.» with five faces (from angry to delighted) and a «I found a bug» link; a face opens the side panel with that rating already chosen: kind (idea, bug, praise, other), stars, the message; guests see a login button. After sending: thanks, and below the user's earlier feedback with Muhojir's replies.
+**What it is for:** A large block at the end of the home page, before the footer: «Don't like something? Tell us.» with five faces (from angry to delighted) and a «I found a bug» link; a face opens the side panel with that rating already chosen: kind (idea, bug, praise, other), stars, the message; guests see a login button. After sending: thanks, and below the user's earlier feedback with Muhojir's replies.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1718,7 +1718,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Footer.jsx`
 
-**What it is for:** The site footer: official links, sections and contacts. At the top: the feedback block (FeedbackBanner).
+**What it is for:** The site footer: official links, sections and contacts.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2103,7 +2103,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate).
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner).
 
 | Name | Kind | What it does |
 |---|---|---|

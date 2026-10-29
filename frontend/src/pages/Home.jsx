@@ -9,6 +9,7 @@ import { t } from "../i18n.js";
 import { date, num, todayTitle, usedPercent } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
 import RubleRate from "../components/RubleRate.jsx";
+import FeedbackBanner from "../components/Feedback.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { STATUS, Skeleton, statusText } from "../components/ui.jsx";
 import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, startShown } from "../components/motion.jsx";
@@ -426,6 +427,9 @@ export default function Home() {
       {user ? <MigrantHome user={user} /> : <GuestHome />}
       <Reveal>
         <RubleRate />
+      </Reveal>
+      <Reveal>
+        <FeedbackBanner />
       </Reveal>
     </div>
   );
