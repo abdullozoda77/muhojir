@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Award, Check, ChevronDown, Clock, Languages, Lock, LogIn, PenLine } from "lucide-react";
-import { t } from "../i18n.js";
+import { lang, t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
+
+const levelTitle = (level) => (lang === "ru" && level.title_ru) || level.title;
 
 const time = (value) => new Date(value).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -76,7 +78,7 @@ function Level({ level, open, onToggle, user, info }) {
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-label-md text-on-surface-variant">{t("Сатҳи {0}", level.level)} · ≈ {level.cefr}</span>
-          <span className="text-[18px] font-semibold leading-tight md:text-[20px]">{level.title}</span>
+          <span className="text-[18px] font-semibold leading-tight md:text-[20px]">{levelTitle(level)}</span>
           <span className="mt-1 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-container-high" role="progressbar" aria-valuenow={done} aria-valuemin={0} aria-valuemax={total}>
             <span className="block h-full rounded-full bg-tertiary transition-all duration-700" style={{ width: `${(done / total) * 100}%` }} />
           </span>
@@ -181,7 +183,7 @@ export default function Course() {
       {!user && (
         <Link to="/login" state={{ from: "/course" }} className="flex items-center gap-3 rounded-xl bg-primary-fixed p-4 text-on-primary-fixed ring-1 ring-primary/15">
           <LogIn className="h-5 w-5 shrink-0" aria-hidden />
-          <span className="text-body-md">{t("Дарсҳоро бе сабти ном хондан мумкин. Барои нигоҳ доштани пешрафт ва гирифтани сертификат ворид шавед.")}</span>
+          <span className="text-body-md">{t("Дарси аввалро бе сабти ном хондан мумкин. Барои нигоҳ доштани пешрафт ва гирифтани сертификат ворид шавед.")}</span>
         </Link>
       )}
       {!data && !error ? (
