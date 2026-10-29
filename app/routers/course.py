@@ -102,11 +102,15 @@ async def must_unlocked(db, user, level, number):
 
 
 def wait_until(attempt):
-    if attempt and attempt.passed is False and attempt.finished_at:
+    if not attempt:
+        return None
+    if attempt.passed is False and attempt.finished_at:
         moment = attempt.finished_at + timedelta(minutes=course.RETRY_MINUTES)
-        if moment > utcnow():
-            return moment
-    return None
+    elif attempt.finished_at is None and attempt.ends_at <= utcnow():
+        moment = attempt.ends_at + timedelta(minutes=course.RETRY_MINUTES)
+    else:
+        return None
+    return moment if moment > utcnow() else None
 
 
 def is_open(attempt):

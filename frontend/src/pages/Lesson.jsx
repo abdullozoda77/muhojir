@@ -35,6 +35,24 @@ function readProgress(level, number, total) {
   return null;
 }
 
+const PENDING = "lesson-pending";
+
+function readPending() {
+  try {
+    return JSON.parse(sessionStorage.getItem(PENDING));
+  } catch {
+    return null;
+  }
+}
+
+function keepPending(value) {
+  try {
+    if (value) sessionStorage.setItem(PENDING, JSON.stringify(value));
+    else sessionStorage.removeItem(PENDING);
+  } catch {
+  }
+}
+
 function keepProgress(level, number, value) {
   try {
     if (value) localStorage.setItem(progressKey(level, number), JSON.stringify(value));
@@ -209,7 +227,7 @@ function Practice({ lesson, start, onSave, onDone }) {
   );
 }
 
-function Result({ percent, lesson, saved, saveError, onRetry }) {
+function Result({ percent, lesson, user, saved, saveError, onRetry }) {
   const passed = percent >= lesson.lesson_pass;
   const nextLink = lesson.number < lesson.lessons_total ? `/course/${lesson.level}/${lesson.number + 1}` : `/course/${lesson.level}/exam`;
   return (
@@ -225,7 +243,13 @@ function Result({ percent, lesson, saved, saveError, onRetry }) {
       </p>
       <ErrorBox error={saveError} />
       <div className="flex flex-wrap justify-center gap-2">
-        {passed && (
+        {passed && !user && (
+          <Link to="/login" state={{ from: `/course/${lesson.level}/${lesson.number}` }} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
+            {t("Ворид шудан ва идома додан")}
+            <ArrowRight className="h-5 w-5" aria-hidden />
+          </Link>
+        )}
+        {passed && saved && (
           <Link to={nextLink} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
             {lesson.number < lesson.lessons_total ? t("Дарси навбатӣ") : t("Ба имтиҳон")}
             <ArrowRight className="h-5 w-5" aria-hidden />
@@ -260,6 +284,19 @@ export default function Lesson() {
     setStage(saved ? "practice" : "learn");
   }, [lesson, level, number]);
 
+  useEffect(() => {
+    const pending = readPending();
+    if (!user || !lesson || !pending || pending.level !== Number(level) || pending.number !== Number(number)) return;
+    keepPending(null);
+    api(`/course/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score: pending.score } })
+      .then(() => {
+        setPercent(pending.score);
+        setSaved(true);
+        setStage("done");
+      })
+      .catch(setSaveError);
+  }, [user, lesson, level, number]);
+
   const save = (value) => {
     keepProgress(level, number, value);
     setResume(value);
@@ -271,7 +308,11 @@ export default function Lesson() {
     setStage("done");
     setSaveError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (!user || score < lesson.lesson_pass) return;
+    if (score < lesson.lesson_pass) return;
+    if (!user) {
+      keepPending({ level: Number(level), number: Number(number), score });
+      return;
+    }
     try {
       await api(`/course/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score } });
       setSaved(true);
@@ -322,7 +363,7 @@ export default function Lesson() {
       )}
       {stage === "practice" && <Practice key={round} lesson={lesson} start={resume} onSave={save} onDone={finish} />}
       {stage === "done" && (
-        <Result percent={percent} lesson={lesson} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
+        <Result percent={percent} lesson={lesson} user={user} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
       )}
 
       <nav className="flex justify-between gap-2 pt-2">

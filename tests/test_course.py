@@ -153,6 +153,20 @@ async def test_failed_exam_waits_before_retry(client, user):
     assert level["exam"]["ready"] and level["exam"]["wait_until"]
 
 
+async def test_abandoned_exam_counts_as_failed(client, user):
+    headers, _ = user
+    await finish_lessons(client, headers, 1)
+    exam = (await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})).json()
+    async with SessionLocal() as db:
+        attempt = await db.get(ExamAttempt, exam["id"])
+        attempt.ends_at = attempt.started_at
+        await db.commit()
+    r = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})
+    assert r.status_code == 429 and r.json()["wait_until"]
+    level = (await client.get("/api/course/", headers=headers)).json()["levels"][0]
+    assert level["exam"]["wait_until"] and not level["exam"]["open"]
+
+
 async def test_exam_belongs_to_its_user(client, user):
     headers, _ = user
     await finish_lessons(client, headers, 1)
