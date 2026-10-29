@@ -8,6 +8,7 @@ from app.models.jobs import INDUSTRIES, BlacklistReport, Employer, EmployerRevie
 from app.models.market import (
     PRODUCT_UNITS, PROOF_KINDS, REQUIRED_PROOFS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopProof, ShopReview,
 )
+from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.support import HelpContact
 from app.models.travel import AIRLINES, Airport, FlightWatch
@@ -23,4 +24,5 @@ __all__ = [
     "SHOP_CATEGORIES", "SHOP_STATUSES", "PRODUCT_UNITS", "PROOF_KINDS", "REQUIRED_PROOFS",
     "Shop", "Product", "ShopProof", "ShopReview",
     "LessonProgress", "ExamAttempt", "Certificate",
+    "RATE_SOURCES", "ExchangeRate",
 ]

@@ -20,7 +20,7 @@ file has **what it is for** and a table of its functions, classes and components
 | Admin panel | SQLAdmin at `/admin/`, roles `migrant` / `editor` / `admin` |
 | Live notifications | WebSocket `/ws/notifications/` (+ Redis between processes) |
 | Background tasks | Celery + Redis: emails, job import (06:00), reminders (06:30), ticket price alerts |
-| Outside services | «Работа России» (jobs), Travelpayouts/Aviasales (tickets), OpenStreetMap (places), Gemini / Claude (assistant) |
+| Outside services | «Работа России» (jobs), Travelpayouts/Aviasales (tickets), OpenStreetMap (places), Gemini / Claude (assistant), NBT and CBR (rouble rate) |
 | Site | React 19, React Router 7, Vite, Tailwind CSS, motion, lucide icons, MapLibre; installable PWA with offline mode |
 | Languages | the site is written in Tajik; `translations.js` holds Russian |
 
@@ -56,22 +56,22 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - Backend — the FastAPI application (`app/`) — 4 files
 - `app/core/` — settings, security, request helpers — 9 files
 - `app/db/` — database connection and column types — 3 files
-- `app/models/` — database tables (SQLAlchemy) — 9 files
+- `app/models/` — database tables (SQLAlchemy) — 10 files
 - `app/schemas/` — request bodies and JSON answers — 5 files
-- `app/routers/` — the API endpoints — 10 files
-- `app/services/` — business logic used by routers and background tasks — 12 files
+- `app/routers/` — the API endpoints — 11 files
+- `app/services/` — business logic used by routers and background tasks — 13 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
-- `alembic/versions/` — the migrations, in order — 10 files
-- `tests/` — automated tests (pytest) — 10 files
+- `alembic/versions/` — the migrations, in order — 11 files
+- `tests/` — automated tests (pytest) — 11 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 14 files
-- `frontend/src/components/` — reusable parts of pages — 25 files
+- `frontend/src/components/` — reusable parts of pages — 26 files
 - `frontend/src/pages/` — one file per page of the site — 27 files
 
 
@@ -110,7 +110,7 @@ A generic, single database configuration.
 
 ### `app/cli.py`
 
-**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh)
+**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -137,6 +137,7 @@ A generic, single database configuration.
 | `run_send_reminders(log)` | async function | — |
 | `run_import_places(log)` | async function | Real places from OpenStreetMap (migration centers, notaries, mosques, Tajik cafes...). |
 | `run_check_flight_watches(log)` | async function | — |
+| `run_update_rates(log)` | async function | Fetches today's official rouble to somoni rate (NBT and CBR). |
 
 ### `app/worker.py`
 
@@ -148,6 +149,7 @@ A generic, single database configuration.
 | `import_jobs()` | function | — |
 | `send_reminders()` | function | — |
 | `check_flight_watches()` | function | — |
+| `update_rates()` | function | Celery task: the official rate, at 08:10, 11:10 and 15:10. |
 | `import_places()` | function | — |
 
 
@@ -374,6 +376,15 @@ A generic, single database configuration.
 |---|---|---|
 | `Place` | class · table `places` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user") with a pin on the map and a photo; they appear after an editor approves them. proof is the private photo (place-proofs/), reject_reason is set when an editor rejects the suggestion. |
 | `PlaceReview` | class · table `place_reviews` | A visitor's rating (1-5) and words about a place; one per person per place. |
+
+### `app/models/rates.py`
+
+**What it is for:** Table of the official rouble to somoni rate, one row per source and day.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `RATE_SOURCES` | const | Sources: nbt (National Bank of Tajikistan) and cbr (Central Bank of Russia). |
+| `ExchangeRate` | class · table `exchange_rates` | The official rate of one day: value = how many somoni for 1 rouble. One row per source and day (one_rate_per_source_day). |
 
 ### `app/models/course.py`
 
@@ -758,6 +769,14 @@ A generic, single database configuration.
 | `write_review(place_id, data, db, user)` | async function · `PUT /api/places/{place_id}/reviews/mine/` | My review of the place: written the first time, changed after that. The owner gets «New review on your shop» for the first review of each person. |
 | `delete_review(place_id, db, user)` | async function · `DELETE /api/places/{place_id}/reviews/mine/` | — |
 
+### `app/routers/rates.py`
+
+**What it is for:** /api/rates/: the official rouble to somoni rate for the card on the home page.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `rates(db)` | async function · `GET /api/rates/` | The latest rate of each source and a 30-day history [{day, nbt, cbr}]. Fetches today's rate first if it is missing. |
+
 ### `app/routers/support.py`
 
 **What it is for:** /api/help/: official places to get help (editors keep the list).
@@ -902,6 +921,27 @@ A generic, single database configuration.
 | `save(db, element, region, category)` | async function | Creates the place or updates the one with the same OSM id; returns "created", "updated" or "skipped". |
 | `import_places(db, regions, categories, pause, log)` | async function | The whole import: regions by name or ISO code (all 30 by default), every category; returns the counts. Run with `python -m app.cli import-places [--region RU-TA] [--category hostel]`; Celery runs it every Sunday at 03:00. |
 
+### `app/services/rates.py`
+
+**What it is for:** The official rouble to somoni rate from the National Bank of Tajikistan (nbt.tj, XML for a date) and the Central Bank of Russia (cbr.ru, XML_daily). The NBT file has broken bytes in some currency names, so both files are read with regular expressions instead of an XML parser.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `RatesUnavailable` | class | A bank did not answer or its file has no rouble/somoni rate. |
+| `today()` | function | Today in Moscow time. |
+| `number(text)` | function | "87,7162" or "0.1142" -> float. |
+| `tag(block, name)` | function | The text of one tag inside a <Valute> block. |
+| `valute(text, code)` | function | (value, nominal) of a currency code (RUB, TJS). |
+| `shown_day(text, pattern)` | function | The date written in <ValCurs Date=...>. |
+| `get_text(client, url, params)` | async function | Downloads a bank file as text. |
+| `fetch_nbt(client, day)` | async function | NBT: somoni for 1 rouble (Value / Nominal). |
+| `fetch_cbr(client, day)` | async function | CBR: roubles for 10 somoni, turned into somoni for 1 rouble (Nominal / Value). |
+| `save_rate(db, source, day, value)` | async function | Adds or updates the row of that source and day. |
+| `update_rates(db, day)` | async function | Fetches both banks and saves the answers; a bank that is down or gives an odd value is skipped. Returns {source: value}. |
+| `ensure_fresh(db)` | async function | Fetches today's rate if a source is missing for today; after a failure waits 30 minutes before trying again. |
+| `history(db, days)` | async function | The rates of the last 30 days by day. |
+| `latest(db)` | async function | The newest row of each source: {value, day, fetched_at}. |
+
 ### `app/services/reminders.py`
 
 **What it is for:** Daily reminders about documents that are about to expire (notification + email).
@@ -1039,6 +1079,7 @@ A generic, single database configuration.
 | `ShopAdmin` | class | Shops: approve or reject (a reason is required); the owner is notified; deleting removes the pictures. |
 | `ProductAdmin` | class | Products of the shops. |
 | `ShopReviewAdmin` | class | Shop reviews (delete only). |
+| `ExchangeRateAdmin` | class | Official rates (view only). |
 
 
 ---
@@ -1164,6 +1205,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the three tables. |
 | `downgrade()` | function | Drops them. |
 
+### `alembic/versions/0011_exchange_rates.py`
+
+**What it is for:** Table exchange_rates (official rouble to somoni rate). Revision ID: 0011 Revises: 0010
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
+
 ---
 
 ## `tests/` — automated tests (pytest)
@@ -1269,6 +1319,17 @@ A generic, single database configuration.
 | `test_password_change_is_reported(client, user)` | async function | Reset password -> «Your password was changed». |
 | `test_document_expired_today(client, user)` | async function | A document ending today gets the «expired today» reminder. |
 | `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | async function | Editors hear about a submitted shop, a suggested place and a moved shop; the owner hears about the first review only. |
+
+### `tests/test_rates.py`
+
+**What it is for:** Tests of the official rate with fake NBT and CBR files.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `fake_banks(monkeypatch, answer)` | function | — |
+| `banks(monkeypatch)` | function | A fake NBT (with broken bytes, like the real one) and CBR answer. |
+| `test_rates_are_fetched_once_and_kept(client, banks)` | async function | Both rates are read and saved; the second request does not ask the banks again. |
+| `test_rates_do_not_break_when_banks_are_down(monkeypatch)` | async function | Banks are down: nothing is saved and nothing breaks. |
 
 ### `tests/test_travel.py`
 
@@ -1750,6 +1811,17 @@ A generic, single database configuration.
 |---|---|---|
 | `RouteArt` | export function | — |
 
+### `frontend/src/components/RubleRate.jsx`
+
+**What it is for:** The card of the official rouble to somoni rate at the end of the home page (before the footer): 1 000 ₽ in somoni from the National Bank of Tajikistan with the date, change over 30 days and a small line chart, an amount field with quick buttons and the sum at the official rate, and the Central Bank of Russia rate. Hidden if no rate is known yet.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `AMOUNTS` | const | Quick amounts: 5 000, 10 000, 50 000, 100 000 ₽. |
+| `tjs(value)` | function | A sum in somoni with two decimals. |
+| `Sparkline` | function | The 30-day line of the NBT rate (SVG). |
+| `RubleRate` | export function | — |
+
 ### `frontend/src/components/SeasonFall.jsx`
 
 **What it is for:** The falling decoration of the current season.
@@ -1965,7 +2037,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services.
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate).
 
 | Name | Kind | What it does |
 |---|---|---|

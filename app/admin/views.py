@@ -10,6 +10,7 @@ from app.models import (
 from app.models import PLACE_CATEGORIES, Airport, FlightWatch, Place, PlaceReview
 from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopReview
 from app.models import Certificate, ExamAttempt, LessonProgress
+from app.models import RATE_SOURCES, ExchangeRate
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -28,6 +29,7 @@ EDITOR_VIEWS = {
     "shop-review": ("list", "details", "delete"),
     "certificate": ("list", "details", "edit"),
     "exam-attempt": ("list", "details"),
+    "exchange-rate": ("list", "details"),
 }
 
 
@@ -425,6 +427,15 @@ class LessonProgressAdmin(Base, model=LessonProgress):
     can_create = can_edit = False
 
 
+class ExchangeRateAdmin(Base, model=ExchangeRate):
+    name, name_plural, icon, category = "Қурби расмӣ", "Қурбҳои расмӣ", "fa-solid fa-chart-line", "Қурби рубл"
+    column_list = [ExchangeRate.source, ExchangeRate.day, ExchangeRate.value, ExchangeRate.fetched_at]
+    column_sortable_list = [ExchangeRate.day]
+    column_default_sort = [(ExchangeRate.day, True)]
+    column_formatters = {"source": lambda m, a: RATE_SOURCES.get(m.source, m.source)}
+    can_create = can_edit = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -434,4 +445,5 @@ VIEWS = [
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
+    ExchangeRateAdmin,
 ]

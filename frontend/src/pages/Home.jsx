@@ -8,6 +8,7 @@ import { useApi, useDocuments } from "../hooks.js";
 import { t } from "../i18n.js";
 import { date, num, todayTitle, usedPercent } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
+import RubleRate from "../components/RubleRate.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { STATUS, Skeleton, statusText } from "../components/ui.jsx";
 import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, startShown } from "../components/motion.jsx";
@@ -420,6 +421,12 @@ function MigrantHome({ user }) {
 export default function Home() {
   const { user, loading } = useAuth();
   if (loading) return <Skeleton className="h-96" />;
-  if (!user) return <GuestHome />;
-  return <MigrantHome user={user} />;
+  return (
+    <div className="flex flex-col gap-14 md:gap-20">
+      {user ? <MigrantHome user={user} /> : <GuestHome />}
+      <Reveal>
+        <RubleRate />
+      </Reveal>
+    </div>
+  );
 }

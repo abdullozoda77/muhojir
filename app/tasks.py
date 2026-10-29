@@ -2,6 +2,7 @@ from app.db.session import SessionLocal
 from app.db.types import utcnow
 from app.services.alerts import notify_alerts
 from app.services.flights import check_watches
+from app.services.rates import update_rates
 from app.services.places import import_places
 from app.services.reminders import send_due_reminders
 from app.services.trudvsem import import_jobs
@@ -35,3 +36,10 @@ async def run_check_flight_watches(log=print):
         told = await check_watches(db)
     log(f"Cheaper tickets: told {told} users")
     return told
+
+
+async def run_update_rates(log=print):
+    async with SessionLocal() as db:
+        saved = await update_rates(db)
+    log(f"Exchange rates: {saved}")
+    return saved

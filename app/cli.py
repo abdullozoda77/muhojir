@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.core.security import hash_password, password_problems
 from app.db.session import SessionLocal
 from app.models import Job, Place, User
-from app.tasks import run_check_flight_watches, run_import_jobs, run_import_places, run_send_reminders
+from app.tasks import run_check_flight_watches, run_import_jobs, run_import_places, run_send_reminders, run_update_rates
 
 
 async def create_superuser(email, password):
@@ -47,6 +47,7 @@ def main():
     places.add_argument("--region", action="append")
     places.add_argument("--category", action="append")
     commands.add_parser("check-flights")
+    commands.add_parser("update-rates")
     args = parser.parse_args()
 
     if args.command == "createsuperuser":
@@ -70,6 +71,8 @@ def main():
         asyncio.run(run_import_places(regions=args.region, categories=args.category))
     elif args.command == "check-flights":
         asyncio.run(run_check_flight_watches())
+    elif args.command == "update-rates":
+        asyncio.run(run_update_rates())
     elif args.command == "has-places":
         sys.exit(0 if asyncio.run(has_places()) else 1)
     elif args.command == "has-jobs":

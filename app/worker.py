@@ -14,6 +14,7 @@ celery.conf.update(
         "daily-import-jobs": {"task": "app.worker.import_jobs", "schedule": crontab(hour=6, minute=0)},
         "daily-reminders": {"task": "app.worker.send_reminders", "schedule": crontab(hour=6, minute=30)},
         "daily-flight-watches": {"task": "app.worker.check_flight_watches", "schedule": crontab(hour=7, minute=0)},
+        "update-rates": {"task": "app.worker.update_rates", "schedule": crontab(hour="8,11,15", minute=10)},
         "weekly-import-places": {"task": "app.worker.import_places", "schedule": crontab(hour=3, minute=0, day_of_week=0)},
     },
 )
@@ -53,3 +54,10 @@ def import_places():
     from app.tasks import run_import_places
 
     asyncio.run(run_import_places())
+
+
+@celery.task(autoretry_for=(OSError,), retry_backoff=60, max_retries=3)
+def update_rates():
+    from app.tasks import run_update_rates
+
+    asyncio.run(run_update_rates())
