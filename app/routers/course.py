@@ -92,8 +92,7 @@ def exam_json(attempt):
     questions = []
     for item in attempt.questions:
         q = course.exam_question(attempt.level, item["i"])
-        questions.append({"q": q["q"], "ru": q.get("ru", ""), "listen": q.get("listen", ""),
-                          "options": [q["options"][k] for k in item["order"]]})
+        questions.append({"q": q["q"], "ru": q.get("ru", ""), "options": [q["options"][k] for k in item["order"]]})
     return {"id": attempt.id, "level": attempt.level, "full_name": attempt.full_name, "questions": questions,
             "ends_at": attempt.ends_at.isoformat(), "minutes": course.EXAM_MINUTES, "pass_percent": course.PASS_PERCENT}
 

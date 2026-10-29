@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Award, Check, ChevronDown, Clock, Languages, Lock, LogIn, PenLine } from "lucide-react";
+import { ArrowRight, Award, Check, ChevronDown, Clock, Languages, Lock, LogIn, PenLine } from "lucide-react";
 import { t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -8,6 +8,16 @@ import { ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 
 const time = (value) => new Date(value).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+function nextLesson(levels) {
+  for (const level of levels) {
+    if (level.exam.certificate) continue;
+    const lesson = level.lessons.find((l) => l.score === null);
+    if (lesson) return { level, lesson };
+    return { level, exam: true };
+  }
+  return null;
+}
 
 function firstOpen(levels) {
   const level = levels.find((l) => !l.exam.certificate);
@@ -138,6 +148,22 @@ export default function Course() {
           ))}
         </div>
       )}
+      {data && user && (() => {
+        const next = nextLesson(data.levels);
+        if (!next || lessonsDone === 0) return null;
+        const to = next.exam ? `/course/${next.level.level}/exam` : `/course/${next.level.level}/${next.lesson.number}`;
+        return (
+          <Link to={to} className="group flex items-center gap-4 rounded-2xl bg-ink p-5 text-on-ink transition-transform hover:-translate-y-0.5">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-label-md opacity-70">{t("Идома додан")} · {t("Сатҳи {0}", next.level.level)}</span>
+              <span className="text-[18px] font-semibold leading-tight">
+                {next.exam ? t("Имтиҳони сатҳ ва сертификат") : t("Дарси {0}: {1}", next.lesson.number, next.lesson.title)}
+              </span>
+            </span>
+            <ArrowRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden />
+          </Link>
+        );
+      })()}
       {!user && (
         <Link to="/login" state={{ from: "/course" }} className="flex items-center gap-3 rounded-xl bg-primary-fixed p-4 text-on-primary-fixed ring-1 ring-primary/15">
           <LogIn className="h-5 w-5 shrink-0" aria-hidden />

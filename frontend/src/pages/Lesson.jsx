@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw, Undo2, Volume2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw, Undo2, X } from "lucide-react";
 import { api } from "../api.js";
 import { t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
-import { canSpeak, hush, speak } from "../speech.js";
 import { BackLink, Button, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { Reveal } from "../components/motion.jsx";
 
@@ -22,13 +21,26 @@ const clean = (text) => text.toLowerCase().replace(/ё/g, "е").replace(/[.,!?;:
 const pieces = (text) => text.replace(/[.,!?;:«»"—–]/g, " ").split(/\s+/).filter(Boolean);
 
 function Say({ text, className = "" }) {
-  if (!canSpeak) return <span lang="ru" className={className}>{text}</span>;
-  return (
-    <button type="button" lang="ru" onClick={() => speak(text.replace(/\[.*?\]/g, ""))} className={`group inline-flex items-center gap-1.5 text-left transition-colors hover:text-primary ${className}`}>
-      <Volume2 className="h-4 w-4 shrink-0 text-outline transition-colors group-hover:text-primary" aria-label={t("Гӯш кардан")} />
-      <span>{text}</span>
-    </button>
-  );
+  return <span lang="ru" className={className}>{text}</span>;
+}
+
+const progressKey = (level, number) => `lesson-progress-${level}-${number}`;
+
+function readProgress(level, number, total) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(progressKey(level, number)));
+    if (saved && saved.index > 0 && saved.index < total) return saved;
+  } catch {
+  }
+  return null;
+}
+
+function keepProgress(level, number, value) {
+  try {
+    if (value) localStorage.setItem(progressKey(level, number), JSON.stringify(value));
+    else localStorage.removeItem(progressKey(level, number));
+  } catch {
+  }
 }
 
 function Theory({ lesson }) {
@@ -78,9 +90,6 @@ function Choice({ exercise, onAnswer }) {
   };
   return (
     <div className="flex flex-col gap-4">
-      {exercise.listen && canSpeak && (
-        <Button icon={Volume2} variant="soft" className="self-start" onClick={() => speak(exercise.listen)}>{t("Гӯш кардан")}</Button>
-      )}
       {exercise.ru && <p lang="ru" className="rounded-xl bg-surface-container-low px-4 py-3 text-[20px] font-semibold ring-1 ring-outline-variant">{exercise.ru}</p>}
       <div className="grid gap-2 sm:grid-cols-2">
         {choices.map((choice) => {
@@ -123,7 +132,6 @@ function Build({ exercise, onAnswer }) {
     const right = clean(chosen.map((tile) => tile.word).join(" ")) === clean(exercise.answer);
     setResult(right);
     onAnswer(right);
-    if (right) speak(exercise.answer);
   };
   return (
     <div className="flex flex-col gap-4">
@@ -158,19 +166,20 @@ function Build({ exercise, onAnswer }) {
   );
 }
 
-function Practice({ lesson, onDone }) {
-  const [index, setIndex] = useState(0);
+function Practice({ lesson, start, onSave, onDone }) {
+  const [index, setIndex] = useState(start?.index ?? 0);
   const [answered, setAnswered] = useState(null);
-  const [right, setRight] = useState(0);
+  const [right, setRight] = useState(start?.right ?? 0);
   const exercise = lesson.exercises[index];
   const total = lesson.exercises.length;
 
   const answer = (ok) => {
+    const score = right + (ok ? 1 : 0);
     setAnswered(ok);
-    if (ok) setRight((n) => n + 1);
+    setRight(score);
+    if (index + 1 < total) onSave({ index: index + 1, right: score });
   };
   const next = () => {
-    hush();
     if (index + 1 >= total) onDone(Math.round((right * 100) / total));
     else {
       setIndex(index + 1);
@@ -237,15 +246,27 @@ export default function Lesson() {
   const [round, setRound] = useState(0);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [resume, setResume] = useState(null);
 
   useEffect(() => {
-    setStage("learn");
     setSaved(false);
     window.scrollTo({ top: 0 });
-    return hush;
   }, [level, number]);
 
+  useEffect(() => {
+    if (!lesson) return;
+    const saved = readProgress(level, number, lesson.exercises.length);
+    setResume(saved);
+    setStage(saved ? "practice" : "learn");
+  }, [lesson, level, number]);
+
+  const save = (value) => {
+    keepProgress(level, number, value);
+    setResume(value);
+  };
+
   const finish = async (score) => {
+    save(null);
     setPercent(score);
     setStage("done");
     setSaveError(null);
@@ -278,13 +299,13 @@ export default function Lesson() {
         <>
           <Theory lesson={lesson} />
           <Button icon={ArrowRight} className="self-end" onClick={() => { setStage("practice"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-            {t("Ба машқҳо")}
+            {resume ? t("Идомаи машқҳо: {0} аз {1}", resume.index + 1, lesson.exercises.length) : t("Ба машқҳо")}
           </Button>
         </>
       )}
-      {stage === "practice" && <Practice key={round} lesson={lesson} onDone={finish} />}
+      {stage === "practice" && <Practice key={round} lesson={lesson} start={resume} onSave={save} onDone={finish} />}
       {stage === "done" && (
-        <Result percent={percent} lesson={lesson} saved={saved} saveError={saveError} onRetry={() => { setRound((r) => r + 1); setStage("practice"); }} />
+        <Result percent={percent} lesson={lesson} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
       )}
 
       <nav className="flex justify-between gap-2 pt-2">

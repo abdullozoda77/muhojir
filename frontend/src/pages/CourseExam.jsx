@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Award, Check, Clock, PenLine, ShieldCheck, Timer, Volume2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, Check, Clock, PenLine, ShieldCheck, Timer, X } from "lucide-react";
 import { api } from "../api.js";
 import { t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
-import { canSpeak, speak } from "../speech.js";
 import { BackLink, Button, ErrorBox, Field, Skeleton } from "../components/ui.jsx";
 
 const saveKey = (id) => `course-exam-${id}`;
@@ -146,7 +145,6 @@ function Questions({ exam, onFinished }) {
       </div>
 
       <h2 className="text-[21px] font-semibold leading-snug">{q.q}</h2>
-      {q.listen && canSpeak && <Button icon={Volume2} variant="soft" className="self-start" onClick={() => speak(q.listen)}>{t("Гӯш кардан")}</Button>}
       {q.ru && <p lang="ru" className="rounded-xl bg-surface-container-low px-4 py-3 text-[19px] font-semibold ring-1 ring-outline-variant">{q.ru}</p>}
       <div className="flex flex-col gap-2">
         {q.options.map((option, i) => (
