@@ -13,7 +13,7 @@ const time = (value) => new Date(value).toLocaleTimeString("ru-RU", { hour: "2-d
 
 function nextLesson(levels) {
   for (const level of levels) {
-    if (level.exam.certificate) continue;
+    if (level.exam.passed) continue;
     const lesson = level.lessons.find((l) => l.score === null);
     if (lesson) return { level, lesson };
     return { level, exam: true };
@@ -22,34 +22,35 @@ function nextLesson(levels) {
 }
 
 function firstOpen(levels) {
-  const level = levels.find((l) => !l.exam.certificate);
+  const level = levels.find((l) => !l.exam.passed);
   return (level || levels[0])?.level;
 }
 
 function ExamPanel({ level, user, size, minutes, pass }) {
   const { exam } = level;
-  if (exam.certificate) {
+  if (exam.passed) {
     return (
-      <Link to={`/certificates/${exam.certificate.code}`} className="flex items-center gap-3 rounded-xl bg-tertiary-fixed p-4 text-on-tertiary-fixed ring-1 ring-tertiary/30 transition-transform hover:-translate-y-0.5">
-        <Award className="h-6 w-6 shrink-0" aria-hidden />
+      <div className="flex items-center gap-3 rounded-xl bg-tertiary-fixed p-4 text-on-tertiary-fixed ring-1 ring-tertiary/30">
+        <Check className="h-6 w-6 shrink-0" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-label-lg">{t("Сертификат гирифтед — {0}%", exam.certificate.percent)}</span>
-          <span className="text-body-sm opacity-80">№ {exam.certificate.number}</span>
+          <span className="text-label-lg">{t("Имтиҳон супорида шуд — {0}%", exam.percent)}</span>
+          <span className="text-body-sm opacity-80">{exam.final ? t("Курс пурра хатм шуд") : t("Сатҳи навбатӣ кушода шуд")}</span>
         </span>
-        <span className="text-label-md underline underline-offset-4">{t("Дидан")}</span>
-      </Link>
+      </div>
     );
   }
   const note = !exam.ready
     ? t("Барои имтиҳон ҳамаи дарсҳоро хатм кунед: {0} аз {1}", exam.lessons_done, exam.lessons_total)
-    : t("{0} савол, {1} дақиқа. Барои сертификат {2}% ҷавоби дуруст лозим.", size, minutes, pass);
+    : exam.final
+      ? t("{0} савол, {1} дақиқа, {2}% лозим. Баъди ин имтиҳон сертификат дода мешавад.", size, minutes, pass)
+      : t("{0} савол, {1} дақиқа. Барои гузаштан ба сатҳи навбатӣ {2}% лозим.", size, minutes, pass);
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-surface-container-low p-4 ring-1 ring-outline-variant sm:flex-row sm:items-center">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant">
         {exam.ready ? <PenLine className="h-5 w-5" aria-hidden /> : <Lock className="h-5 w-5 text-on-surface-variant" aria-hidden />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-label-lg">{t("Имтиҳони сатҳ ва сертификат")}</span>
+        <span className="text-label-lg">{exam.final ? t("Имтиҳони ниҳоӣ ва сертификат") : t("Имтиҳони сатҳ")}</span>
         <span className="text-body-sm text-on-surface-variant">{note}</span>
       </span>
       {exam.ready && user && (exam.wait_until ? (
@@ -73,8 +74,8 @@ function Level({ level, open, onToggle, user, info }) {
   return (
     <section className={`overflow-hidden rounded-2xl bg-surface-container-lowest ring-1 transition-shadow ${open ? "ring-outline/50 shadow-[0_18px_40px_-28px_rgb(16_36_84/0.45)]" : "ring-outline-variant"}`}>
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-4 p-5 text-left md:p-6">
-        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[20px] font-semibold tabular-nums ${level.exam.certificate ? "bg-tertiary text-on-tertiary" : level.unlocked ? "bg-ink text-on-ink" : "bg-surface-container-high text-on-surface-variant"}`}>
-          {level.exam.certificate ? <Check className="h-6 w-6" aria-label={t("Хатм шуд")} /> : level.unlocked ? level.level : <Lock className="h-5 w-5" aria-label={t("Баста")} />}
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[20px] font-semibold tabular-nums ${level.exam.passed ? "bg-tertiary text-on-tertiary" : level.unlocked ? "bg-ink text-on-ink" : "bg-surface-container-high text-on-surface-variant"}`}>
+          {level.exam.passed ? <Check className="h-6 w-6" aria-label={t("Хатм шуд")} /> : level.unlocked ? level.level : <Lock className="h-5 w-5" aria-label={t("Баста")} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-label-md text-on-surface-variant">{t("Сатҳи {0}", level.level)} · ≈ {level.cefr}</span>
@@ -141,7 +142,7 @@ export default function Course() {
     if (data && openLevel === null) setOpenLevel(firstOpen(data.levels));
   }, [data, openLevel]);
 
-  const certificates = data?.levels.filter((l) => l.exam.certificate).length ?? 0;
+  const passedLevels = data?.levels.filter((l) => l.exam.passed).length ?? 0;
   const lessonsDone = data?.levels.reduce((sum, l) => sum + l.exam.lessons_done, 0) ?? 0;
   const lessonsTotal = data?.levels.reduce((sum, l) => sum + l.exam.lessons_total, 0) ?? 0;
 
@@ -150,13 +151,13 @@ export default function Course() {
       <PageHeader
         eyebrow={t("Ройгон ва бо забони тоҷикӣ")}
         title={t("Курси забони русӣ")}
-        text={t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс. Баъд аз ҳар 10 дарс имтиҳон супоред ва сертификат гиред.")}
+        text={t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс. Баъд аз ҳар 10 дарс имтиҳон, дар охири курс — сертификат.")}
         icon={Languages}
       />
       <ErrorBox error={error} />
       {data && (
         <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
-          {[[lessonsDone, t("дарс хатм шуд")], [lessonsTotal - lessonsDone, t("дарс монд")], [certificates, t("сертификат")]].map(([n, label]) => (
+          {[[lessonsDone, t("дарс хатм шуд")], [lessonsTotal - lessonsDone, t("дарс монд")], [passedLevels, t("сатҳ супорида шуд")]].map(([n, label]) => (
             <div key={label} className="flex flex-col rounded-xl bg-surface-container-lowest p-3 ring-1 ring-outline-variant">
               <span className="text-[24px] font-semibold tabular-nums">{n}</span>
               <span className="text-body-sm text-on-surface-variant">{label}</span>
@@ -173,13 +174,36 @@ export default function Course() {
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-label-md opacity-70">{t("Идома додан")} · {t("Сатҳи {0}", next.level.level)}</span>
               <span className="text-[18px] font-semibold leading-tight">
-                {next.exam ? t("Имтиҳони сатҳ ва сертификат") : t("Дарси {0}: {1}", next.lesson.number, next.lesson.title)}
+                {next.exam ? (next.level.exam.final ? t("Имтиҳони ниҳоӣ ва сертификат") : t("Имтиҳони сатҳ")) : t("Дарси {0}: {1}", next.lesson.number, next.lesson.title)}
               </span>
             </span>
             <ArrowRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden />
           </Link>
         );
       })()}
+      {data && (data.certificate ? (
+        <Link to={`/certificates/${data.certificate.code}`} className="flex items-center gap-4 rounded-2xl bg-tertiary-fixed p-5 text-on-tertiary-fixed ring-1 ring-tertiary/30 transition-transform hover:-translate-y-0.5">
+          <Award className="h-8 w-8 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[18px] font-semibold">{t("Сертификати шумо — {0}%", data.certificate.percent)}</span>
+            <span className="text-body-sm opacity-80">№ {data.certificate.number}</span>
+          </span>
+          <span className="text-label-md underline underline-offset-4">{t("Дидан")}</span>
+        </Link>
+      ) : (
+        <Link to="/certificates/sample" className="group flex items-center gap-4 overflow-hidden rounded-2xl bg-[#0f2452] p-4 text-white ring-1 ring-[#d9b765]/40 transition-transform hover:-translate-y-0.5">
+          <span className="relative flex h-16 w-[90px] shrink-0 flex-col items-center justify-center rounded-md border border-[#d9b765] bg-gradient-to-b from-[#1a3a7a] to-[#0b1a3d]">
+            <span className="text-[7px] font-extrabold tracking-[0.2em] text-white">СЕРТИФИКАТ</span>
+            <span className="mt-1 h-px w-12 bg-[#d9b765]" />
+            <Award className="mt-1 h-4 w-4 text-[#d9b765]" aria-hidden />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[17px] font-semibold">{t("Сертификат пас аз хатми ҳамаи 7 сатҳ")}</span>
+            <span className="text-body-sm text-white/70">{t("Бо номи шумо, рақам, мӯҳр ва QR-код барои санҷиш. Намунаро бинед.")}</span>
+          </span>
+          <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden />
+        </Link>
+      ))}
       {!user && (
         <Link to="/login" state={{ from: "/course" }} className="flex items-center gap-3 rounded-xl bg-primary-fixed p-4 text-on-primary-fixed ring-1 ring-primary/15">
           <LogIn className="h-5 w-5 shrink-0" aria-hidden />

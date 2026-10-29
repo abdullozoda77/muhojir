@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/course", tags=["course"])
 NO_LEVEL = "Level not found."
 NO_LESSON = "Lesson not found."
 LESSONS_FIRST = "Finish all lessons of this level first."
-ALREADY_PASSED = "You already have the certificate for this level."
+ALREADY_PASSED = "You already passed this level."
 WAIT = "You can try the exam again later."
 FINISHED = "This exam is already finished."
 LOCKED = "Finish the previous lesson first."
@@ -43,9 +43,8 @@ def level_info(data):
 
 
 def certificate_json(c):
-    data = course.level(c.level) or {"title": "", "title_ru": ""}
-    return {"code": c.code, "number": c.number, "full_name": c.full_name, "level": c.level,
-            "level_title": data["title"], "level_title_ru": data.get("title_ru", ""), "percent": c.percent,
+    return {"code": c.code, "number": c.number, "full_name": c.full_name, "levels": course.LEVELS,
+            "lessons": course.LEVELS * course.LESSONS_PER_LEVEL, "percent": c.percent,
             "issued_at": c.issued_at.isoformat(), "is_revoked": c.is_revoked}
 
 
@@ -65,11 +64,25 @@ async def progress_of(db, user, level=None):
     return {(p.level, p.number): p for p in (await db.scalars(query)).all()}
 
 
-async def certificates_of(db, user):
+def percent_of(attempt):
+    return round(attempt.score * 100 / len(attempt.questions)) if attempt.questions else 0
+
+
+async def passed_levels(db, user):
     if not user:
         return {}
-    rows = (await db.scalars(select(Certificate).where(Certificate.user_id == user.id))).all()
-    return {c.level: c for c in rows}
+    rows = (await db.scalars(select(ExamAttempt).where(ExamAttempt.user_id == user.id,
+                                                       ExamAttempt.passed.is_(True)))).all()
+    best = {}
+    for attempt in rows:
+        best[attempt.level] = max(best.get(attempt.level, 0), percent_of(attempt))
+    return best
+
+
+async def certificate_of(db, user):
+    if not user:
+        return None
+    return await db.scalar(select(Certificate).where(Certificate.user_id == user.id).limit(1))
 
 
 async def last_attempt(db, user, level):
@@ -77,14 +90,14 @@ async def last_attempt(db, user, level):
                            .order_by(ExamAttempt.started_at.desc()).limit(1))
 
 
-def is_unlocked(level, number, done, certificates):
+def is_unlocked(level, number, done, passed):
     if number == 1:
-        return level == 1 or level - 1 in certificates
+        return level == 1 or level - 1 in passed
     return (level, number - 1) in done
 
 
 async def must_unlocked(db, user, level, number):
-    if not is_unlocked(level, number, await progress_of(db, user), await certificates_of(db, user)):
+    if not is_unlocked(level, number, await progress_of(db, user), await passed_levels(db, user)):
         raise ApiError(LOCKED, 403, code="locked")
 
 
@@ -118,25 +131,27 @@ def shuffled(data, index):
 @router.get("/")
 async def overview(db: DB, user: OptionalUser):
     done = await progress_of(db, user)
-    certificates = await certificates_of(db, user)
+    passed = await passed_levels(db, user)
+    certificate = await certificate_of(db, user)
     result = []
     for data in course.levels():
         n = data["level"]
         lessons = [{"number": i, "title": item["title"], "goal": item.get("goal", ""),
                     "score": done[(n, i)].score if (n, i) in done else None,
-                    "unlocked": is_unlocked(n, i, done, certificates)}
+                    "unlocked": is_unlocked(n, i, done, passed)}
                    for i, item in enumerate(data["lessons"], start=1)]
         finished = sum(1 for item in lessons if item["score"] is not None)
         exam = {"lessons_done": finished, "lessons_total": len(lessons), "ready": finished >= len(lessons),
-                "certificate": certificate_json(certificates[n]) if n in certificates else None,
+                "passed": n in passed, "percent": passed.get(n), "final": n == course.LEVELS,
                 "wait_until": None, "open": False}
-        if user and exam["ready"] and not exam["certificate"]:
+        if user and exam["ready"] and not exam["passed"]:
             attempt = await last_attempt(db, user, n)
             moment = wait_until(attempt)
             exam["wait_until"] = moment.isoformat() if moment else None
             exam["open"] = bool(is_open(attempt))
         result.append({**level_info(data), "unlocked": lessons[0]["unlocked"], "lessons": lessons, "exam": exam})
-    return {"levels": result, "exam_size": course.EXAM_SIZE, "exam_minutes": course.EXAM_MINUTES,
+    return {"levels": result, "certificate": certificate_json(certificate) if certificate else None,
+            "exam_size": course.EXAM_SIZE, "exam_minutes": course.EXAM_MINUTES,
             "pass_percent": course.PASS_PERCENT, "lesson_pass": course.LESSON_PASS}
 
 
@@ -175,10 +190,10 @@ async def lesson_complete(level: int, number: int, body: LessonDone, db: DB, use
 @router.post("/levels/{level}/exam/", status_code=201)
 async def exam_start(level: int, body: ExamStart, db: DB, user: CurrentUser):
     data = must_level(level)
-    certificates = await certificates_of(db, user)
-    if level in certificates:
+    passed = await passed_levels(db, user)
+    if level in passed:
         raise ApiError(ALREADY_PASSED)
-    if level > 1 and level - 1 not in certificates:
+    if level > 1 and level - 1 not in passed:
         raise ApiError(LOCKED, 403, code="locked")
     done = await progress_of(db, user, level)
     if len(done) < len(data["lessons"]):
@@ -207,16 +222,17 @@ async def exam_detail(attempt_id: int, db: DB, user: CurrentUser):
     return exam_json(attempt)
 
 
-async def issue(db, user, attempt, percent):
+async def issue(db, user, attempt):
+    passed = await passed_levels(db, user)
+    percent = round(sum(passed.values()) / len(passed))
     certificate = Certificate(code=secrets.token_hex(6), user_id=user.id, attempt_id=attempt.id, level=attempt.level,
                               full_name=attempt.full_name, percent=percent, number="")
     db.add(certificate)
     await db.flush()
-    certificate.number = f"MJ-RU{attempt.level}-{certificate.issued_at:%Y}-{certificate.id:05d}"
+    certificate.number = f"MJ-RU-{certificate.issued_at:%Y}-{certificate.id:05d}"
     await db.commit()
-    title = course.level(attempt.level)["title"]
     await notify(db, user, "Сертификати нав!",
-                 f"Табрик! Шумо имтиҳони сатҳи {attempt.level} «{title}»-ро бо натиҷаи {percent}% супоридед. "
+                 f"Табрик! Шумо ҳамаи {course.LEVELS} сатҳи курси забони русиро хатм кардед, натиҷаи миёна {percent}%. "
                  f"Сертификат № {certificate.number} дар саҳифаи «Курси забони русӣ» аст.")
     return certificate
 
@@ -244,9 +260,10 @@ async def exam_submit(attempt_id: int, body: ExamAnswers, db: DB, user: CurrentU
     attempt.passed = percent >= course.PASS_PERCENT
     await db.commit()
     certificate = None
-    if attempt.passed and attempt.level not in await certificates_of(db, user):
-        certificate = await issue(db, user, attempt, percent)
+    if attempt.passed and attempt.level == course.LEVELS and not await certificate_of(db, user):
+        certificate = await issue(db, user, attempt)
     return {"right": right, "total": total, "percent": percent, "passed": attempt.passed, "late": late,
+            "final": attempt.level == course.LEVELS,
             "review": review, "certificate": certificate_json(certificate) if certificate else None,
             "wait_until": (moment.isoformat() if (moment := wait_until(attempt)) else None)}
 

@@ -60,7 +60,7 @@ function Start({ level, info, onStarted }) {
         {[
           [Check, t("{0} савол аз ҳамаи 10 дарси сатҳ", info.exam_size)],
           [Timer, t("{0} дақиқа вақт. Вақт тамом шавад, ҷавобҳо худ ба худ фиристода мешаванд.", info.exam_minutes)],
-          [Award, t("Барои сертификат {0}% ҷавоби дуруст лозим", info.pass_percent)],
+          [Award, level.exam.final ? t("Барои сертификат {0}% ҷавоби дуруст лозим", info.pass_percent) : t("Барои кушодани сатҳи навбатӣ {0}% ҷавоби дуруст лозим", info.pass_percent)],
           [Clock, t("Агар нагузаред, баъд аз 1 соат боз супоридан мумкин")],
         ].map(([Icon, text]) => (
           <li key={text} className="flex items-start gap-2.5"><Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />{text}</li>
@@ -179,18 +179,21 @@ function Questions({ exam, onFinished }) {
   );
 }
 
-function Result({ result, level }) {
+function Result({ result }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="card flex flex-col items-center gap-4 p-8 text-center md:p-12">
         <span className={`flex h-28 w-28 items-center justify-center rounded-full text-[34px] font-semibold tabular-nums ring-4 ${result.passed ? "text-tertiary ring-tertiary/40" : "text-warning ring-warning-container/50"}`}>
           {result.percent}%
         </span>
-        <h1 className="text-[26px] font-semibold">{result.passed ? t("Табрик! Шумо имтиҳонро супоридед!") : t("Ин дафъа нашуд")}</h1>
+        <h1 className="text-[26px] font-semibold">
+          {!result.passed ? t("Ин дафъа нашуд") : result.certificate ? t("Табрик! Шумо тамоми курсро хатм кардед!") : t("Табрик! Шумо имтиҳонро супоридед!")}
+        </h1>
         <p className="max-w-md text-body-md text-on-surface-variant">
           {t("{0} аз {1} ҷавоби дуруст.", result.right, result.total)}{" "}
           {result.late && t("Ҷавобҳо баъд аз тамом шудани вақт расиданд. ")}
           {!result.passed && result.wait_until && t("Дарсҳоро такрор кунед ва аз соати {0} боз кӯшиш кунед.", time(result.wait_until))}
+          {result.passed && !result.final && t("Сатҳи навбатӣ кушода шуд. Сертификат пас аз хатми ҳамаи 7 сатҳ дода мешавад.")}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {result.certificate && (
@@ -199,7 +202,7 @@ function Result({ result, level }) {
             </Link>
           )}
           <Link to="/course" className="inline-flex min-h-[48px] items-center rounded-xl px-5 text-label-lg ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low">
-            {result.passed && level < 7 ? t("Ба сатҳи навбатӣ") : t("Ба курс")}
+            {result.passed && !result.final ? t("Ба сатҳи навбатӣ") : t("Ба курс")}
           </Link>
         </div>
       </div>
@@ -246,14 +249,16 @@ export default function CourseExam() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 pt-2 md:pt-6">
       {!exam && <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>}
       {result ? (
-        <Result result={result} level={number} />
+        <Result result={result} />
       ) : exam ? (
         <Questions exam={exam} onFinished={setResult} />
-      ) : level.exam.certificate ? (
+      ) : level.exam.passed ? (
         <div className="card flex flex-col items-start gap-4 p-8">
           <ShieldCheck className="h-8 w-8 text-tertiary" aria-hidden />
           <h1 className="text-[22px] font-semibold">{t("Шумо ин сатҳро аллакай супоридаед")}</h1>
-          <Link to={`/certificates/${level.exam.certificate.code}`} className="text-label-lg text-primary underline underline-offset-4">{t("Сертификатро дидан")}</Link>
+          <Link to={data.certificate ? `/certificates/${data.certificate.code}` : "/course"} className="text-label-lg text-primary underline underline-offset-4">
+            {data.certificate ? t("Сертификатро дидан") : t("Ба курс")}
+          </Link>
         </div>
       ) : !level.exam.ready ? (
         <div className="card flex flex-col items-start gap-4 p-8">

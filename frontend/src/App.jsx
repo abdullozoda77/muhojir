@@ -67,6 +67,7 @@ export default function App() {
         <Route path="course" element={<Course />} />
         <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
         <Route path="course/:level/:number" element={<Lesson />} />
+        <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />
         <Route path="tickets" element={<Tickets />} />
         <Route path="places" element={<Places />} />

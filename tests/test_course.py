@@ -83,36 +83,60 @@ async def test_lesson_progress_keeps_best_score(client, user):
     assert lessons[1]["score"] == 95 and lessons[2]["score"] is None
 
 
-async def test_exam_gives_certificate(client, user):
-    headers, data = user
+async def pass_level(client, headers, level, name="Али Валиев"):
+    await finish_lessons(client, headers, level)
+    r = await client.post(f"/api/course/levels/{level}/exam/", headers=headers, json={"full_name": name})
+    assert r.status_code == 201, r.text
+    exam = r.json()
+    r = await client.post(f"/api/course/exams/{exam['id']}/submit/", headers=headers,
+                          json={"answers": await answers_for(exam["id"])})
+    return exam, r.json()
+
+
+async def test_level_exam_opens_next_level(client, user):
+    headers, _ = user
     r = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})
     assert r.status_code == 400
     await finish_lessons(client, headers, 1)
-    r = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "  Али   Валиев "})
-    assert r.status_code == 201, r.text
+    r = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})
     exam = r.json()
-    assert len(exam["questions"]) == course.EXAM_SIZE and "answer" not in exam["questions"][0]
+    assert r.status_code == 201 and len(exam["questions"]) == course.EXAM_SIZE and "answer" not in exam["questions"][0]
     again = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})
     assert again.json()["id"] == exam["id"]
-
     r = await client.post(f"/api/course/exams/{exam['id']}/submit/", headers=headers,
                           json={"answers": await answers_for(exam["id"])})
     result = r.json()
-    assert result["passed"] and result["percent"] == 100 and len(result["review"]) == course.EXAM_SIZE
+    assert result["passed"] and result["percent"] == 100 and result["certificate"] is None and not result["final"]
+    assert len(result["review"]) == course.EXAM_SIZE
+    assert (await client.post(f"/api/course/exams/{exam['id']}/submit/", headers=headers, json={"answers": []})).status_code == 400
+    assert (await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али"})).status_code == 400
+    data = (await client.get("/api/course/", headers=headers)).json()
+    assert data["levels"][0]["exam"]["passed"] and data["levels"][0]["exam"]["percent"] == 100
+    assert data["levels"][1]["unlocked"] and data["certificate"] is None
+    assert (await client.get("/api/course/certificates/", headers=headers)).json() == []
+
+
+async def test_whole_course_gives_one_certificate(client, user):
+    headers, data = user
+    for level in range(1, course.LEVELS):
+        _, result = await pass_level(client, headers, level)
+        assert result["passed"] and result["certificate"] is None
+    _, result = await pass_level(client, headers, course.LEVELS, name="  Али   Валиев ")
+    assert result["final"] and result["passed"]
     certificate = result["certificate"]
-    assert certificate["full_name"] == "Али Валиев" and certificate["number"].startswith("MJ-RU1-")
+    assert certificate["full_name"] == "Али Валиев" and certificate["number"].startswith("MJ-RU-")
+    assert certificate["percent"] == 100 and certificate["levels"] == course.LEVELS and certificate["lessons"] == 70
 
     public = await client.get(f"/api/course/certificates/{certificate['code']}/")
     assert public.status_code == 200 and public.json()["number"] == certificate["number"]
     assert (await client.get("/api/course/certificates/nothing/")).status_code == 404
     mine = (await client.get("/api/course/certificates/", headers=headers)).json()
     assert [c["code"] for c in mine] == [certificate["code"]]
-    assert (await client.post(f"/api/course/exams/{exam['id']}/submit/", headers=headers, json={"answers": []})).status_code == 400
-    r = await client.post("/api/course/levels/1/exam/", headers=headers, json={"full_name": "Али Валиев"})
-    assert r.status_code == 400
+    overview = (await client.get("/api/course/", headers=headers)).json()
+    assert overview["certificate"]["code"] == certificate["code"]
     async with SessionLocal() as db:
         titles = (await db.scalars(select(Notification.title).where(Notification.user_id == data["user"]["id"]))).all()
-    assert "Сертификати нав!" in titles
+    assert titles.count("Сертификати нав!") == 1
 
 
 async def test_failed_exam_waits_before_retry(client, user):
