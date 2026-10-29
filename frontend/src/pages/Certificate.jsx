@@ -90,6 +90,8 @@ function Signature({ className = "" }) {
   );
 }
 
+const nameSize = (name) => (name.length > 34 ? 2.4 : name.length > 26 ? 3 : name.length > 20 ? 3.5 : 4);
+
 function Paper({ certificate, url }) {
   const issued = new Date(certificate.issued_at);
   const date = issued.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -115,7 +117,7 @@ function Paper({ certificate, url }) {
           <img src="/logo.png" alt="" className="h-[4.2cqw] w-[4.2cqw] rounded-full bg-white p-[0.2cqw] ring-[0.1cqw] ring-[#b8892b]" />
           <div className="flex flex-col items-start leading-tight">
             <span className="text-[2.2cqw] font-bold tracking-[0.04em]">Muhojir</span>
-            <span className="text-[1.05cqw] text-[#4a5a85]">Курси онлайни забони русӣ · Онлайн-курс русского языка</span>
+            <span className="whitespace-nowrap text-[1.05cqw] text-[#4a5a85]">Курси онлайни забони русӣ · Онлайн-курс русского языка</span>
           </div>
         </div>
 
@@ -123,7 +125,7 @@ function Paper({ certificate, url }) {
         <p className="mt-[0.7cqw] text-[1.3cqw] font-semibold uppercase tracking-[0.3em] text-[#b8892b]">дар бораи хатми сатҳ · об окончании уровня</p>
 
         <p className="mt-[2.2cqw] text-[1.45cqw] text-[#4a5a85]">Ин сертификат тасдиқ мекунад, ки · Настоящим подтверждается, что</p>
-        <p className="mt-[0.8cqw] border-b-[0.12cqw] border-[#b8892b] px-[3cqw] pb-[0.4cqw] text-[4cqw] font-bold leading-tight text-[#1f3a93]">{certificate.full_name}</p>
+        <p className="mt-[0.8cqw] max-w-[80cqw] overflow-hidden whitespace-nowrap border-b-[0.12cqw] border-[#b8892b] px-[3cqw] pb-[0.4cqw] font-bold leading-tight text-[#1f3a93]" style={{ fontSize: `${nameSize(certificate.full_name)}cqw` }}>{certificate.full_name}</p>
 
         <p className="mt-[1.6cqw] max-w-[72cqw] text-[1.55cqw] leading-snug">
           сатҳи <b>{certificate.level}</b> — «<b>{certificate.level_title}</b>»-и курси забони русиро хатм карда, имтиҳони ниҳоиро бо натиҷаи <b>{certificate.percent}%</b> супоридааст.
@@ -145,7 +147,7 @@ function Paper({ certificate, url }) {
           </div>
           <div className="flex flex-col items-center gap-[0.3cqw]">
             <Qr text={url} className="h-[8.5cqw] w-[8.5cqw]" />
-            <span className="text-[0.85cqw] text-[#4a5a85]">Санҷиш · Проверка</span>
+            <span className="whitespace-nowrap text-[0.85cqw] text-[#4a5a85]">Санҷиш · Проверка</span>
           </div>
         </div>
         <p className="mt-[1.2cqw] text-[0.85cqw] text-[#6b7799]">
