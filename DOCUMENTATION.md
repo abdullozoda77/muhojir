@@ -56,23 +56,23 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - Backend — the FastAPI application (`app/`) — 4 files
 - `app/core/` — settings, security, request helpers — 9 files
 - `app/db/` — database connection and column types — 3 files
-- `app/models/` — database tables (SQLAlchemy) — 8 files
+- `app/models/` — database tables (SQLAlchemy) — 9 files
 - `app/schemas/` — request bodies and JSON answers — 5 files
-- `app/routers/` — the API endpoints — 9 files
-- `app/services/` — business logic used by routers and background tasks — 11 files
+- `app/routers/` — the API endpoints — 10 files
+- `app/services/` — business logic used by routers and background tasks — 12 files
 - `app/assistant/` — the AI assistant — 3 files
 - `app/admin/` — the admin panel (SQLAdmin, `/admin/`) — 2 files
 - `app/admin/templates/` — admin panel pages — 1 files
 - `alembic/` — database migrations — 1 files
-- `alembic/versions/` — the migrations, in order — 7 files
-- `tests/` — automated tests (pytest) — 8 files
+- `alembic/versions/` — the migrations, in order — 10 files
+- `tests/` — automated tests (pytest) — 10 files
 - `deploy/` — putting the site on the server — 6 files
 - Frontend — the React site (`frontend/`) — 4 files
 - `frontend/scripts/` — 1 files
 - `frontend/public/` — files served as they are — 4 files
-- `frontend/src/` — app core: routing, API, login, languages, helpers — 13 files
-- `frontend/src/components/` — reusable parts of pages — 23 files
-- `frontend/src/pages/` — one file per page of the site — 23 files
+- `frontend/src/` — app core: routing, API, login, languages, helpers — 14 files
+- `frontend/src/components/` — reusable parts of pages — 25 files
+- `frontend/src/pages/` — one file per page of the site — 27 files
 
 
 ---
@@ -375,6 +375,16 @@ A generic, single database configuration.
 | `Place` | class · table `places` | A useful place on the map. Most come from OpenStreetMap (source "osm", refreshed by the import); users may suggest new ones (source "user") with a pin on the map and a photo; they appear after an editor approves them. proof is the private photo (place-proofs/), reject_reason is set when an editor rejects the suggestion. |
 | `PlaceReview` | class · table `place_reviews` | A visitor's rating (1-5) and words about a place; one per person per place. |
 
+### `app/models/course.py`
+
+**What it is for:** Tables of the Russian course: lesson progress, level exams and the course certificate.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `LessonProgress` | class · table `lesson_progress` | A finished lesson of a user (level, number, best score in %). One row per user and lesson. |
+| `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
+| `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
+
 ### `app/models/support.py`
 
 **What it is for:** Database tables of help: help sites and contacts (embassy, hotline, lawyers).
@@ -553,6 +563,21 @@ A generic, single database configuration.
 | `notification(notification_id, user, db)` | async function · `GET /api/auth/notifications/{notification_id}/` | — |
 | `update_notification(notification_id, data, user, db)` | async function · `PATCH /api/auth/notifications/{notification_id}/` | — |
 | `delete_notification(notification_id, user, db)` | async function · `DELETE /api/auth/notifications/{notification_id}/` | — |
+
+### `app/routers/course.py`
+
+**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `GET /api/course/` | async function | All levels with lessons, the user's scores, which lessons are open, exam state of each level (ready, passed, percent, wait_until, open) and the user's certificate. Works for guests too. |
+| `GET /api/course/levels/{level}/lessons/{number}/` | async function | One lesson: theory, words and exercises. 403 with code «locked» if the previous lesson is not finished. |
+| `POST /api/course/levels/{level}/lessons/{number}/complete/` | async function | Saves the lesson score (at least 60%); the best score is kept. |
+| `POST /api/course/levels/{level}/exam/` | async function | Starts the level exam (all 10 lessons needed, previous level passed) or returns the open one. full_name is the name for the certificate. 429 with wait_until after a failed try. |
+| `GET /api/course/exams/{attempt_id}/` | async function | The questions of an open exam (without answers). |
+| `POST /api/course/exams/{attempt_id}/submit/` | async function | Grades the answers and returns the result with a review; after level 7 also the certificate. |
+| `GET /api/course/certificates/` | async function | The user's certificate (a list with 0 or 1 item). |
+| `GET /api/course/certificates/{code}/` | async function | Public check of a certificate by its code. |
 
 ### `app/routers/documents.py`
 
@@ -766,6 +791,17 @@ A generic, single database configuration.
 |---|---|---|
 | `alert_filters(alert)` | function | The alert as query parameters of the jobs list (?search=...&city=...). |
 | `notify_alerts(db, since)` | async function | Tells every alert about the jobs that appeared since this moment. Returns how many users were told. |
+
+### `app/services/course.py`
+
+**What it is for:** Reads the course content from app/seed/course/level1.json … level7.json (cached in memory) and keeps the course rules: 7 levels, 10 lessons each, 20 exam questions, 30 minutes, 80% to pass an exam, 60% to finish a lesson, 60 minutes before a new try. Each level file has title, title_ru, cefr, text, lessons (theory blocks with examples, words, exercises of type «choice» or «build») and exam (a pool of 25 questions). Lesson texts are in Tajik; there is no audio.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `level(number)` | function | The content of one level or None. |
+| `levels()` | function | All levels in order. |
+| `lesson(level, number)` | function | One lesson or None. |
+| `exam_question(level, index)` | function | One question of the level's exam pool. |
 
 ### `app/services/emails.py`
 
@@ -1119,6 +1155,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Drops legal_questions. |
 | `downgrade()` | function | Creates it again (empty). |
 
+### `alembic/versions/0010_course.py`
+
+**What it is for:** Tables of the Russian course: lesson_progress, exam_attempts and certificates. Revision ID: 0010 Revises: 0009
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the three tables. |
+| `downgrade()` | function | Drops them. |
+
 ---
 
 ## `tests/` — automated tests (pytest)
@@ -1159,6 +1204,11 @@ A generic, single database configuration.
 | `test_profile(client, user)` | async function | — |
 | `test_login_is_throttled(client)` | async function | — |
 | `test_avatar(client, user)` | async function | — |
+
+### `tests/test_course.py`
+
+**What it is for:** Tests of the course: every level file is complete, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check.
+
 
 ### `tests/test_google.py`
 
@@ -1452,6 +1502,16 @@ A generic, single database configuration.
 | `isIOS` | export const | — |
 | `useInstall` | export function | {installed, canInstall, install()}: canInstall is true where the browser can install it with one button. |
 | `useOnline` | export function | — |
+
+### `frontend/src/speech.js`
+
+**What it is for:** Reads Russian text aloud with the browser's voice (only the patent exam practice uses it; the course has no audio).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `canSpeak` | const | Whether the browser can speak. |
+| `speak(text, rate)` | function | Says the text in Russian. |
+| `hush()` | function | Stops speaking. |
 
 ### `frontend/src/theme.js`
 
@@ -1836,6 +1896,41 @@ A generic, single database configuration.
 | `ReviewForm` | function | — |
 | `EmployerPage` | export function | — |
 
+### `frontend/src/pages/Course.jsx`
+
+**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the next lesson and a card with the user's certificate or a link to the sample.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Course` | export function | — |
+
+### `frontend/src/pages/Lesson.jsx`
+
+**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is kept in the browser, so a reopened lesson continues from the next exercise. The score is sent to the server when it is at least 60%.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Practice` | function | Exercises one by one. |
+| `Lesson` | export function | — |
+
+### `frontend/src/pages/CourseExam.jsx`
+
+**What it is for:** /course/:level/exam — the level exam: the name for the certificate, then questions with a timer; answers are kept in the browser and sent automatically when time is over; the result shows a review of mistakes.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `CourseExam` | export function | — |
+
+### `frontend/src/pages/Certificate.jsx`
+
+**What it is for:** /certificates/:code and /certificates/sample — the dark-blue A4 certificate (stamp, signature, seal, number and a QR code to this page). «Download PDF» draws the certificate into an A4 PDF in the browser (html-to-image + jsPDF); «Print» also works. The sample has a watermark and is open to everyone.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Paper` | function | The certificate itself. |
+| `savePdf` | async function | Makes and saves the PDF. |
+| `Certificate` | export function | — |
+
 ### `frontend/src/pages/Exam.jsx`
 
 **What it is for:** Practice for the exam in Russian language, history and law that is needed for the patent. Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place.
@@ -1846,7 +1941,6 @@ A generic, single database configuration.
 | `prepare` | const | Each option keeps whether it is the right one, so the order can change freely. |
 | `readBest` | function | — |
 | `saveBest` | function | — |
-| `speak` | function | — |
 | `Listen` | function | — |
 | `Quiz` | function | — |
 | `Exam` | export function | — |
