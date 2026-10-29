@@ -55,15 +55,32 @@ async def test_lessons_are_open_to_guests(client):
     assert r.status_code == 401
 
 
+async def test_lessons_open_one_by_one(client, user):
+    headers, _ = user
+    assert (await client.get("/api/course/levels/1/lessons/2/", headers=headers)).status_code == 403
+    assert (await client.get("/api/course/levels/1/lessons/2/")).status_code == 403
+    r = await client.post("/api/course/levels/1/lessons/2/complete/", headers=headers, json={"score": 100})
+    assert r.status_code == 403 and r.json()["code"] == "locked"
+    await client.post("/api/course/levels/1/lessons/1/complete/", headers=headers, json={"score": 100})
+    assert (await client.get("/api/course/levels/1/lessons/2/", headers=headers)).status_code == 200
+    levels = (await client.get("/api/course/", headers=headers)).json()["levels"]
+    assert [l["unlocked"] for l in levels[0]["lessons"][:3]] == [True, True, False]
+    assert levels[1]["unlocked"] is False
+    assert (await client.get("/api/course/levels/2/lessons/1/", headers=headers)).status_code == 403
+    r = await client.post("/api/course/levels/2/exam/", headers=headers, json={"full_name": "Али Валиев"})
+    assert r.status_code == 403
+
+
 async def test_lesson_progress_keeps_best_score(client, user):
     headers, _ = user
+    await client.post("/api/course/levels/1/lessons/1/complete/", headers=headers, json={"score": 100})
     r = await client.post("/api/course/levels/1/lessons/2/complete/", headers=headers, json={"score": 40})
     assert r.status_code == 400
     await client.post("/api/course/levels/1/lessons/2/complete/", headers=headers, json={"score": 95})
     r = await client.post("/api/course/levels/1/lessons/2/complete/", headers=headers, json={"score": 70})
     assert r.json()["score"] == 95
     lessons = (await client.get("/api/course/", headers=headers)).json()["levels"][0]["lessons"]
-    assert lessons[1]["score"] == 95 and lessons[0]["score"] is None
+    assert lessons[1]["score"] == 95 and lessons[2]["score"] is None
 
 
 async def test_exam_gives_certificate(client, user):

@@ -22,6 +22,7 @@ LESSONS_FIRST = "Finish all lessons of this level first."
 ALREADY_PASSED = "You already have the certificate for this level."
 WAIT = "You can try the exam again later."
 FINISHED = "This exam is already finished."
+LOCKED = "Finish the previous lesson first."
 
 
 class LessonDone(Form):
@@ -76,6 +77,17 @@ async def last_attempt(db, user, level):
                            .order_by(ExamAttempt.started_at.desc()).limit(1))
 
 
+def is_unlocked(level, number, done, certificates):
+    if number == 1:
+        return level == 1 or level - 1 in certificates
+    return (level, number - 1) in done
+
+
+async def must_unlocked(db, user, level, number):
+    if not is_unlocked(level, number, await progress_of(db, user), await certificates_of(db, user)):
+        raise ApiError(LOCKED, 403, code="locked")
+
+
 def wait_until(attempt):
     if attempt and attempt.passed is False and attempt.finished_at:
         moment = attempt.finished_at + timedelta(minutes=course.RETRY_MINUTES)
@@ -111,7 +123,8 @@ async def overview(db: DB, user: OptionalUser):
     for data in course.levels():
         n = data["level"]
         lessons = [{"number": i, "title": item["title"], "goal": item.get("goal", ""),
-                    "score": done[(n, i)].score if (n, i) in done else None}
+                    "score": done[(n, i)].score if (n, i) in done else None,
+                    "unlocked": is_unlocked(n, i, done, certificates)}
                    for i, item in enumerate(data["lessons"], start=1)]
         finished = sum(1 for item in lessons if item["score"] is not None)
         exam = {"lessons_done": finished, "lessons_total": len(lessons), "ready": finished >= len(lessons),
@@ -122,7 +135,7 @@ async def overview(db: DB, user: OptionalUser):
             moment = wait_until(attempt)
             exam["wait_until"] = moment.isoformat() if moment else None
             exam["open"] = bool(is_open(attempt))
-        result.append({**level_info(data), "lessons": lessons, "exam": exam})
+        result.append({**level_info(data), "unlocked": lessons[0]["unlocked"], "lessons": lessons, "exam": exam})
     return {"levels": result, "exam_size": course.EXAM_SIZE, "exam_minutes": course.EXAM_MINUTES,
             "pass_percent": course.PASS_PERCENT, "lesson_pass": course.LESSON_PASS}
 
@@ -133,6 +146,7 @@ async def lesson_detail(level: int, number: int, db: DB, user: OptionalUser):
     item = course.lesson(level, number)
     if not item:
         raise ApiError(NO_LESSON, 404)
+    await must_unlocked(db, user, level, number)
     done = (await progress_of(db, user, level)).get((level, number))
     return {**item, "level": level, "number": number, "level_title": data["title"],
             "lessons_total": len(data["lessons"]), "score": done.score if done else None,
@@ -144,6 +158,7 @@ async def lesson_complete(level: int, number: int, body: LessonDone, db: DB, use
     must_level(level)
     if not course.lesson(level, number):
         raise ApiError(NO_LESSON, 404)
+    await must_unlocked(db, user, level, number)
     if body.score < course.LESSON_PASS:
         raise FieldError("score", f"At least {course.LESSON_PASS}% is needed to finish the lesson.")
     done = (await progress_of(db, user, level)).get((level, number))
@@ -160,8 +175,11 @@ async def lesson_complete(level: int, number: int, body: LessonDone, db: DB, use
 @router.post("/levels/{level}/exam/", status_code=201)
 async def exam_start(level: int, body: ExamStart, db: DB, user: CurrentUser):
     data = must_level(level)
-    if level in await certificates_of(db, user):
+    certificates = await certificates_of(db, user)
+    if level in certificates:
         raise ApiError(ALREADY_PASSED)
+    if level > 1 and level - 1 not in certificates:
+        raise ApiError(LOCKED, 403, code="locked")
     done = await progress_of(db, user, level)
     if len(done) < len(data["lessons"]):
         raise ApiError(LESSONS_FIRST)

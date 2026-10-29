@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw, Undo2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lightbulb, Lock, RotateCcw, Undo2, X } from "lucide-react";
 import { api } from "../api.js";
 import { t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
@@ -281,6 +281,23 @@ export default function Lesson() {
   };
 
   if (loading || (!lesson && !error)) return <Skeleton className="mt-8 h-96" />;
+  if (error?.status === 403) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 pt-2 md:pt-6">
+        <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>
+        <div className="card flex flex-col items-start gap-4 p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high"><Lock className="h-6 w-6" aria-hidden /></span>
+          <h1 className="text-[22px] font-semibold">{t("Ин дарс ҳоло баста аст")}</h1>
+          <p className="text-body-md text-on-surface-variant">
+            {user ? t("Дарсҳо бо тартиб кушода мешаванд: аввал дарси пешинаро хатм кунед.") : t("Барои идома додан ворид шавед — пешрафти шумо нигоҳ дошта мешавад ва дарсҳо бо тартиб кушода мешаванд.")}
+          </p>
+          <Link to={user ? "/course" : "/login"} state={user ? undefined : { from: `/course/${level}/${number}` }} className="inline-flex min-h-[44px] items-center rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
+            {user ? t("Ба курс") : t("Ворид шудан")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
   if (error) return <ErrorBox error={error} className="mt-8" />;
 
   return (

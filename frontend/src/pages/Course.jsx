@@ -67,12 +67,12 @@ function ExamPanel({ level, user, size, minutes, pass }) {
 function Level({ level, open, onToggle, user, info }) {
   const done = level.exam.lessons_done;
   const total = level.exam.lessons_total;
-  const next = level.lessons.find((l) => l.score === null) || level.lessons[0];
+  const next = level.lessons.find((l) => l.score === null && l.unlocked);
   return (
     <section className={`overflow-hidden rounded-2xl bg-surface-container-lowest ring-1 transition-shadow ${open ? "ring-outline/50 shadow-[0_18px_40px_-28px_rgb(16_36_84/0.45)]" : "ring-outline-variant"}`}>
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-4 p-5 text-left md:p-6">
-        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[20px] font-semibold tabular-nums ${level.exam.certificate ? "bg-tertiary text-on-tertiary" : "bg-ink text-on-ink"}`}>
-          {level.exam.certificate ? <Check className="h-6 w-6" aria-label={t("Хатм шуд")} /> : level.level}
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[20px] font-semibold tabular-nums ${level.exam.certificate ? "bg-tertiary text-on-tertiary" : level.unlocked ? "bg-ink text-on-ink" : "bg-surface-container-high text-on-surface-variant"}`}>
+          {level.exam.certificate ? <Check className="h-6 w-6" aria-label={t("Хатм шуд")} /> : level.unlocked ? level.level : <Lock className="h-5 w-5" aria-label={t("Баста")} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-label-md text-on-surface-variant">{t("Сатҳи {0}", level.level)} · ≈ {level.cefr}</span>
@@ -90,6 +90,19 @@ function Level({ level, open, onToggle, user, info }) {
           <Stagger as="ol" className="grid gap-2 sm:grid-cols-2">
             {level.lessons.map((lesson) => (
               <StaggerItem as="li" key={lesson.number}>
+                {!lesson.unlocked ? (
+                  <div className="flex h-full items-start gap-3 rounded-xl p-3 opacity-60 ring-1 ring-inset ring-outline-variant" aria-disabled="true">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-on-surface-variant">
+                      <Lock className="h-4 w-4" aria-label={t("Баста")} />
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-label-lg leading-snug">{lesson.title}</span>
+                      <span className="text-body-sm text-on-surface-variant">
+                        {lesson.number === 1 ? t("Пас аз имтиҳони сатҳи {0} кушода мешавад", level.level - 1) : t("Аввал дарси {0}-ро хатм кунед", lesson.number - 1)}
+                      </span>
+                    </span>
+                  </div>
+                ) : (
                 <Link
                   to={`/course/${level.level}/${lesson.number}`}
                   className={`group flex h-full items-start gap-3 rounded-xl p-3 ring-1 ring-inset transition-colors hover:bg-surface-container-low ${lesson === next && done < total ? "ring-2 ring-primary" : "ring-outline-variant"}`}
@@ -106,6 +119,7 @@ function Level({ level, open, onToggle, user, info }) {
                     )}
                   </span>
                 </Link>
+                )}
               </StaggerItem>
             ))}
           </Stagger>
