@@ -26,6 +26,7 @@ class Feedback(Base):
     rating: Mapped[int | None] = mapped_column(Integer)
     message: Mapped[str] = mapped_column(Text)
     page: Mapped[str] = mapped_column(String(200), default="")
+    photo: Mapped[str] = mapped_column(String(100), default="")
     status: Mapped[str] = mapped_column(String(10), default="new", index=True)
     reply: Mapped[str] = mapped_column(Text, default="")
     replied_at: Mapped[datetime | None] = mapped_column(UTCDateTime)

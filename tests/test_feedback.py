@@ -36,3 +36,24 @@ async def test_feedback_reaches_editors_and_the_reply_comes_back(client, user):
     assert any("Ташаккур, ба наздикӣ!" in n["message"] for n in r.json()["results"])
     r = await client.get("/api/feedback/mine/", headers=sender)
     assert [f["reply"] for f in r.json()] == ["Ташаккур, ба наздикӣ!"]
+
+
+async def test_feedback_with_a_photo_is_seen_only_by_the_sender_and_editors(client, user):
+    editor, data = user
+    await set_role(data["user"]["id"], "editor")
+    sender = await register(client, "photo@example.com", "Фаридун Раҳимов")
+    stranger = await register(client, "stranger@example.com", "Бегона Одам")
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 64
+    r = await client.post("/api/feedback/", headers=sender, data={"kind": "bug", "message": "Тугма кор намекунад"},
+                          files={"photo": ("bug.exe", b"MZ", "application/octet-stream")})
+    assert "photo" in r.json()
+    r = await client.post("/api/feedback/", headers=sender, data={"kind": "bug", "rating": "2", "message": "Тугма кор намекунад"},
+                          files={"photo": ("bug.png", png, "image/png")})
+    assert r.status_code == 201, r.text
+    feedback = r.json()
+    assert feedback["rating"] == 2 and feedback["photo"] == f"/api/feedback/{feedback['id']}/photo/"
+    assert (await client.get(feedback["photo"], headers=sender)).content == png
+    assert (await client.get(feedback["photo"], headers=editor)).status_code == 200
+    assert (await client.get(feedback["photo"], headers=stranger)).status_code == 404
+    r = await client.post("/api/feedback/", headers=sender, json={"message": "Бе акс ҳам кор мекунад"})
+    assert r.status_code == 201 and r.json()["photo"] is None

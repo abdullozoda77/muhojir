@@ -58,6 +58,8 @@ class DeletesPrivateFiles:
                 docs = select(UserDocument.photo).where(False)
                 pays = select(Payment.receipt).where(Payment.id == model.id)
             request.state.private_files = [*(await db.scalars(docs)).all(), *(await db.scalars(pays)).all()]
+            if isinstance(model, User):
+                request.state.private_files += (await db.scalars(select(Feedback.photo).where(Feedback.user_id == model.id))).all()
 
     async def after_model_delete(self, model, request):
         from app.core.files import delete_private
@@ -444,7 +446,7 @@ class FeedbackAdmin(Base, model=Feedback):
     column_searchable_list = [Feedback.message]
     column_sortable_list = [Feedback.created_at, Feedback.status, Feedback.rating]
     column_default_sort = [(Feedback.created_at, True)]
-    column_formatters = {"kind": lambda m, a: m.kind_label, "message": lambda m, a: m.message[:120]}
+    column_formatters = {"kind": lambda m, a: m.kind_label, "message": lambda m, a: m.message[:120] + (" 📷" if m.photo else "")}
     form_columns = [Feedback.status, Feedback.reply]
     form_choices = {"status": [(st, st) for st in FEEDBACK_STATUSES]}
     can_create = False
@@ -459,6 +461,11 @@ class FeedbackAdmin(Base, model=Feedback):
 
             async with SessionLocal() as db:
                 await send_reply(db, await db.get(Feedback, model.id))
+
+    async def after_model_delete(self, model, request):
+        from app.core.files import delete_private
+
+        await delete_private(model.photo)
 
 
 VIEWS = [

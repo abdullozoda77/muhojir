@@ -343,7 +343,7 @@ A generic, single database configuration.
 |---|---|---|
 | `FEEDBACK_KINDS` | const | Kinds of feedback: idea, bug (something broken on the site), praise, other. |
 | `FEEDBACK_STATUSES` | const | new (not read yet), read, done (answered). |
-| `Feedback` | class · table `feedback` | Feedback of a logged-in user: kind, rating 1-5 (optional), message, the page it was sent from, status, an editor's reply and when it was sent. |
+| `Feedback` | class · table `feedback` | Feedback of a logged-in user: kind, rating 1-5 (optional), message, the page it was sent from, status, an editor's reply and when it was sent, and an optional photo (private file in private_media/feedback/). |
 
 ### `app/models/jobs.py`
 
@@ -651,8 +651,9 @@ A generic, single database configuration.
 |---|---|---|
 | `FeedbackIn` | class | kind, rating (1-5 or empty), message (5-3000 characters), page. |
 | `FeedbackPatch` | class | status and/or reply (editors). |
-| `feedback_json(f, viewer)` | function | JSON of feedback; editors also see the name, email and page of the author. |
-| `send_feedback(data, db, user)` | async function · `POST /api/feedback/` | Saves the feedback and notifies editors. 10 per hour per user. |
+| `feedback_json(f, viewer)` | function | JSON of feedback; editors also see the name, email and page of the author; photo is the address of the photo or null. |
+| `send_feedback(request, db, user)` | async function · `POST /api/feedback/` | Takes JSON or a form (multipart) with an optional photo (jpg, png, webp; up to 10 MB). Saves the feedback and notifies editors. 10 per hour per user. |
+| `feedback_photo(feedback_id, db, user)` | async function · `GET /api/feedback/{feedback_id}/photo/` | The photo of feedback: only its author and editors, others get 404. |
 | `my_feedback(db, user)` | async function · `GET /api/feedback/mine/` | The user's own feedback with the replies. |
 | `list_feedback(request, db, user, page)` | async function · `GET /api/feedback/` | Editors: all feedback, newest first; ?status= and ?kind=. |
 | `update_feedback(feedback_id, data, db, user)` | async function · `PATCH /api/feedback/{feedback_id}/` | Editors: change the status or reply; a reply notifies the author. |
@@ -1253,6 +1254,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0013_feedback_photo.py`
+
+**What it is for:** Column feedback.photo. Revision ID: 0013 Revises: 0012
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Adds the column. |
+| `downgrade()` | function | Drops it. |
+
 ### `alembic/versions/0012_feedback.py`
 
 **What it is for:** Table feedback. Revision ID: 0012 Revises: 0011
@@ -1317,6 +1327,7 @@ A generic, single database configuration.
 |---|---|---|
 | `register(client, email, name)` | async function | A new confirmed user, returns the auth header. |
 | `test_only_logged_in_users_send_feedback(client)` | async function | Guests get 401. |
+| `test_feedback_with_a_photo_is_seen_only_by_the_sender_and_editors(client, user)` | async function | A non-photo file is refused; feedback with a photo is saved from a form; the author and editors open the photo, a stranger gets 404; JSON without a photo still works. |
 | `test_feedback_reaches_editors_and_the_reply_comes_back(client, user)` | async function | Too short is refused; editors are notified; only editors see the list (with email and page); a reply marks it done and notifies the author; /mine/ shows the reply. |
 
 ### `tests/test_google.py`
@@ -1707,8 +1718,8 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `KINDS` | const | The four kinds with icons. |
-| `MyFeedback` | function | The user's feedback and replies (GET /feedback/mine/). |
-| `FeedbackForm` | function | The form; sends the current page too. |
+| `MyFeedback` | function | The user's feedback and replies (GET /feedback/mine/); "See photo" opens the attached photo. |
+| `FeedbackForm` | function | The form; sends the current page too, and an optional photo or screenshot (preview with a remove button, made smaller with fitPhoto before sending). |
 | `FACES` | const | Five ratings 1-5 with face icons, labels and the kind they start with (1 → bug, 5 → praise). |
 | `FeedbackBanner` | export function | The block and the panel (rendered into document.body so it is above the header). |
 
@@ -1895,7 +1906,9 @@ A generic, single database configuration.
 | `rubles(value)` | function | A sum in roubles with two decimals. |
 | `tjs(value)` | function | A sum in somoni with two decimals. |
 | `Sparkline` | function | The 30-day line of the NBT rate (SVG). |
-| `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. In the somoni direction the headline and the CBR box show 100 somoni in roubles. |
+| `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. At the top: round flags of Russia and Tajikistan with the pair (RUB → TJS or TJS → RUB), the result in big type on one line and "for 1 000 ₽" (or "for 100 somoni") under it. In the somoni direction the CBR box shows 100 somoni in roubles. |
+| `Flag` | function | A round flag: Russia drawn in SVG, Tajikistan from /flag-tj.svg. |
+| `Pair` | function | The two flags overlapping and the currency codes in the chosen direction. |
 
 ### `frontend/src/components/SeasonFall.jsx`
 

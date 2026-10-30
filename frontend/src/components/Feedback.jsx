@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { Angry, Bug, CheckCircle2, Frown, Heart, Laugh, Lightbulb, LogIn, Meh, MessageSquareText, MessagesSquare, Smile } from "lucide-react";
-import { api } from "../api.js";
+import { Angry, Bug, CheckCircle2, Frown, Heart, ImagePlus, Laugh, Lightbulb, LogIn, Meh, MessageSquareText, MessagesSquare, Smile, X } from "lucide-react";
+import { api, openPrivateFile } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import { StarPicker } from "./Stars.jsx";
+import { fitPhoto } from "./Shop.jsx";
 import { Button, Drawer, ErrorBox, Field } from "./ui.jsx";
 
 const KINDS = [
@@ -38,6 +39,12 @@ function MyFeedback({ tick }) {
             <span>{ago(f.created_at)}</span>
           </p>
           <p className="whitespace-pre-line">{f.message}</p>
+          {f.photo && (
+            <button type="button" onClick={() => openPrivateFile(f.photo.replace(/^\/api/, "")).catch(() => null)} className="inline-flex items-center gap-1.5 self-start text-label-md text-primary hover:underline">
+              <ImagePlus className="h-4 w-4" aria-hidden />
+              {t("Дидани сурат")}
+            </button>
+          )}
           {f.reply ? (
             <p className="whitespace-pre-line rounded-lg bg-primary-fixed/60 p-2.5">
               <span className="font-semibold">{t("Ҷавоби Muhojir:")}</span> {f.reply}
@@ -56,6 +63,16 @@ function FeedbackForm({ start, onSent }) {
   const [kind, setKind] = useState(start?.kind || "idea");
   const [rating, setRating] = useState(start?.rating || null);
   const [message, setMessage] = useState("");
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const input = useRef(null);
+
+  useEffect(() => {
+    if (!photo) return setPreview(null);
+    const url = URL.createObjectURL(photo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -64,9 +81,13 @@ function FeedbackForm({ start, onSent }) {
     setSaving(true);
     setError(null);
     try {
-      await api("/feedback/", { method: "POST", body: { kind, rating, message, page: pathname } });
+      const body = new FormData();
+      Object.entries({ kind, rating: rating ?? "", message, page: pathname }).forEach(([k, v]) => body.append(k, v));
+      if (photo) body.append("photo", (await fitPhoto(photo, 1600).catch(() => null)) || photo, "photo.webp");
+      await api("/feedback/", { method: "POST", body });
       setMessage("");
       setRating(null);
+      setPhoto(null);
       onSent();
     } catch (err) {
       setError(err);
@@ -92,7 +113,25 @@ function FeedbackForm({ start, onSent }) {
       <Field label={t("Фикри шумо")} required error={error?.data?.message}>
         <textarea className="input min-h-[180px] resize-y" rows={6} maxLength={3000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={kind === "bug" ? t("Чӣ кор кардед ва чӣ шуд? Масалан: тугмаи «Захира» дар саҳифаи ҳуҷҷатҳо кор намекунад.") : t("Чӣ хуб аст, чӣ намерасад, чиро илова кунем?")} />
       </Field>
-      <ErrorBox error={error && !error.data?.message ? error : null} />
+      <div>
+        <span className="label">{t("Сурат (агар хоҳед)")}</span>
+        {preview ? (
+          <div className="relative w-fit">
+            <img src={preview} alt="" className="max-h-40 rounded-xl object-contain ring-1 ring-outline-variant" />
+            <button type="button" onClick={() => setPhoto(null)} aria-label={t("Тоза кардан")} className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-on-ink shadow">
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => input.current?.click()} className="flex min-h-[64px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-outline/50 text-label-md text-on-surface-variant transition-colors hover:border-outline hover:text-on-surface">
+            <ImagePlus className="h-5 w-5" aria-hidden />
+            {t("Сурат ё скриншот илова кардан")}
+          </button>
+        )}
+        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { setPhoto(e.target.files?.[0] || null); e.target.value = ""; }} />
+        {error?.data?.photo && <p className="mt-1 text-body-sm text-error">{[].concat(error.data.photo).join(" ")}</p>}
+      </div>
+      <ErrorBox error={error && !error.data?.message && !error.data?.photo ? error : null} />
       <Button type="submit" loading={saving} disabled={message.trim().length < 5} icon={MessagesSquare}>
         {t("Фиристодан")}
       </Button>

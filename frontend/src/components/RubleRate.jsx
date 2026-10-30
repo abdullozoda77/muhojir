@@ -25,6 +25,32 @@ function Sparkline({ points }) {
   );
 }
 
+function Flag({ code }) {
+  const ring = "h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-surface-container-lowest";
+  if (code === "tjs") return <img src="/flag-tj.svg" alt="" aria-hidden className={`${ring} object-cover`} />;
+  return (
+    <svg viewBox="0 0 6 6" preserveAspectRatio="none" aria-hidden className={ring}>
+      <rect width="6" height="2" fill="#fff" />
+      <rect y="2" width="6" height="2" fill="#0039a6" />
+      <rect y="4" width="6" height="2" fill="#d52b1e" />
+    </svg>
+  );
+}
+
+function Pair({ from }) {
+  const order = from === "rub" ? ["rub", "tjs"] : ["tjs", "rub"];
+  return (
+    <span className="flex items-center gap-3">
+      <span className="flex -space-x-2.5">
+        {order.map((code) => <Flag key={code} code={code} />)}
+      </span>
+      <span className="text-label-lg font-semibold tracking-wide text-on-surface">
+        {order[0].toUpperCase()} <span className="text-outline">→</span> {order[1].toUpperCase()}
+      </span>
+    </span>
+  );
+}
+
 const rubles = (value) =>
   `${Number(value).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
 
@@ -60,10 +86,16 @@ export default function RubleRate() {
               <Banknote className="h-4 w-4 text-primary" aria-hidden />
               {t("Қурби расмӣ")}
             </p>
-            <p className="mt-1 font-display text-[26px] font-semibold tabular-nums leading-tight md:text-[30px]">
-              {from === "rub" ? `1 000 ₽ = ${tjs(main.value * 1000)}` : `${tjs(100)} = ${rubles(100 / main.value)}`}
+            <div className="mt-3">
+              <Pair from={from} />
+            </div>
+            <p className="mt-3 whitespace-nowrap font-display text-[30px] font-semibold tabular-nums leading-none md:text-[36px]">
+              {from === "rub" ? tjs(main.value * 1000) : rubles(100 / main.value)}
             </p>
-            <p className="mt-1 text-body-sm text-on-surface-variant">
+            <p className="mt-1.5 text-body-md tabular-nums text-on-surface-variant">
+              {t("барои {0}", from === "rub" ? "1 000 ₽" : tjs(100))}
+            </p>
+            <p className="mt-1 text-body-sm text-outline">
               {nbt ? t("Бонки миллии Тоҷикистон, {0}", date(nbt.day)) : t("Банки марказии Русия, {0}", date(cbr.day))}
             </p>
           </div>
