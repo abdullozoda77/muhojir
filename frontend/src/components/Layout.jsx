@@ -74,9 +74,7 @@ function useCounters(user, onNew) {
 function Logo() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Muhojir">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm">
-        <img src="/logo.png" alt="" className="h-full w-full rounded-full" />
-      </span>
+      <img src="/logo.png" alt="" className="h-10 w-10 shrink-0" />
       <span className="text-[18px] font-semibold tracking-tight text-on-surface">Muhojir</span>
     </Link>
   );

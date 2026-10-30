@@ -1891,10 +1891,11 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `AMOUNTS` | const | Quick amounts: 5 000, 10 000, 50 000, 100 000 ₽. |
+| `AMOUNTS` | const | Quick amounts for each direction: rub 5 000, 10 000, 50 000, 100 000 ₽; tjs 500, 1 000, 5 000, 10 000 somoni. |
+| `rubles(value)` | function | A sum in roubles with two decimals. |
 | `tjs(value)` | function | A sum in somoni with two decimals. |
 | `Sparkline` | function | The 30-day line of the NBT rate (SVG). |
-| `RubleRate` | export function | — |
+| `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. In the somoni direction the headline and the CBR box show 100 somoni in roubles. |
 
 ### `frontend/src/components/SeasonFall.jsx`
 

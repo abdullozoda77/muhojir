@@ -62,7 +62,7 @@ export function InstallMenuButton({ onDone }) {
       }}
       className="mt-4 flex min-h-[56px] w-full items-center gap-3 rounded-xl bg-gradient-to-br from-[#172f73] to-[#1d4ed8] px-4 text-left text-white shadow-lg shadow-primary/20"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><img src="/logo.png" alt="" className="h-full w-full rounded-full" /></span>
+      <img src="/logo.png" alt="" className="h-9 w-9 shrink-0" />
       <span className="flex-1">
         <span className="block text-label-lg">{t("Ҳамчун барнома насб кардан")}</span>
         <span className="text-body-sm text-white/75">{t("Аз экрани асосӣ, бе браузер")}</span>
@@ -114,7 +114,7 @@ export function InstallBanner() {
           aria-label={t("Ҳамчун барнома насб кардан")}
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><img src="/logo.png" alt="" className="h-full w-full rounded-full" /></span>
+            <img src="/logo.png" alt="" className="h-11 w-11 shrink-0" />
             <span className="min-w-0 flex-1">
               <span className="block text-label-lg leading-snug">{t("Барномаи Muhojir")}</span>
               <span className="block text-body-sm leading-snug text-white/75">{t("Аз экрани асосӣ, бе браузер")}</span>

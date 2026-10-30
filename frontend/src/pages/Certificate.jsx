@@ -146,7 +146,7 @@ function Paper({ certificate, url, sample, paperRef }) {
 
       <div className="absolute inset-[5.5cqw] flex flex-col items-center text-center">
         <div className="flex items-center gap-[1cqw]">
-          <img src="/logo.png" alt="" className="h-[4.2cqw] w-[4.2cqw] rounded-full bg-white p-[0.2cqw]" style={{ boxShadow: `0 0 0 0.12cqw ${GOLD}` }} />
+          <img src="/logo.png" alt="" className="h-[4.2cqw] w-[4.2cqw]" />
           <div className="flex flex-col items-start leading-tight">
             <span className="text-[2.2cqw] font-bold tracking-[0.04em]">Muhojir</span>
             <span className="whitespace-nowrap text-[1.05cqw]" style={{ color: MUTED }}>Курси онлайни забони русӣ · Онлайн-курс русского языка</span>

@@ -235,7 +235,7 @@ export default function Login() {
 
       <aside className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
         <Link to="/" className="flex items-center gap-2.5 self-start">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm"><img src="/logo.png" alt="" className="h-full w-full" /></span>
+          <img src="/logo.png" alt="" className="h-10 w-10 shrink-0" />
           <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
         </Link>
         <div className="flex max-w-lg flex-col gap-8">
@@ -274,7 +274,7 @@ export default function Login() {
             </div>
           </div>
           <Link to="/" className="mb-4 flex items-center justify-center gap-2 lg:hidden">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm"><img src="/logo.png" alt="" className="h-full w-full" /></span>
+            <img src="/logo.png" alt="" className="h-10 w-10 shrink-0" />
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
           <div className="relative rounded-3xl bg-white/75 p-6 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-8 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
