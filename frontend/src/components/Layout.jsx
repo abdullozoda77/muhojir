@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Banknote, Bell, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
-  Newspaper, PanelLeftClose, PanelLeftOpen, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  Menu, Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -281,8 +281,13 @@ export default function Layout() {
 
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
         <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none">
-          <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" aria-label={side ? t("Пӯшидани панел") : t("Кушодани панел")} title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className="-ml-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex">
-            {side ? <PanelLeftClose className="h-5 w-5" aria-hidden /> : <PanelLeftOpen className="h-5 w-5" aria-hidden />}
+          <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className={`-ml-1 hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors lg:flex ${side ? "bg-primary-fixed text-on-primary-fixed ring-primary/20" : "text-on-surface ring-outline-variant hover:bg-surface-container-high"}`}>
+            <AnimatePresence mode="wait" initial={false}>
+              <m.span key={side ? "x" : "menu"} className="block" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                {side ? <X className="h-[18px] w-[18px]" aria-hidden /> : <Menu className="h-[18px] w-[18px]" aria-hidden />}
+              </m.span>
+            </AnimatePresence>
+            {t("Меню")}
           </button>
           <Logo />
           <nav className="mx-auto hidden items-center gap-0.5 lg:flex xl:absolute xl:left-1/2 xl:-translate-x-1/2" aria-label={t("Менюи асосӣ")}>
