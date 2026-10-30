@@ -32,6 +32,8 @@ const Places = lazy(() => import("./pages/Places.jsx"));
 const Shops = lazy(() => import("./pages/Shops.jsx"));
 const ShopPage = lazy(() => import("./pages/ShopPage.jsx"));
 const MyShops = lazy(() => import("./pages/MyShops.jsx"));
+const Rate = lazy(() => import("./pages/Rate.jsx"));
+const FeedbackPage = lazy(() => import("./pages/FeedbackPage.jsx"));
 
 function Private({ children }) {
   const { user, loading } = useAuth();
@@ -67,6 +69,8 @@ export default function App() {
         <Route path="course" element={<Private><Course /></Private>} />
         <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
         <Route path="course/:level/:number" element={<Private><Lesson /></Private>} />
+        <Route path="rate" element={<Rate />} />
+        <Route path="feedback" element={<FeedbackPage />} />
         <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />
         <Route path="tickets" element={<Private><Tickets /></Private>} />

@@ -1,8 +1,8 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  Bell, BookOpen, Bookmark, Briefcase, Calculator, ChevronDown, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, Moon,
-  PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  Banknote, Bell, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -28,16 +28,19 @@ function sections(user) {
     { to: "/tickets", icon: Plane, label: t("Чиптаҳо"), main: true, dock: user ? null : 3 },
     { to: "/places", icon: MapPinned, label: t("Ҷойҳо"), main: true, dock: 4 },
     { to: "/shops", icon: Store, label: t("Мағозаҳо"), main: true },
-    { to: "/calculator", icon: Calculator, label: t("Нархи патент") },
-    { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо") },
-    { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо") },
-    { to: "/course", icon: Languages, label: t("Курси забони русӣ") },
-    { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон") },
-    { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ") },
-    user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо") },
-    user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо") },
-    user && { to: "/notifications", icon: Bell, label: t("Огоҳиҳо"), badge: "unread" },
-    user && { to: "/profile", icon: Settings, label: t("Профил ва танзимот") },
+    { to: "/calculator", icon: Calculator, label: t("Нархи патент"), group: "more" },
+    { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо"), group: "more" },
+    { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо"), group: "more" },
+    { to: "/course", icon: Languages, label: t("Курси забони русӣ"), group: "more" },
+    { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон"), group: "more" },
+    { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ"), group: "more" },
+    user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
+    user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
+    { to: "/rate", icon: Banknote, label: t("Қурби расмӣ"), group: "home" },
+    { to: "/guides#news", icon: Newspaper, label: t("Хабарҳо"), group: "home", hash: true },
+    { to: "/feedback", icon: MessagesSquare, label: t("Фикру мулоҳиза"), group: "home" },
+    user && { to: "/notifications", icon: Bell, label: t("Огоҳиҳо"), badge: "unread", group: "account" },
+    user && { to: "/profile", icon: Settings, label: t("Профил ва танзимот"), group: "account" },
     !user && { to: "/login", icon: LogIn, label: t("Ворид шудан") },
   ];
   return all.filter(Boolean);
@@ -130,51 +133,44 @@ export function ThemeToggle() {
   );
 }
 
-function MoreMenu({ items, counts, user }) {
-  const [open, setOpen] = useState(false);
-  const box = useRef(null);
-  const { pathname } = useLocation();
-  useEffect(() => setOpen(false), [pathname]);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => !box.current?.contains(e.target) && setOpen(false);
-    const esc = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [open]);
-  const active = items.some((i) => pathname.startsWith(i.to));
+function SideLink({ item, counts }) {
+  const base = "flex min-h-[38px] items-center gap-3 rounded-lg px-2.5 py-1.5 text-label-md transition-colors";
+  const idle = "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface";
   return (
-    <div ref={box} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={`flex h-9 items-center gap-1 rounded-lg px-3 text-label-md transition-colors ${active || open ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}>
-        {t("Боз")}
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <m.div initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }} className="absolute left-0 top-11 z-50 grid w-[420px] grid-cols-2 gap-0.5 rounded-xl bg-surface-container-lowest p-1.5 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.18)] ring-1 ring-outline-variant">
-            {items.map((i) => (
-              <NavLink key={i.to} to={i.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-2.5 py-2 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-outline-variant">
-                  <i.icon className="h-4 w-4" aria-hidden />
-                </span>
-                <span className="flex-1">{i.label}</span>
-                {i.badge && <Count n={counts[i.badge]} />}
-              </NavLink>
+    <NavLink to={item.to} end={item.end} className={({ isActive }) => `${base} ${isActive && !item.hash ? "bg-primary-fixed text-on-primary-fixed" : idle}`}>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-outline-variant">
+        <item.icon className="h-4 w-4" aria-hidden />
+      </span>
+      <span className="flex-1 leading-tight">{item.label}</span>
+      {item.badge && <Count n={counts[item.badge]} />}
+    </NavLink>
+  );
+}
+
+function Sidebar({ items, counts, user }) {
+  const groups = [
+    [t("Боз"), items.filter((i) => i.group === "more")],
+    [t("Аз саҳифаи асосӣ"), items.filter((i) => i.group === "home")],
+  ].filter(([, list]) => list.length);
+  return (
+    <aside className="fixed bottom-0 left-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-r border-outline-variant bg-background lg:flex" aria-label={t("Боз")}>
+      <nav className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-3 py-4">
+        {groups.map(([title, list]) => (
+          <div key={title || "main"} className="flex flex-col gap-0.5">
+            {title && <span className="px-2.5 pb-1 text-label-sm font-medium uppercase tracking-wide text-outline">{title}</span>}
+            {list.map((i) => (
+              <SideLink key={i.to} item={i} counts={counts} />
             ))}
-            {canEdit(user) && (
-              <a href="/admin/" className="col-span-2 mt-1 flex items-center gap-3 rounded-lg border-t border-outline-variant px-2.5 py-2.5 text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface">
-                <PenSquare className="h-[18px] w-[18px]" aria-hidden />
-                {t("Идораи мундариҷа")}
-              </a>
-            )}
-          </m.div>
+          </div>
+        ))}
+        {canEdit(user) && (
+          <a href="/admin/" className="flex min-h-[38px] items-center gap-3 rounded-lg border-t border-outline-variant px-2.5 pt-3 text-label-md text-on-surface-variant hover:text-on-surface">
+            <PenSquare className="h-[18px] w-[18px]" aria-hidden />
+            {t("Идораи мундариҷа")}
+          </a>
         )}
-      </AnimatePresence>
-    </div>
+      </nav>
+    </aside>
   );
 }
 
@@ -201,7 +197,7 @@ function MenuSheet({ open, onClose, items, counts, user }) {
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {items.map((i) => (
-                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
+                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive && !i.hash ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
                   <i.icon className="h-6 w-6" aria-hidden />
                   <span className="leading-tight">{i.label}</span>
                   {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-3"><Count n={counts[i.badge]} /></span>}
@@ -251,7 +247,6 @@ export default function Layout() {
 
   const firstName = user?.full_name?.trim().split(/\s+/)[0];
   const tabs = items.filter((i) => i.main);
-  const more = items.filter((i) => !i.main && i.to !== "/login" && i.to !== "/profile" && i.to !== "/notifications");
   const dock = items.filter((i) => i.dock).sort((a, b) => a.dock - b.dock);
 
   return (
@@ -263,7 +258,7 @@ export default function Layout() {
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none">
           <Logo />
           <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
@@ -272,7 +267,6 @@ export default function Layout() {
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
             ))}
-            <MoreMenu items={more} counts={counts} user={user} />
           </nav>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
@@ -323,7 +317,9 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]">
+      <Sidebar items={items} counts={counts} user={user} />
+
+      <main className="relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] lg:pl-60">
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {update.ready && (
             <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">

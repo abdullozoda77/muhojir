@@ -1776,7 +1776,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Layout.jsx`
 
-**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections and "More", the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
+**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections, a left sidebar on wide screens (lg+) with the "More" sections and the blocks from the home page (official rate, news, feedback), the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1788,7 +1788,8 @@ A generic, single database configuration.
 | `LangSwitch` | export function | — |
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
-| `MoreMenu` | function | "More": the sections that are not tabs, in a panel under the button. |
+| `SideLink` | function | One link of the sidebar: icon, name, counter. The "News" link (/guides#news) is never shown as active, so it does not light up together with "Guides". |
+| `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 
@@ -2089,6 +2090,14 @@ A generic, single database configuration.
 | `Quiz` | function | — |
 | `Exam` | export function | — |
 
+### `frontend/src/pages/FeedbackPage.jsx`
+
+**What it is for:** /feedback — the feedback block (FeedbackBanner) as its own page, for the sidebar. Open to guests; writing asks to log in.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `FeedbackPage` | export function | The page header and the FeedbackBanner block. |
+
 ### `frontend/src/pages/Guides.jsx`
 
 **What it is for:** /guides — guides for every document type and the law news.
@@ -2266,6 +2275,14 @@ A generic, single database configuration.
 |---|---|---|
 | `Alerts` | function | — |
 | `SavedJobs` | export function | — |
+
+### `frontend/src/pages/Rate.jsx`
+
+**What it is for:** /rate — the official ruble rate (RubleRate) as its own page, so it can be opened from the sidebar, not only from the home page. Open to guests.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Rate` | export function | The page header and the RubleRate card. |
 
 ### `frontend/src/pages/ShopPage.jsx`
 
