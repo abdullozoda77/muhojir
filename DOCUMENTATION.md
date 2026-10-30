@@ -1776,7 +1776,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Layout.jsx`
 
-**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections, a left sidebar on wide screens (lg+) with the "More" sections and the blocks from the home page (official rate, news, feedback), the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
+**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections in the middle (centered on the screen from xl, in the free space on smaller laptops), a left sidebar on wide screens (lg+) with the "More" sections and the blocks from the home page (official rate, news, feedback), the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1789,6 +1789,7 @@ A generic, single database configuration.
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `SideLink` | function | One link of the sidebar: icon, name, counter. The "News" link (/guides#news) is never shown as active, so it does not light up together with "Guides". |
+| `useSidebarOpen` | function | Whether the sidebar is open; the button left of the logo (PanelLeftClose / PanelLeftOpen) toggles it, the choice is kept in localStorage ("sidebar"). When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
 | `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |

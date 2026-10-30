@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Banknote, Bell, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
-  Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  Newspaper, PanelLeftClose, PanelLeftOpen, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -147,13 +147,34 @@ function SideLink({ item, counts }) {
   );
 }
 
-function Sidebar({ items, counts, user }) {
+function useSidebarOpen() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar") !== "closed";
+    } catch {
+      return true;
+    }
+  });
+  const toggle = useCallback(() => {
+    setOpen((v) => {
+      try {
+        localStorage.setItem("sidebar", v ? "closed" : "open");
+      } catch {
+        return !v;
+      }
+      return !v;
+    });
+  }, []);
+  return [open, toggle];
+}
+
+function Sidebar({ items, counts, user, open }) {
   const groups = [
     [t("Боз"), items.filter((i) => i.group === "more")],
     [t("Аз саҳифаи асосӣ"), items.filter((i) => i.group === "home")],
   ].filter(([, list]) => list.length);
   return (
-    <aside className="fixed bottom-0 left-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-r border-outline-variant bg-background lg:flex" aria-label={t("Боз")}>
+    <aside id="sidebar" inert={!open} className={`fixed bottom-0 left-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-r border-outline-variant bg-background transition-transform duration-300 ease-out lg:flex ${open ? "translate-x-0" : "-translate-x-full"}`} aria-label={t("Боз")}>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-3 py-4">
         {groups.map(([title, list]) => (
           <div key={title || "main"} className="flex flex-col gap-0.5">
@@ -233,6 +254,7 @@ export default function Layout() {
   const online = useOnline();
   const update = useAppUpdate();
   const [scrolled, setScrolled] = useState(false);
+  const [side, toggleSide] = useSidebarOpen();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -258,9 +280,12 @@ export default function Layout() {
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none">
+        <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none">
+          <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" aria-label={side ? t("Пӯшидани панел") : t("Кушодани панел")} title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className="-ml-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex">
+            {side ? <PanelLeftClose className="h-5 w-5" aria-hidden /> : <PanelLeftOpen className="h-5 w-5" aria-hidden />}
+          </button>
           <Logo />
-          <nav className="ml-6 hidden flex-1 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
+          <nav className="mx-auto hidden items-center gap-0.5 lg:flex xl:absolute xl:left-1/2 xl:-translate-x-1/2" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
               <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
@@ -317,9 +342,9 @@ export default function Layout() {
         </div>
       </header>
 
-      <Sidebar items={items} counts={counts} user={user} />
+      <Sidebar items={items} counts={counts} user={user} open={side} />
 
-      <main className="relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] lg:pl-60">
+      <main className={`relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] transition-[padding] duration-300 ease-out ${side ? "lg:pl-60" : ""}`}>
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {update.ready && (
             <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">
