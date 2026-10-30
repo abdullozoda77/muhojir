@@ -12,6 +12,7 @@ from app.models import PRODUCT_UNITS, SHOP_CATEGORIES, SHOP_STATUSES, Product, S
 from app.models import Certificate, ExamAttempt, LessonProgress
 from app.models import RATE_SOURCES, ExchangeRate
 from app.models import FEEDBACK_STATUSES, Feedback
+from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -32,6 +33,7 @@ EDITOR_VIEWS = {
     "exam-attempt": ("list", "details"),
     "exchange-rate": ("list", "details"),
     "feedback": ("list", "details", "edit", "delete"),
+    "housing": ("list", "details", "edit", "delete"),
 }
 
 
@@ -468,6 +470,49 @@ class FeedbackAdmin(Base, model=Feedback):
         await delete_private(model.photo)
 
 
+class HousingAdmin(Base, model=Housing):
+    name, name_plural, icon, category = "Манзил", "Манзил", "fa-solid fa-bed", "Мағозаҳо"
+    column_list = [Housing.title, Housing.kind, Housing.city, Housing.price, Housing.owner, Housing.status, Housing.is_active,
+                   Housing.created_at]
+    column_searchable_list = [Housing.title, Housing.city, Housing.address, Housing.phone]
+    column_sortable_list = [Housing.price, Housing.city, Housing.status, Housing.created_at]
+    column_default_sort = [(Housing.created_at, True)]
+    column_formatters = {"kind": lambda m, a: m.kind_label}
+    form_columns = [Housing.status, Housing.reject_reason, Housing.is_active, Housing.kind, Housing.title, Housing.description,
+                    Housing.city, Housing.address, Housing.metro, Housing.price, Housing.period, Housing.rooms, Housing.places,
+                    Housing.for_whom, Housing.registration, Housing.utilities_included, Housing.no_deposit, Housing.phone,
+                    Housing.whatsapp, Housing.telegram]
+    form_choices = {"status": [(st, st) for st in HOUSING_STATUSES],
+                    "kind": [(k, label) for k, label in HOUSING_KINDS.items()],
+                    "for_whom": [(k, label) for k, label in HOUSING_FOR.items()],
+                    "period": [("month", "month"), ("day", "day")]}
+    can_create = False
+
+    async def on_model_change(self, data, model, is_created, request):
+        request.state.status_changed = data.get("status") not in (None, model.status)
+        if data.get("status") == "rejected" and not (data.get("reject_reason") or "").strip():
+            raise ValueError("Write why the listing is rejected.")
+        if data.get("status") == "approved":
+            data["reject_reason"] = ""
+
+    async def after_model_change(self, data, model, is_created, request):
+        if getattr(request.state, "status_changed", False) and model.status != "pending":
+            from app.db.session import SessionLocal
+            from app.routers.housing import tell_owner
+
+            async with SessionLocal() as db:
+                await tell_owner(db, await db.get(Housing, model.id))
+
+    async def on_model_delete(self, model, request):
+        request.state.housing_files = [p.file for p in model.photos]
+
+    async def after_model_delete(self, model, request):
+        from app.core.files import delete_image
+
+        for name in getattr(request.state, "housing_files", []):
+            await delete_image(name, "housing")
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -477,5 +522,5 @@ VIEWS = [
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
-    ExchangeRateAdmin, FeedbackAdmin,
+    ExchangeRateAdmin, FeedbackAdmin, HousingAdmin,
 ]

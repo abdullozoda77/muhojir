@@ -33,6 +33,8 @@ const Shops = lazy(() => import("./pages/Shops.jsx"));
 const ShopPage = lazy(() => import("./pages/ShopPage.jsx"));
 const MyShops = lazy(() => import("./pages/MyShops.jsx"));
 const Rate = lazy(() => import("./pages/Rate.jsx"));
+const Housing = lazy(() => import("./pages/Housing.jsx"));
+const HousingDetail = lazy(() => import("./pages/HousingDetail.jsx"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage.jsx"));
 
 function Private({ children }) {
@@ -73,6 +75,8 @@ export default function App() {
         <Route path="feedback" element={<FeedbackPage />} />
         <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />
+        <Route path="housing" element={<Private><Housing /></Private>} />
+        <Route path="housing/:id" element={<Private><HousingDetail /></Private>} />
         <Route path="tickets" element={<Private><Tickets /></Private>} />
         <Route path="places" element={<Private><Places /></Private>} />
         <Route path="shops" element={<Private><Shops /></Private>} />

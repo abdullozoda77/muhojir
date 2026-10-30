@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  Banknote, Bell, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
   Menu, Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -25,6 +25,7 @@ function sections(user) {
     { to: "/", icon: Home, label: t("Асосӣ"), end: true, main: true, dock: 1 },
     user && { to: "/documents", icon: ShieldCheck, label: t("Ҳуҷҷатҳои ман"), short: t("Ҳуҷҷатҳо"), badge: "docs", main: true, dock: 2 },
     { to: "/jobs", icon: Briefcase, label: t("Ҷойи кор"), short: t("Кор"), main: true, dock: user ? 3 : 2 },
+    { to: "/housing", icon: Building2, label: t("Манзил"), main: true },
     { to: "/tickets", icon: Plane, label: t("Чиптаҳо"), main: true, dock: user ? null : 3 },
     { to: "/places", icon: MapPinned, label: t("Ҷойҳо"), main: true, dock: 4 },
     { to: "/shops", icon: Store, label: t("Мағозаҳо"), main: true },

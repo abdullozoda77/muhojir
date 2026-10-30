@@ -7,7 +7,9 @@ Tajikistan and Russia** (both ways: prices from Aviasales, a calendar of prices,
 and a **map of useful places** (migration centers, notaries, the embassy, mosques, Tajik cafes, halal shops... from
 OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places) and **Tajik shops**
 (owners add their shop, products, prices and photos, prove the shop is real with photos and its place on the map;
-an editor approves it; buyers search and contact the seller by phone, WhatsApp or Telegram).
+an editor approves it; buyers search and contact the seller by phone, WhatsApp or Telegram) and
+**housing** (beds, rooms and flats for migrants posted by landlords: search by city, metro and price, filters for
+registration, utilities and no deposit, photos; an editor approves each listing).
 
 Everything is async: FastAPI, the database (SQLAlchemy asyncio), email (aiosmtplib), outside APIs (httpx), files
 (anyio) and the AI models.
@@ -56,7 +58,7 @@ photos, payments, roles, jobs and alerts, reminders and the AI assistant's tools
 app/
   main.py            the FastAPI app: routers, errors, /media, the admin panel
   core/              settings, security (passwords, JWT), who is asking, pages, request limits, files
-  models/            SQLAlchemy tables: accounts, documents, jobs, help, travel, places, shops
+  models/            SQLAlchemy tables: accounts, documents, jobs, help, travel, places, shops, housing
   schemas/           request and response shapes
   routers/           /api/auth, /api/documents, /api/jobs, /api/flights, /api/places, /api/market, /api/help,
                      /api/assistant, /ws/notifications

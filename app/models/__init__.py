@@ -5,6 +5,7 @@ from app.models.documents import (
     add_months, law_news_document_types,
 )
 from app.models.feedback import FEEDBACK_KINDS, FEEDBACK_STATUSES, Feedback
+from app.models.housing import HOUSING_FOR, HOUSING_KINDS, HOUSING_PERIODS, HOUSING_STATUSES, Housing, HousingPhoto
 from app.models.jobs import INDUSTRIES, BlacklistReport, Employer, EmployerReview, Job, JobAlert, SavedJob
 from app.models.market import (
     PRODUCT_UNITS, PROOF_KINDS, REQUIRED_PROOFS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopProof, ShopReview,
@@ -27,4 +28,5 @@ __all__ = [
     "LessonProgress", "ExamAttempt", "Certificate",
     "RATE_SOURCES", "ExchangeRate",
     "FEEDBACK_KINDS", "FEEDBACK_STATUSES", "Feedback",
+    "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
 ]

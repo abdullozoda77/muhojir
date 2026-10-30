@@ -345,6 +345,19 @@ A generic, single database configuration.
 | `FEEDBACK_STATUSES` | const | new (not read yet), read, done (answered). |
 | `Feedback` | class · table `feedback` | Feedback of a logged-in user: kind, rating 1-5 (optional), message, the page it was sent from, status, an editor's reply and when it was sent, and an optional photo (private file in private_media/feedback/). |
 
+### `app/models/housing.py`
+
+**What it is for:** Tables of housing listings (beds, rooms, flats, hostels) that people post for migrants, and their photos.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `HOUSING_KINDS` | const | bed (a bed in a shared room), room, flat (the whole flat), hostel. |
+| `HOUSING_FOR` | const | Who may live there: any, men, women, family. |
+| `HOUSING_PERIODS` | const | The price is per month or per day. |
+| `HOUSING_STATUSES` | const | pending (waits for an editor), approved, rejected. |
+| `Housing` | class · table `housing` | A listing: kind, title, description, city, address, metro, price and period, rooms, free places, for whom, registration (the landlord registers the migrant), utilities included, no deposit, phone/WhatsApp/Telegram, is_active (false = already rented, hidden), status, reject_reason. kind_label and for_whom_label give the Tajik names. |
+| `HousingPhoto` | class · table `housing_photos` | A photo of a listing (public file in media/housing/), deleted together with the listing. |
+
 ### `app/models/jobs.py`
 
 **What it is for:** Database tables of work: employers, jobs (imported from «Работа России»), reviews of employers, workers' blacklist reports, saved jobs and job alerts.
@@ -487,6 +500,16 @@ A generic, single database configuration.
 | `UserDocumentPatch` | class | — |
 | `user_document_json(d)` | function | — |
 | `payment_json(p)` | function | — |
+
+### `app/schemas/housing.py`
+
+**What it is for:** Request bodies and the JSON answer of /api/housing/.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `HousingIn` | class | A new listing; phones are normalized, Telegram checked (as for shops); at least one contact is required. |
+| `HousingPatch` | class | The same fields, all optional, plus is_active. |
+| `housing_json(h, viewer)` | function | A listing with photos, the owner's first name and is_mine; reject_reason only for the owner and editors. |
 
 ### `app/schemas/jobs.py`
 
@@ -679,6 +702,26 @@ A generic, single database configuration.
 | `create_watch(data, db, user)` | async function · `POST /api/flights/watches/` | — |
 | `my_watch(db, user, watch_id)` | async function | — |
 | `delete_watch(watch_id, db, user)` | async function · `DELETE /api/flights/watches/{watch_id}/` | — |
+
+### `app/routers/housing.py`
+
+**What it is for:** /api/housing/: housing listings for migrants. Anyone logged in posts a listing; it is shown to everyone only after an editor approves it. Search and filters like the jobs page.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `housing_filters(query, request)` | function | ?search= (title, description, address, metro), ?city=, ?kind=, ?for_whom= (also shows listings for any), ?period=, ?min_price=, ?max_price=, ?registration=, ?utilities_included=, ?no_deposit=, ?with_photos=. |
+| `list_housing(request, db, user, page)` | async function · `GET /api/housing/` | Approved and active listings with the filters; ?mine=true — the user's own listings in any status; editors: ?status=. ?ordering=price / -price / -created_at (default newest). |
+| `summary(db)` | async function · `GET /api/housing/summary/` | How many listings are shown, per kind, and the top cities. |
+| `get_housing(db, user, housing_id)` | async function | A listing that this user may see (others see only approved and active ones), else 404. |
+| `own_housing(db, user, housing_id)` | async function | The same, but only for the owner or an editor (403). |
+| `tell_owner(db, housing)` | async function | Notifies the owner that the listing was approved or rejected (with the reason). |
+| `housing_detail(housing_id, db, user)` | async function · `GET /api/housing/{housing_id}/` | One listing. |
+| `create_housing(data, db, user)` | async function · `POST /api/housing/` | A new listing: from editors approved at once, from others pending and editors are notified. At most 5 waiting listings per user, 10 posts per hour. |
+| `update_housing(housing_id, data, db, user)` | async function · `PATCH /api/housing/{housing_id}/` | Changes a listing. Any change except is_active by a non-editor sends it back to checking. |
+| `delete_housing(housing_id, db, user)` | async function · `DELETE /api/housing/{housing_id}/` | Deletes the listing and its photo files. |
+| `moderate_housing(housing_id, data, db, user)` | async function · `POST /api/housing/{housing_id}/moderate/` | Editors: approved or rejected (a reason is required); the owner is notified. |
+| `add_photo(housing_id, db, user, photo)` | async function · `POST /api/housing/{housing_id}/photos/` | Adds a photo (JPG, PNG, WEBP, up to 5 MB, at most 8). |
+| `delete_photo(housing_id, photo_id, db, user)` | async function · `DELETE /api/housing/{housing_id}/photos/{photo_id}/` | Removes a photo. |
 
 ### `app/routers/jobs.py`
 
@@ -1120,6 +1163,7 @@ A generic, single database configuration.
 | `ShopReviewAdmin` | class | Shop reviews (delete only). |
 | `ExchangeRateAdmin` | class | Official rates (view only). |
 | `FeedbackAdmin` | class | Feedback: editors set the status and write a reply; a new reply notifies the author. |
+| `HousingAdmin` | class | Housing listings: editors approve or reject (a reason is required), change or delete; the owner is notified, photo files are deleted with the listing. |
 
 
 ---
@@ -1254,6 +1298,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0012_feedback.py`
+
+**What it is for:** Table feedback. Revision ID: 0012 Revises: 0011
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
+
 ### `alembic/versions/0013_feedback_photo.py`
 
 **What it is for:** Column feedback.photo. Revision ID: 0013 Revises: 0012
@@ -1263,14 +1316,14 @@ A generic, single database configuration.
 | `upgrade()` | function | Adds the column. |
 | `downgrade()` | function | Drops it. |
 
-### `alembic/versions/0012_feedback.py`
+### `alembic/versions/0014_housing.py`
 
-**What it is for:** Table feedback. Revision ID: 0012 Revises: 0011
+**What it is for:** Tables housing and housing_photos. Revision ID: 0014 Revises: 0013
 
 | Name | Kind | What it does |
 |---|---|---|
-| `upgrade()` | function | Creates the table. |
-| `downgrade()` | function | Drops it. |
+| `upgrade()` | function | Creates the tables. |
+| `downgrade()` | function | Drops them. |
 
 ---
 
@@ -1355,6 +1408,16 @@ A generic, single database configuration.
 | `other_user(client)` | async function | — |
 | `test_editors_change_content(client, user)` | async function | — |
 | `test_reminders_are_sent_once(client, user, outbox)` | async function | — |
+
+### `tests/test_housing.py`
+
+**What it is for:** Tests of housing listings.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_a_listing_is_shown_only_after_an_editor_approves_it(client, user)` | async function | A listing without contacts is refused; a new one waits for checking and editors are notified; only editors moderate, rejection needs a reason; after approval the owner is notified and everyone sees it; is_active=false hides it; a real change sends it back to checking. |
+| `test_filters_search_and_ordering(client, user)` | async function | City, kind, search by metro, for whom (with «any»), price limits, registration, utilities, no deposit, ordering by price, a wrong number gives 400; the summary counts kinds and cities. |
+| `test_photos_only_the_owner_adds_and_removes(client, user)` | async function | Not a photo is refused; the owner adds and removes photos, a stranger gets 403; ?with_photos= works; only the owner deletes the listing. |
 
 ### `tests/test_jobs.py`
 
@@ -1769,6 +1832,24 @@ A generic, single database configuration.
 | `InstallHeaderButton` | export function | A small button for the header on big screens. |
 | `InstallBanner` | export function | On phones: a card that slides in under the header a few seconds after the site opens. |
 
+### `frontend/src/components/Housing.jsx`
+
+**What it is for:** Shared parts of the housing pages.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `HOUSING_KINDS` | const | The four kinds with icons and labels. |
+| `FOR_WHOM` | const | Who may live there. |
+| `FLAGS` | const | Registration, utilities included, no deposit: icon, label and a short explanation. |
+| `kindOf(value)` | function | The kind entry for a value. |
+| `HousingPrice` | export function | «9 000 ₽ / month» (or «/ day»). |
+| `HousingStatus` | export function | A badge: rented (inactive), waiting for checking or rejected; nothing for approved. |
+| `HousingCover` | export function | The first photo, or the kind's icon on a plain background. |
+| `HousingCard` | export function | A card: photo with the kind and photo count, price, title, city, metro, for whom and the green flags; children go under it (owner buttons). |
+| `Photos` | function | Photos of a saved listing: add several at once (made smaller with fitPhoto), remove each; at most 8. |
+| `HousingForm` | export function | The side panel (rendered into document.body, above the header) to post or edit a listing; after the first save the photos part appears. |
+| `DeleteHousing` | export function | The delete button with a confirmation. |
+
 ### `frontend/src/components/JobCard.jsx`
 
 **What it is for:** The job card and its parts: badges, perks, the link to the official ad, the save and blacklist buttons.
@@ -2154,6 +2235,27 @@ A generic, single database configuration.
 | `QUICK` | const | Shown beside the greeting while there are no documents yet (the hero button already adds one). |
 | `MigrantHome` | function | — |
 | `Home` | export function | — |
+
+### `frontend/src/pages/Housing.jsx`
+
+**What it is for:** /housing — the «Housing» page (main tab in the header): search by metro/area/word, city and «price up to» with quick buttons, kind chips with counts, for whom, registration / utilities / no deposit / with photos, ordering (newest, cheaper, more expensive), cards with «show more». The «My listings» tab shows the user's own listings with status, the reject reason, edit and delete. On the side: «Have a free place?» and a warning about fraud. Filters live in the address (?kind=, ?max_price= …).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `usePaged(path)` | function | Loads a page of listings, «show more», and replaces/drops/prepends a card after editing. |
+| `Safety` | function | Three rules against fraud: no money before seeing the place, ask for a contract or receipt, registration only where you live. |
+| `PostCard` | function | «Have a free place?» with the post button. |
+| `Housing` | export function | The page. |
+
+### `frontend/src/pages/HousingDetail.jsx`
+
+**What it is for:** /housing/:id — one listing: photo gallery, title, city/address/metro, facts (kind, rooms, free places, for whom), description, the three flags (shown dimmed when absent), price with contact buttons (phone, WhatsApp, Telegram), edit for the owner, the editor's approve/reject box for listings not yet approved, and the fraud warning.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Gallery` | function | The big photo and thumbnails to switch. |
+| `Moderate` | function | Editors: approve or reject with a reason (POST /housing/{id}/moderate/). |
+| `HousingDetail` | export function | The page. |
 
 ### `frontend/src/pages/JobDetail.jsx`
 

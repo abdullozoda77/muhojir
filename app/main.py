@@ -8,7 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.admin import setup_admin
 from app.core.config import MEDIA_ROOT, settings
 from app.core.errors import ApiError, api_error_handler, http_error_handler, validation_error_handler
-from app.routers import assistant, auth, course, documents, feedback, flights, jobs, market, places, rates, support, ws
+from app.routers import assistant, auth, course, documents, feedback, flights, housing, jobs, market, places, rates, support, ws
 from app.services.live import hub
 
 @asynccontextmanager
@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_title,
-    description="API for Tajik migrants in Russia: documents and deadlines, patent prices, guides, real jobs, Tajik shops and the rouble to somoni rate",
+    description="API for Tajik migrants in Russia: documents and deadlines, patent prices, guides, real jobs, Tajik shops, housing listings and the rouble to somoni rate",
     version="1.0",
     docs_url="/swagger/",
     redoc_url="/redoc/",
@@ -37,7 +37,7 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_error_handler)
 
-for module in (auth, documents, jobs, flights, places, market, rates, course, support, feedback, assistant, ws):
+for module in (auth, documents, jobs, housing, flights, places, market, rates, course, support, feedback, assistant, ws):
     app.include_router(module.router)
 
 MEDIA_ROOT.mkdir(exist_ok=True)
