@@ -50,6 +50,18 @@ def streaks(days):
     return current, best
 
 
+def weekly(dates, weeks):
+    start = today() - timedelta(days=today().weekday()) - timedelta(weeks=weeks - 1)
+    before = sum(1 for d in dates if d < start)
+    result, total = [], before
+    for w in range(weeks):
+        monday = start + timedelta(weeks=w)
+        count = sum(1 for d in dates if monday <= d < monday + timedelta(weeks=1))
+        total += count
+        result.append({"week": monday.isoformat(), "count": count, "total": total})
+    return result
+
+
 def week_count(counter):
     start = today() - timedelta(days=6)
     return sum(n for d, n in counter.items() if d >= start)
@@ -97,6 +109,7 @@ async def course_stats(db, user):
         "certificate": certificate.code if certificate else None,
         "streak": current, "best_streak": best, "active_days": len(counter), "this_week": week_count(counter),
         "days": calendar(counter, COURSE_DAYS), "levels": levels, "recent": recent,
+        "weeks": weekly([local_day(p.completed_at) for p in lessons], COURSE_DAYS // 7),
     }
 
 

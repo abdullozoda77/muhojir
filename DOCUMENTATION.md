@@ -1070,6 +1070,7 @@ A generic, single database configuration.
 | `today()` | function | — |
 | `calendar(counter, days)` | function | The last `days` days as [{date, count}], starting on a Monday, for the activity calendar. |
 | `streaks(days)` | function | (current, best): days in a row; the current streak still counts if today is empty but yesterday was active. |
+| `weekly(dates, weeks)` | function | The last `weeks` weeks from Monday: [{week, count, total}], total also counts lessons done earlier. |
 | `week_count(counter)` | function | Actions in the last 7 days. |
 | `course_stats(db, user)` | async function | Lessons done, average and 100% scores, exams, streaks, 12-week calendar, progress per level and the last 5 lessons. |
 | `SECTIONS` | const | Sections of the site with the model and the owner column used for «Your activity». |
@@ -1504,6 +1505,7 @@ A generic, single database configuration.
 |---|---|---|
 | `test_streaks_count_days_in_a_row()` | function | — |
 | `test_calendar_starts_on_monday_and_ends_today()` | function | — |
+| `test_weekly_counts_and_running_total()` | function | — |
 | `test_course_stats(client, user)` | async function | Empty stats, then two lessons: average, 100% count, streak, calendar. |
 | `test_activity(client, user)` | async function | A lesson shows in totals, sections, streak and recent actions. |
 
@@ -2070,9 +2072,8 @@ A generic, single database configuration.
 | `StatTile` | export function | A card with an icon, a big number, a label and a hint. |
 | `Ring` | export function | A round progress ring with content in the middle. |
 | `Heatmap` | export function | Activity calendar: weeks as columns, 5 shades of the primary colour, month names, a tooltip with the date and count. |
-| `levelStars` | export function | Stars of a level, 0–3: ★ half of the lessons, ★★ all lessons, ★★★ level exam passed. |
-| `Stars` | function | Three stars in an arc (the middle one higher), gold with a glow when earned. |
-| `LevelBars` | export function | A «Stars N / 21» bar on top, bars of lessons done per level (green = passed) with a faint column behind each, 3 stars under every level; hover/tap shows the level details and its stars below. |
+| `LevelBars` | export function | Bars of lessons done per level (green = passed) with a faint column behind each; hover/tap shows the level details below. |
+| `LineChart` | export function | Line chart with a soft area: the running total of lessons done per week (12 weeks); dots on weeks with lessons, hover/tap shows the week, +lessons and the total. Width follows the card (ResizeObserver). |
 | `ShareBars` | export function | Horizontal bars: where the user is active. |
 | `StatCard` | export function | A card with a title, an icon and a small note on the right. |
 
@@ -2131,7 +2132,6 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `average` | export function | — |
-| `Stars` | export function | — |
 | `StarPicker` | export function | Big stars to pick a rating in the review form. |
 
 ### `frontend/src/components/motion.jsx`

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart3, CalendarDays, Check, Clock, Flame, PenLine, Star, Target, Trophy } from "lucide-react";
+import { ArrowRight, BarChart3, TrendingUp, CalendarDays, Check, Clock, Flame, PenLine, Star, Target, Trophy } from "lucide-react";
 import { lang, t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { ago } from "../format.js";
 import { BackLink, PageHeader, Skeleton } from "../components/ui.jsx";
-import { Heatmap, LevelBars, Ring, StatCard, StatTile } from "../components/Stats.jsx";
+import { Heatmap, LevelBars, LineChart, Ring, StatCard, StatTile } from "../components/Stats.jsx";
 
 const levelTitle = (level) => (lang === "ru" && level.title_ru) || level.title;
 
@@ -67,6 +67,15 @@ export default function CourseStats() {
               <Heatmap days={data.days} unit={t("амал")} />
             </StatCard>
             <StatCard title={t("Пешрафт дар сатҳҳо")} icon={BarChart3} aside={t("{0} аз {1}", data.levels_passed, data.levels_total)}>
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center justify-between text-label-md text-on-surface-variant">
+                  {t("Дарсҳои хатмшуда дар 12 ҳафта")}
+                  <span className="inline-flex items-center gap-1 tabular-nums text-on-surface"><TrendingUp className="h-4 w-4 text-tertiary" aria-hidden />+{data.weeks.reduce((n, w) => n + w.count, 0)}</span>
+                </span>
+                <LineChart points={data.weeks} unit={t("дарс")} />
+              </div>
+              <div className="h-px bg-outline-variant" />
+              <span className="text-label-md text-on-surface-variant">{t("Дар ҳар сатҳ")}</span>
               <LevelBars levels={data.levels} title={levelTitle} />
             </StatCard>
           </div>

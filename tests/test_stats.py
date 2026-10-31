@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from app.services.stats import calendar, streaks, today
+from app.services.stats import calendar, streaks, today, weekly
 
 
 def test_streaks_count_days_in_a_row():
@@ -16,6 +16,13 @@ def test_calendar_starts_on_monday_and_ends_today():
     days = calendar({today(): 2}, 30)
     assert date.fromisoformat(days[0]["date"]).weekday() == 0
     assert days[-1] == {"date": today().isoformat(), "count": 2}
+
+
+def test_weekly_counts_and_running_total():
+    now = today()
+    weeks = weekly([now, now, now - timedelta(weeks=1), now - timedelta(weeks=40)], 4)
+    assert len(weeks) == 4 and weeks[0]["total"] == 1 + weeks[0]["count"]
+    assert weeks[-1]["count"] == 2 and weeks[-1]["total"] == 4
 
 
 async def test_course_stats(client, user):
@@ -34,6 +41,7 @@ async def test_course_stats(client, user):
     assert data["streak"] == 1 and data["active_days"] == 1 and data["this_week"] == 2
     assert data["levels"][0]["done"] == 2 and data["levels"][0]["average"] == 90
     assert data["recent"][0]["number"] in (1, 2) and data["days"][-1]["count"] == 2
+    assert len(data["weeks"]) == 12 and data["weeks"][-1] == {**data["weeks"][-1], "count": 2, "total": 2}
 
 
 async def test_activity(client, user):

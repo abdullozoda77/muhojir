@@ -1,5 +1,4 @@
-import { useMemo, useRef, useState } from "react";
-import { Star } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { lang, t } from "../i18n.js";
 
 const MONTHS_TG = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
@@ -118,44 +117,11 @@ export function Heatmap({ days, unit }) {
   );
 }
 
-export function levelStars(level) {
-  return (level.done * 2 >= level.total && level.done > 0 ? 1 : 0) + (level.done >= level.total ? 1 : 0) + (level.passed ? 1 : 0);
-}
-
-function Stars({ count, size = "h-3.5 w-3.5", lit = true }) {
-  return (
-    <span className="flex items-end justify-center gap-0.5">
-      {[0, 1, 2].map((i) => {
-        const on = i < count;
-        return (
-          <Star
-            key={i}
-            className={`${size} shrink-0 transition-all duration-500 ${i === 1 ? "-translate-y-1" : ""} ${on ? `fill-amber-400 text-amber-400 ${lit ? "drop-shadow-[0_0_6px_rgba(251,191,36,0.65)]" : ""}` : "fill-surface-container-high text-outline-variant"}`}
-            strokeWidth={1.5}
-            style={{ transitionDelay: `${i * 120}ms` }}
-            aria-hidden
-          />
-        );
-      })}
-    </span>
-  );
-}
-
 export function LevelBars({ levels, title }) {
   const [active, setActive] = useState(null);
   const current = active === null ? null : levels[active];
-  const total = levels.reduce((sum, l) => sum + levelStars(l), 0);
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent px-3 py-2 ring-1 ring-inset ring-amber-400/20">
-        <span className="flex items-center gap-2 text-label-md text-on-surface">
-          <Star className="h-5 w-5 fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" aria-hidden />
-          {t("Ситораҳо")}
-        </span>
-        <span className="font-display text-[18px] font-semibold tabular-nums text-on-surface">
-          {total}<span className="text-on-surface-variant"> / {levels.length * 3}</span>
-        </span>
-      </div>
       <div className="relative flex h-36 items-end gap-2 border-b border-outline-variant" onMouseLeave={() => setActive(null)}>
         {[25, 50, 75].map((p) => (
           <span key={p} className="pointer-events-none absolute inset-x-0 border-t border-dashed border-outline-variant/60" style={{ bottom: `${p}%` }} aria-hidden />
@@ -169,7 +135,7 @@ export function LevelBars({ levels, title }) {
               onMouseEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onClick={() => setActive(i)}
-              aria-label={`${title(level)}: ${level.done}/${level.total}, ${t("{0} ситора", levelStars(level))}`}
+              aria-label={`${title(level)}: ${level.done}/${level.total}`}
               className="group relative flex h-full flex-1 items-end justify-center outline-none"
             >
               <span className={`absolute bottom-0 top-0 w-full max-w-[34px] rounded-t-[6px] transition-colors ${active === i ? "bg-surface-container-high" : "bg-surface-container-low"} group-focus-visible:ring-2 group-focus-visible:ring-primary`} aria-hidden />
@@ -183,10 +149,7 @@ export function LevelBars({ levels, title }) {
       </div>
       <div className="flex gap-2" aria-hidden>
         {levels.map((level, i) => (
-          <span key={level.level} className={`flex flex-1 flex-col items-center gap-1.5 rounded-lg py-1.5 transition-colors ${active === i ? "bg-surface-container-low" : ""}`}>
-            <Stars count={levelStars(level)} size="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span className="text-label-sm tabular-nums text-on-surface-variant">{level.level}</span>
-          </span>
+          <span key={level.level} className={`flex-1 rounded-md py-0.5 text-center text-label-sm tabular-nums transition-colors ${active === i ? "bg-surface-container-low text-on-surface" : "text-on-surface-variant"}`}>{level.level}</span>
         ))}
       </div>
       <div className="min-h-[52px] rounded-xl bg-surface-container-low px-3 py-2 text-body-sm" aria-live="polite">
@@ -200,7 +163,6 @@ export function LevelBars({ levels, title }) {
                 {current.exam_percent !== null && ` · ${t("имтиҳон {0}%", current.exam_percent)}`}
               </span>
             </span>
-            <Stars count={levelStars(current)} size="h-4 w-4" />
           </span>
         ) : (
           <span className="flex flex-col gap-1.5 text-on-surface-variant">
@@ -208,10 +170,82 @@ export function LevelBars({ levels, title }) {
               <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-tertiary" />{t("Сатҳ супорида шуд")}</span>
               <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />{t("Дар ҷараён")}</span>
             </span>
-            <span className="text-[12px]">{t("★ нисфи дарсҳо · ★★ ҳамаи дарсҳо · ★★★ имтиҳон супорида шуд")}</span>
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+export function LineChart({ points, unit }) {
+  const box = useRef(null);
+  const [width, setWidth] = useState(0);
+  const [active, setActive] = useState(null);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return undefined;
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.observe(el);
+    setWidth(el.offsetWidth);
+    return () => observer.disconnect();
+  }, []);
+
+  const height = 168;
+  const pad = { top: 16, right: 14, bottom: 26, left: 30 };
+  const max = Math.max(4, ...points.map((p) => p.total));
+  const top = Math.ceil(max / 4) * 4;
+  const innerW = Math.max(0, width - pad.left - pad.right);
+  const innerH = height - pad.top - pad.bottom;
+  const x = (i) => pad.left + (points.length > 1 ? (i / (points.length - 1)) * innerW : innerW / 2);
+  const y = (v) => pad.top + innerH - (v / top) * innerH;
+  const coords = points.map((p, i) => [x(i), y(p.total)]);
+  const path = coords.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
+  const area = coords.length ? `${path} L${coords[coords.length - 1][0].toFixed(1)},${y(0)} L${coords[0][0].toFixed(1)},${y(0)} Z` : "";
+  const ticks = [0, top / 2, top];
+  const current = active === null ? null : points[active];
+
+  const pick = (e) => {
+    const rect = box.current.getBoundingClientRect();
+    const px = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const i = Math.round(((px - pad.left) / Math.max(1, innerW)) * (points.length - 1));
+    setActive(Math.min(points.length - 1, Math.max(0, i)));
+  };
+
+  return (
+    <div ref={box} className="relative w-full select-none" style={{ height }} onMouseMove={pick} onTouchStart={pick} onTouchMove={pick} onMouseLeave={() => setActive(null)}>
+      {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label={points.map((p) => `${dayText(p.week)}: ${p.total}`).join(", ")}>
+          <defs>
+            <linearGradient id="line-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style={{ stopColor: "rgb(var(--c-primary))", stopOpacity: 0.28 }} />
+              <stop offset="100%" style={{ stopColor: "rgb(var(--c-primary))", stopOpacity: 0 }} />
+            </linearGradient>
+          </defs>
+          {ticks.map((v) => (
+            <g key={v}>
+              <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} className="stroke-outline-variant" strokeDasharray={v ? "3 4" : undefined} />
+              <text x={pad.left - 8} y={y(v) + 4} textAnchor="end" className="fill-on-surface-variant text-[10px] tabular-nums">{v}</text>
+            </g>
+          ))}
+          {points.map((p, i) => (i % 2 === (points.length - 1) % 2 ? (
+            <text key={p.week} x={x(i)} y={height - 8} textAnchor={i === points.length - 1 ? "end" : i === 0 ? "start" : "middle"} className="fill-on-surface-variant text-[10px]">{dayText(p.week)}</text>
+          ) : null))}
+          <path d={area} fill="url(#line-fill)" />
+          <path d={path} fill="none" className="stroke-primary" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          {current && (
+            <line x1={coords[active][0]} x2={coords[active][0]} y1={pad.top} y2={y(0)} className="stroke-outline" strokeDasharray="3 3" />
+          )}
+          {coords.map(([px, py], i) => (
+            <circle key={points[i].week} cx={px} cy={py} r={active === i ? 6 : points[i].count ? 4 : 0} className="fill-primary stroke-surface-container-lowest" strokeWidth="2" />
+          ))}
+        </svg>
+      )}
+      {current && (
+        <div className="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-label-sm text-on-ink shadow-lg" style={{ left: Math.min(Math.max(coords[active][0], 70), width - 70), top: 0 }}>
+          <span className="opacity-70">{t("Ҳафтаи {0}", dayText(current.week))}</span>
+          <span className="block tabular-nums"><b>+{current.count}</b> {unit} · {t("ҳамагӣ {0}", current.total)}</span>
+        </div>
+      )}
     </div>
   );
 }
