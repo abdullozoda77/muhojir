@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Star } from "lucide-react";
 import { lang, t } from "../i18n.js";
 
 const MONTHS_TG = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
@@ -117,12 +118,45 @@ export function Heatmap({ days, unit }) {
   );
 }
 
+export function levelStars(level) {
+  return (level.done * 2 >= level.total && level.done > 0 ? 1 : 0) + (level.done >= level.total ? 1 : 0) + (level.passed ? 1 : 0);
+}
+
+function Stars({ count, size = "h-3.5 w-3.5", lit = true }) {
+  return (
+    <span className="flex items-end justify-center gap-0.5">
+      {[0, 1, 2].map((i) => {
+        const on = i < count;
+        return (
+          <Star
+            key={i}
+            className={`${size} shrink-0 transition-all duration-500 ${i === 1 ? "-translate-y-1" : ""} ${on ? `fill-amber-400 text-amber-400 ${lit ? "drop-shadow-[0_0_6px_rgba(251,191,36,0.65)]" : ""}` : "fill-surface-container-high text-outline-variant"}`}
+            strokeWidth={1.5}
+            style={{ transitionDelay: `${i * 120}ms` }}
+            aria-hidden
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 export function LevelBars({ levels, title }) {
   const [active, setActive] = useState(null);
   const current = active === null ? null : levels[active];
+  const total = levels.reduce((sum, l) => sum + levelStars(l), 0);
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative flex h-40 items-end gap-2 border-b border-outline-variant" onMouseLeave={() => setActive(null)}>
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent px-3 py-2 ring-1 ring-inset ring-amber-400/20">
+        <span className="flex items-center gap-2 text-label-md text-on-surface">
+          <Star className="h-5 w-5 fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" aria-hidden />
+          {t("Ситораҳо")}
+        </span>
+        <span className="font-display text-[18px] font-semibold tabular-nums text-on-surface">
+          {total}<span className="text-on-surface-variant"> / {levels.length * 3}</span>
+        </span>
+      </div>
+      <div className="relative flex h-36 items-end gap-2 border-b border-outline-variant" onMouseLeave={() => setActive(null)}>
         {[25, 50, 75].map((p) => (
           <span key={p} className="pointer-events-none absolute inset-x-0 border-t border-dashed border-outline-variant/60" style={{ bottom: `${p}%` }} aria-hidden />
         ))}
@@ -135,35 +169,46 @@ export function LevelBars({ levels, title }) {
               onMouseEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onClick={() => setActive(i)}
-              aria-label={`${title(level)}: ${level.done}/${level.total}`}
+              aria-label={`${title(level)}: ${level.done}/${level.total}, ${t("{0} ситора", levelStars(level))}`}
               className="group relative flex h-full flex-1 items-end justify-center outline-none"
             >
-              <span className="absolute inset-x-0 bottom-0 top-0 rounded-t-md bg-surface-container-low opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
+              <span className={`absolute bottom-0 top-0 w-full max-w-[34px] rounded-t-[6px] transition-colors ${active === i ? "bg-surface-container-high" : "bg-surface-container-low"} group-focus-visible:ring-2 group-focus-visible:ring-primary`} aria-hidden />
               <span
-                className={`relative w-full max-w-[34px] rounded-t-[4px] transition-[height] duration-700 ease-out ${level.passed ? "bg-tertiary" : "bg-primary"} ${active === i ? "opacity-100" : active === null ? "opacity-100" : "opacity-50"}`}
+                className={`relative w-full max-w-[34px] rounded-t-[6px] transition-[height,opacity] duration-700 ease-out ${level.passed ? "bg-gradient-to-t from-tertiary to-tertiary/70" : "bg-gradient-to-t from-primary to-primary/70"} ${active === null || active === i ? "opacity-100" : "opacity-50"}`}
                 style={{ height: `${Math.max(part * 100, level.done ? 4 : 0)}%` }}
               />
             </button>
           );
         })}
       </div>
-      <div className="flex gap-2 text-center text-label-sm tabular-nums text-on-surface-variant" aria-hidden>
-        {levels.map((level) => <span key={level.level} className="flex-1">{level.level}</span>)}
+      <div className="flex gap-2" aria-hidden>
+        {levels.map((level, i) => (
+          <span key={level.level} className={`flex flex-1 flex-col items-center gap-1.5 rounded-lg py-1.5 transition-colors ${active === i ? "bg-surface-container-low" : ""}`}>
+            <Stars count={levelStars(level)} size="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="text-label-sm tabular-nums text-on-surface-variant">{level.level}</span>
+          </span>
+        ))}
       </div>
-      <div className="min-h-[44px] rounded-xl bg-surface-container-low px-3 py-2 text-body-sm" aria-live="polite">
+      <div className="min-h-[52px] rounded-xl bg-surface-container-low px-3 py-2 text-body-sm" aria-live="polite">
         {current ? (
-          <span className="flex flex-col">
-            <span className="font-semibold text-on-surface">{t("Сатҳи {0}", current.level)} · {title(current)}</span>
-            <span className="text-on-surface-variant tabular-nums">
-              {t("{0} аз {1} дарс", current.done, current.total)}
-              {current.average !== null && ` · ${t("миёна {0}%", current.average)}`}
-              {current.exam_percent !== null && ` · ${t("имтиҳон {0}%", current.exam_percent)}`}
+          <span className="flex items-center gap-3">
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold text-on-surface">{t("Сатҳи {0}", current.level)} · {title(current)}</span>
+              <span className="text-on-surface-variant tabular-nums">
+                {t("{0} аз {1} дарс", current.done, current.total)}
+                {current.average !== null && ` · ${t("миёна {0}%", current.average)}`}
+                {current.exam_percent !== null && ` · ${t("имтиҳон {0}%", current.exam_percent)}`}
+              </span>
             </span>
+            <Stars count={levelStars(current)} size="h-4 w-4" />
           </span>
         ) : (
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-on-surface-variant">
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-tertiary" />{t("Сатҳ супорида шуд")}</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />{t("Дар ҷараён")}</span>
+          <span className="flex flex-col gap-1.5 text-on-surface-variant">
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-tertiary" />{t("Сатҳ супорида шуд")}</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />{t("Дар ҷараён")}</span>
+            </span>
+            <span className="text-[12px]">{t("★ нисфи дарсҳо · ★★ ҳамаи дарсҳо · ★★★ имтиҳон супорида шуд")}</span>
           </span>
         )}
       </div>

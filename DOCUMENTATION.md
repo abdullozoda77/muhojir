@@ -2070,7 +2070,9 @@ A generic, single database configuration.
 | `StatTile` | export function | A card with an icon, a big number, a label and a hint. |
 | `Ring` | export function | A round progress ring with content in the middle. |
 | `Heatmap` | export function | Activity calendar: weeks as columns, 5 shades of the primary colour, month names, a tooltip with the date and count. |
-| `LevelBars` | export function | Bars of lessons done per course level (green = level passed); hover/tap shows the level details below. |
+| `levelStars` | export function | Stars of a level, 0–3: ★ half of the lessons, ★★ all lessons, ★★★ level exam passed. |
+| `Stars` | function | Three stars in an arc (the middle one higher), gold with a glow when earned. |
+| `LevelBars` | export function | A «Stars N / 21» bar on top, bars of lessons done per level (green = passed) with a faint column behind each, 3 stars under every level; hover/tap shows the level details and its stars below. |
 | `ShareBars` | export function | Horizontal bars: where the user is active. |
 | `StatCard` | export function | A card with a title, an icon and a small note on the right. |
 
