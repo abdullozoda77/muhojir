@@ -24,7 +24,7 @@ function maskEmail(email) {
   return `${name.slice(0, 2)}${"•".repeat(Math.min(name.length - 4, 8))}${name.slice(-2)}@${domain}`;
 }
 
-function Avatar({ name, photo, size = "h-20 w-20 text-[30px]" }) {
+function Avatar({ name, photo, size = "h-20 w-20 text-[30px] lg:h-28 lg:w-28 lg:text-[42px]" }) {
   return (
     <span className={`relative flex shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#cc1a22_0deg_120deg,#ffffff_120deg_240deg,#167a32_240deg_360deg)] p-[4px] shadow-lg ${size}`} aria-hidden>
       {photo ? (
@@ -186,12 +186,12 @@ function MyActivity() {
     .filter((i) => i.count > 0)
     .sort((a, b) => b.count - a.count);
   return (
-    <section className="flex flex-col gap-3" aria-label={t("Фаъолияти шумо")}>
-      <h2 className="flex items-center gap-2 px-1 text-[18px] font-semibold">
+    <section className="flex flex-col gap-3 lg:gap-4" aria-label={t("Фаъолияти шумо")}>
+      <h2 className="flex items-center gap-2 px-1 text-[18px] font-semibold lg:text-[22px]">
         <Activity className="h-5 w-5 text-primary" aria-hidden />
         {t("Фаъолияти шумо")}
       </h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <StatTile icon={CalendarDays} value={data.member_days} label={t("Рӯз бо Muhojir")} />
         <StatTile icon={Sparkles} value={data.total} label={t("Ҳамаи амалҳо")} />
         <StatTile icon={Flame} accent="text-orange-500" value={data.streak} label={t("Рӯз пай дар пай")} hint={t("беҳтарин: {0}", data.best_streak)} />
@@ -200,7 +200,7 @@ function MyActivity() {
       <StatCard title={t("Рӯзҳои фаъол")} icon={CalendarDays} aside={t("{0} дар ин ҳафта", data.this_week)}>
         <Heatmap days={data.days} unit={t("амал")} />
       </StatCard>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:gap-4">
         <StatCard title={t("Дар куҷо фаъол ҳастед")} icon={BarChart3}>
           {share.length ? <ShareBars items={share.slice(0, 6)} /> : <p className="text-body-sm text-on-surface-variant">{t("Ҳоло амал нест. Ҳуҷҷат илова кунед ё дарси аввалро хонед.")}</p>}
         </StatCard>
@@ -283,14 +283,14 @@ export default function Profile() {
   ];
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 text-white shadow-[0_24px_60px_-28px_rgba(29,78,216,0.7)] md:p-8 dark:from-[#0f1d4a] dark:via-[#132a66] dark:to-[#1a3a8a] dark:shadow-none dark:ring-1 dark:ring-white/10">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 lg:gap-8">
+      <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 text-white shadow-[0_24px_60px_-28px_rgba(29,78,216,0.7)] md:p-8 lg:p-10 dark:from-[#0f1d4a] dark:via-[#132a66] dark:to-[#1a3a8a] dark:shadow-none dark:ring-1 dark:ring-white/10">
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-sky-300/20 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-5">
           <AvatarPicker user={user} name={name} setUser={setUser} />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight md:text-[30px]">{name || t("Номи худро нависед")}</h1>
+            <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight md:text-[30px] lg:text-[38px]">{name || t("Номи худро нависед")}</h1>
             <div className="mt-1.5 flex min-w-0 items-center gap-2 text-body-md text-white/85">
               <Mail className="h-4 w-4 shrink-0" aria-hidden />
               <span className="truncate">{showEmail ? user.email : maskEmail(user.email)}</span>
@@ -329,7 +329,7 @@ export default function Profile() {
 
       <MyActivity />
 
-      <form onSubmit={submit} className="flex flex-col gap-6">
+      <form onSubmit={submit} className="grid gap-6 lg:grid-cols-2">
         <Section title={t("Маълумоти шахсӣ")}>
           <Field label={t("Ному насаб")} error={errors.full_name}>
             <IconInput icon={UserRound} value={form.full_name} onChange={(e) => set("full_name", e.target.value)} autoComplete="name" placeholder={t("Масалан: Алӣ Каримов")} />
@@ -366,9 +366,11 @@ export default function Profile() {
           <Toggle checked={form.email_reminders} onChange={(v) => set("email_reminders", v)} title={t("Ёдраскунӣ ба почтаи электронӣ")} text={t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")} />
         </Section>
 
+        <div className="flex flex-col gap-4 lg:col-span-2">
         <ErrorBox error={error} />
         {saved && <p role="status" className="rounded-xl bg-tertiary-fixed p-4 text-label-md text-on-tertiary-fixed">{t("Сабт шуд")}</p>}
-        <Button type="submit" icon={Save} loading={busy} className="min-h-[52px] w-full text-[16px] shadow-lg shadow-primary/25 dark:shadow-none">{t("Сабт кардан")}</Button>
+        <Button type="submit" icon={Save} loading={busy} className="min-h-[52px] w-full text-[16px] lg:ml-auto lg:w-auto lg:min-w-[280px] shadow-lg shadow-primary/25 dark:shadow-none">{t("Сабт кардан")}</Button>
+        </div>
       </form>
 
       {(user.role === "editor" || user.role === "admin") && (

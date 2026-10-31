@@ -83,7 +83,7 @@ export function Heatmap({ days, unit }) {
   };
 
   return (
-    <div ref={box} className="relative flex flex-col gap-2" onMouseLeave={() => setTip(null)}>
+    <div ref={box} className="relative flex w-full flex-col gap-2" style={{ maxWidth: weeks * 24 }} onMouseLeave={() => setTip(null)}>
       <div className="grid gap-[3px] text-[10px] text-on-surface-variant" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }} aria-hidden>
         {months.map((m) => (
           <span key={m.w} className="whitespace-nowrap" style={{ gridColumnStart: m.w + 1 }}>{m.text}</span>

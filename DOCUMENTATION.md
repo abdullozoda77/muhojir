@@ -2226,8 +2226,15 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `CourseStats` | function | «My statistics» for logged-in users: dark card with the ring and 4 numbers, 4 tiles, the activity calendar, bars per level and the last lessons. Can be hidden. |
 | `Course` | export function | — |
+
+### `frontend/src/pages/CourseStats.jsx`
+
+**What it is for:** /course/stats — «My statistics» of the Russian course (button «My statistics» on /course): dark card with the progress ring and 4 numbers, 4 tiles, the activity calendar (12 weeks), bars per level, the last lessons; before the first lesson a link to lesson 1.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `CourseStats` | export function | — |
 
 ### `frontend/src/pages/Lesson.jsx`
 

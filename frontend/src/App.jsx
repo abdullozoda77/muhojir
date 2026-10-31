@@ -13,6 +13,7 @@ const Calculator = lazy(() => import("./pages/Calculator.jsx"));
 const Checks = lazy(() => import("./pages/Checks.jsx"));
 const Exam = lazy(() => import("./pages/Exam.jsx"));
 const Course = lazy(() => import("./pages/Course.jsx"));
+const CourseStats = lazy(() => import("./pages/CourseStats.jsx"));
 const Lesson = lazy(() => import("./pages/Lesson.jsx"));
 const CourseExam = lazy(() => import("./pages/CourseExam.jsx"));
 const Certificate = lazy(() => import("./pages/Certificate.jsx"));
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="checks" element={<Private><Checks /></Private>} />
         <Route path="exam" element={<Private><Exam /></Private>} />
         <Route path="course" element={<Private><Course /></Private>} />
+        <Route path="course/stats" element={<Private><CourseStats /></Private>} />
         <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
         <Route path="course/:level/:number" element={<Private><Lesson /></Private>} />
         <Route path="rate" element={<Rate />} />
