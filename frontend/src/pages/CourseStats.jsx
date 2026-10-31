@@ -3,7 +3,7 @@ import { ArrowRight, BarChart3, TrendingUp, CalendarDays, Check, Clock, Flame, P
 import { lang, t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { ago } from "../format.js";
-import { BackLink, PageHeader, Skeleton } from "../components/ui.jsx";
+import { BackLink, BrandBadge, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Heatmap, LevelBars, LineChart, Ring, StatCard, StatTile } from "../components/Stats.jsx";
 
 const levelTitle = (level) => (lang === "ru" && level.title_ru) || level.title;
@@ -27,7 +27,7 @@ export default function CourseStats() {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f2452] via-[#132f6b] to-[#1d4ed8] p-5 text-white shadow-[0_24px_60px_-30px_rgba(29,78,216,0.8)] md:p-6">
         <div className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-5">
-          <Ring value={data.lessons_done} total={data.lessons_total} size={112} stroke={10}>
+          <Ring value={data.lessons_done} total={data.lessons_total} size={112} stroke={10} track="stroke-white/15">
             <span className="font-display text-[26px] font-semibold leading-none tabular-nums">{percent}%</span>
             <span className="mt-1 text-[11px] text-white/70">{t("курс")}</span>
           </Ring>
@@ -47,6 +47,7 @@ export default function CourseStats() {
               </div>
             ))}
           </div>
+          <BrandBadge />
         </div>
       </div>
           {data.lessons_done === 0 && (

@@ -2169,6 +2169,7 @@ A generic, single database configuration.
 | `Skeleton` | export function | — |
 | `EmptyState` | export function | — |
 | `Field` | export function | — |
+| `BrandBadge` | export function | The Muhojir logo with its name for the blue cards (profile, course statistics); on phones a faint big logo in the corner instead. |
 | `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Rendered into document.body (portal) so it covers the site header and the bottom menu and the ✕ button is always visible. Optional footer: a sticky bottom bar. Closes on Escape and on the dark backdrop; the page behind is locked with useScrollLock. |
 | `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). |
 | `BackLink` | export function | "← Back" above a detail page: a quiet text link. |

@@ -25,14 +25,14 @@ export function StatTile({ icon: Icon, value, label, hint, accent = "text-primar
   );
 }
 
-export function Ring({ value, total, size = 132, stroke = 12, children }) {
+export function Ring({ value, total, size = 132, stroke = 12, track = "stroke-surface-container-high", children }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const part = total ? Math.min(1, value / total) : 0;
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" role="img" aria-label={`${value} / ${total}`}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-surface-container-high" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className={track} />
         <circle
           cx={size / 2}
           cy={size / 2}

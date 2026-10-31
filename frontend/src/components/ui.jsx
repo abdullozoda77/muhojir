@@ -180,6 +180,19 @@ export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
   );
 }
 
+export function BrandBadge() {
+  return (
+    <>
+      <img src="/logo.png" alt="" className="pointer-events-none absolute -bottom-6 -right-6 h-32 w-32 opacity-[0.12] sm:hidden" aria-hidden />
+      <span className="relative hidden shrink-0 flex-col items-center gap-1.5 sm:flex" aria-hidden>
+        <span className="absolute inset-0 -z-10 rounded-full bg-white/15 blur-2xl" />
+        <img src="/logo.png" alt="" className="h-16 w-16 drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] lg:h-20 lg:w-20" />
+        <span className="text-[13px] font-semibold tracking-tight text-white/90">Muhojir</span>
+      </span>
+    </>
+  );
+}
+
 export function BackLink({ to, children }) {
   return (
     <Link to={to} className="group inline-flex min-h-[40px] items-center gap-1.5 self-start text-label-md text-on-surface-variant transition-colors hover:text-on-surface">

@@ -11,7 +11,7 @@ import { lang, setLang, t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
-import { Button, ErrorBox, Field } from "../components/ui.jsx";
+import { BrandBadge, Button, ErrorBox, Field } from "../components/ui.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
 import { ago, date, rub } from "../format.js";
@@ -305,6 +305,7 @@ export default function Profile() {
               {user.date_joined && <span className="text-label-sm font-normal text-white/75">{t("Аз {0} бо мо", date(user.date_joined))}</span>}
             </div>
           </div>
+          <BrandBadge />
         </div>
       </Reveal>
 
