@@ -9,6 +9,7 @@ from app.assistant.providers import AssistantError, active_provider, ask
 from app.core.deps import DB, CurrentUser
 from app.core.throttle import throttle
 from app.schemas.common import Form
+from app.services import stats
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
@@ -57,7 +58,8 @@ async def chat(data: Chat, request: Request, db: DB, user: CurrentUser):
     visitor_note = (
         f"Site language of this visitor: {LANGUAGE_NAMES[site_language(request, user)]}. "
         f"Logged in: {'yes, ' + (user.full_name or 'no name') if user else 'no'}. "
-        f"Current page: {data.page or '/'}."
+        f"Current page: {data.page or '/'}. "
+        f"Today in Moscow: {stats.today():%d.%m.%Y}."
     )
     messages = [{"role": m.role, "content": m.content} for m in data.messages]
     try:

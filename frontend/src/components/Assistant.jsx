@@ -7,12 +7,23 @@ import { useAuth } from "../auth.jsx";
 import { lang, t } from "../i18n.js";
 
 const STORE = "muhojir-assistant";
-const SUGGESTIONS = [
-  () => t("Нархи патент дар Маскав чанд аст?"),
-  () => t("Кори курьерро дар Маскав нишон деҳ"),
-  () => t("Чиптаи Душанбе – Маскавро нишон деҳ"),
-  () => t("Масҷидҳоро дар Маскав нишон деҳ"),
-];
+const SUGGESTIONS = {
+  "/housing": [() => t("Ҷойи хоб дар Маскав то 15 000 ₽ ёб"), () => t("Ҳуҷра бо бақайдгирӣ ҳаст?"), () => t("Чӣ тавр эълон диҳам?")],
+  "/shops": [() => t("Гӯшти ҳалол дар Маскав куҷо харам?"), () => t("Мағозаҳо бо расонидан нишон деҳ"), () => t("Чӣ тавр мағоза кушоям?")],
+  "/course": [() => t("Дарси навбатии ман кадом аст?"), () => t("Пешрафти ман дар курс чӣ хел?"), () => t("Имтиҳони сатҳ чӣ тавр мегузарад?")],
+  "/jobs": [() => t("Кори курьерро дар Маскав нишон деҳ"), () => t("Кор бо манзил ёб"), () => t("Ин ширкат дар рӯйхати сиёҳ ҳаст?")],
+  "/rate": [() => t("10 000 рубл чанд сомонӣ мешавад?"), () => t("Қурби имрӯза чанд аст?")],
+  "/places": [() => t("Масҷидҳоро дар Маскав нишон деҳ"), () => t("Маркази муҳоҷиратро дар Маскав ёб")],
+  "/tickets": [() => t("Чиптаи Душанбе – Маскавро нишон деҳ"), () => t("Чиптаи арзон ба Хуҷанд кай аст?")],
+  "": [
+    () => t("Нархи патент дар Маскав чанд аст?"),
+    () => t("Ҷойи хоб дар Маскав то 15 000 ₽ ёб"),
+    () => t("10 000 рубл чанд сомонӣ мешавад?"),
+    () => t("Дарси навбатии ман кадом аст?"),
+  ],
+};
+
+const suggestionsFor = (pathname) => SUGGESTIONS[Object.keys(SUGGESTIONS).find((key) => key && pathname.startsWith(key)) || ""];
 
 function load() {
   try {
@@ -157,8 +168,8 @@ export default function Assistant() {
                 <p className="rounded-2xl bg-surface-container-low p-3 text-body-md text-on-surface-variant">{t("Ошно ҳоло танзим нашудааст.")}</p>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-body-md text-on-surface-variant">{t("Салом! Ман дар бораи ҳуҷҷатҳо, патент ва кор ёрӣ медиҳам ва саҳифаи лозимиро мекушоям. Масалан:")}</p>
-                  {SUGGESTIONS.map((s) => (
+                  <p className="text-body-md text-on-surface-variant">{t("Салом! Ман дар бораи ҳуҷҷатҳо, патент, кор, манзил, қурби рубл ва курси забони русӣ ёрӣ медиҳам ва саҳифаи лозимиро мекушоям. Масалан:")}</p>
+                  {suggestionsFor(pathname).map((s) => (
                     <button key={s()} type="button" onClick={() => send(s())} className="rounded-xl px-3 py-2 text-left text-body-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
                       {s()}
                     </button>

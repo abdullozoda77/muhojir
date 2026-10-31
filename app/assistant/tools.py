@@ -4,9 +4,11 @@ from urllib.parse import urlencode
 
 from sqlalchemy import func, or_, select
 
-from app.models import PLACE_CATEGORIES, Airport, DocumentType, GuideStep, Place, Region, UserDocument
-from app.services import flights
-from app.models.jobs import INDUSTRIES, Job
+from app.models import PLACE_CATEGORIES, Airport, Certificate, DocumentType, GuideStep, LawNews, Place, Region, UserDocument
+from app.models.housing import HOUSING_FOR, HOUSING_KINDS, Housing
+from app.models.market import SHOP_CATEGORIES, Product, Shop
+from app.services import course, flights, rates, stats
+from app.models.jobs import INDUSTRIES, Employer, Job
 from app.routers.jobs import open_jobs
 
 PAGES = {
@@ -26,6 +28,31 @@ PAGES = {
     "login": "/login",
     "tickets": "/tickets",
     "places": "/places",
+    "housing": "/housing",
+    "shops": "/shops",
+    "my_shops": "/shops/my",
+    "blacklist": "/blacklist",
+    "rate": "/rate",
+    "feedback": "/feedback",
+    "course": "/course",
+    "course_stats": "/course/stats",
+    "lesson": "/course",
+    "course_exam": "/course",
+    "my_certificate": "/course",
+    "certificate_sample": "/certificates/sample",
+    "my_housing": "/housing?tab=mine",
+    "job": "/jobs",
+    "housing_ad": "/housing",
+    "shop": "/shops",
+    "employer": "/blacklist",
+    "news_item": "/guides#news",
+}
+ITEM_PAGES = {
+    "job": "/jobs/{}",
+    "housing_ad": "/housing/{}",
+    "shop": "/shops/{}",
+    "employer": "/employers/{}",
+    "news_item": "/news/{}",
 }
 DOCUMENT_SLUGS = ["patent", "registration", "migration-card", "insurance-dms", "medical"]
 INDUSTRY_KEYS = list(INDUSTRIES)
@@ -36,8 +63,11 @@ TOOLS = [
         "name": "navigate",
         "description": (
             "Opens a page of the site for the visitor. For jobs you may add filters (search words, city, industry, "
-            "housing). For guides you may open the guide of one document. For places: a kind and a region. For "
-            "tickets: from and to."
+            "housing). For guides: the guide of one document. For places: a kind and a region. For tickets: from and "
+            "to. For housing: words (metro, district), city, kind, max price, registration. For shops: words, city, "
+            "category. For lesson: level and lesson number (use my_course to know the next lesson); course_exam: level. "
+            "To open one found item use job, housing_ad, shop, employer or news_item with item_id from a search tool. "
+            "my_certificate opens the visitor's course certificate, my_housing their own housing ads."
         ),
         "input_schema": {
             "type": "object",
@@ -52,6 +82,17 @@ TOOLS = [
                 "places_region": {"type": "string", "description": "places only: region in Russian, e.g. Москва."},
                 "tickets_from": {"type": "string", "description": "tickets only: IATA code of the airport or city, e.g. DYU, MOW."},
                 "tickets_to": {"type": "string", "description": "tickets only: IATA code, e.g. LBD, LED."},
+                "housing_search": {"type": "string", "description": "housing only: metro, district or words, e.g. Люблино."},
+                "housing_city": {"type": "string", "description": "housing only: city in Russian, e.g. Москва."},
+                "housing_kind": {"type": "string", "enum": list(HOUSING_KINDS), "description": "housing only: bed, room, flat or hostel."},
+                "housing_max_price": {"type": "integer", "description": "housing only: highest price in rubles."},
+                "housing_registration": {"type": "boolean", "description": "housing only: only places that give registration."},
+                "shops_search": {"type": "string", "description": "shops only: shop or product name."},
+                "shops_city": {"type": "string", "description": "shops only: city in Russian."},
+                "shops_category": {"type": "string", "enum": list(SHOP_CATEGORIES), "description": "shops only: category."},
+                "course_level": {"type": "integer", "description": "lesson only: level 1-7."},
+                "course_lesson": {"type": "integer", "description": "lesson only: lesson 1-10 of the level."},
+                "item_id": {"type": "integer", "description": "job, housing_ad, shop, employer, news_item: the id from a search tool."},
             },
             "required": ["page"],
             "additionalProperties": False,
@@ -135,10 +176,93 @@ TOOLS = [
         "description": "The visitor's own documents on the site with their end dates (only when they are logged in).",
         "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
+    {
+        "name": "find_housing",
+        "description": (
+            "Searches approved housing ads (beds, rooms, flats, hostels for migrants). Returns up to 5 cheapest-first or "
+            "newest with price, period, city, metro, for whom, registration, utilities, deposit and contacts."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "search": {"type": "string", "description": "Metro, district or words, in Russian."},
+                "city": {"type": "string", "description": "City in Russian."},
+                "kind": {"type": "string", "enum": list(HOUSING_KINDS)},
+                "for_whom": {"type": "string", "enum": list(HOUSING_FOR)},
+                "max_price": {"type": "integer", "description": "Highest price in rubles."},
+                "registration": {"type": "boolean", "description": "Only places that give registration."},
+                "cheapest": {"type": "boolean", "description": "Sort by price instead of newest."},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "find_shops",
+        "description": (
+            "Searches approved Tajik shops in Russia (groceries, halal meat, bread, sweets, cafes, clothes, household) "
+            "by shop or product name, city and category. Returns up to 5 with address, phone, delivery and matching products."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "search": {"type": "string", "description": "Shop or product name, e.g. курага, лепёшка."},
+                "city": {"type": "string", "description": "City in Russian."},
+                "category": {"type": "string", "enum": list(SHOP_CATEGORIES)},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "exchange_rate",
+        "description": (
+            "The official ruble to somoni rate today (National Bank of Tajikistan and Bank of Russia). Optionally converts "
+            "an amount: rub_to_tjs or tjs_to_rub."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "amount": {"type": "number", "description": "Amount to convert."},
+                "direction": {"type": "string", "enum": ["rub_to_tjs", "tjs_to_rub"]},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "check_employer",
+        "description": "Checks if a company is on the site's blacklist of employers or has workers' reports.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "Company name or INN."}},
+            "required": ["name"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "my_course",
+        "description": (
+            "The visitor's Russian course progress: lessons done, average score, days in a row, levels passed, the next "
+            "lesson (level, number, title) and the last lessons. Only when logged in."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "my_activity",
+        "description": "The visitor's activity on the site: days with Muhojir, totals per section, days in a row, recent actions.",
+        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "latest_news",
+        "description": "The latest law news for migrants on the site (title, date, id), optionally filtered by words.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"search": {"type": "string", "description": "Words in Russian or Tajik, e.g. патент."}},
+            "additionalProperties": False,
+        },
+    },
 ]
 
 
-async def _navigate(db, args):
+async def _navigate(db, args, user=None):
     page = args.get("page")
     if page not in PAGES:
         return {"error": f"page must be one of: {', '.join(PAGES)}"}
@@ -164,6 +288,41 @@ async def _navigate(db, args):
         query = {k: v for k, v in query.items() if len(v) == 3}
         if query:
             path += "?" + urlencode(query)
+    elif page == "housing":
+        price = args.get("housing_max_price")
+        query = {"search": (args.get("housing_search") or "").strip(), "city": (args.get("housing_city") or "").strip(),
+                 "kind": args.get("housing_kind") if args.get("housing_kind") in HOUSING_KINDS else "",
+                 "max_price": str(int(price)) if isinstance(price, (int, float)) and price > 0 else "",
+                 "registration": "true" if args.get("housing_registration") else ""}
+        query = {k: v for k, v in query.items() if v}
+        if query:
+            path += "?" + urlencode(query)
+    elif page == "shops":
+        query = {"search": (args.get("shops_search") or "").strip(), "city": (args.get("shops_city") or "").strip(),
+                 "category": args.get("shops_category") if args.get("shops_category") in SHOP_CATEGORIES else ""}
+        query = {k: v for k, v in query.items() if v}
+        if query:
+            path += "?" + urlencode(query)
+    elif page == "lesson":
+        level, number = args.get("course_level"), args.get("course_lesson")
+        if isinstance(level, int) and isinstance(number, int) and course.lesson(level, number):
+            path = f"/course/{level}/{number}"
+    elif page == "course_exam":
+        level = args.get("course_level")
+        if isinstance(level, int) and course.level(level):
+            path = f"/course/{level}/exam"
+    elif page == "my_certificate":
+        if user is None:
+            return {"error": "the visitor is not logged in"}
+        code = await db.scalar(select(Certificate.code).where(Certificate.user_id == user.id).limit(1))
+        if not code:
+            return {"error": "the visitor has no certificate yet; it is given after the level 7 exam"}
+        path = f"/certificates/{code}"
+    elif page in ITEM_PAGES:
+        item_id = args.get("item_id")
+        if not isinstance(item_id, int) or item_id <= 0:
+            return {"error": f"{page} needs item_id from a search tool"}
+        path = ITEM_PAGES[page].format(item_id)
     elif page == "guides" and args.get("guide_document"):
         type_id = await db.scalar(select(DocumentType.id).where(DocumentType.slug == args["guide_document"]))
         if type_id:
@@ -220,7 +379,7 @@ async def _find_jobs(db, args):
     jobs = (await db.scalars(query.order_by(Job.created_at.desc()).limit(MAX_JOBS))).unique().all()
     found = [
         {
-            "title": j.title, "company": j.employer.name, "city": j.city, "address": j.address,
+            "id": j.id, "employer_id": j.employer_id, "title": j.title, "company": j.employer.name, "city": j.city, "address": j.address,
             "salary_from": j.salary_from, "salary_to": j.salary_to, "housing": j.housing_provided, "meals": j.meals_provided,
         }
         for j in jobs
@@ -281,10 +440,133 @@ async def _my_documents(db, user):
     }
 
 
+async def _find_housing(db, args):
+    query = select(Housing).where(Housing.status == "approved", Housing.is_active.is_(True))
+    if words := (args.get("search") or "").strip():
+        like = f"%{words}%"
+        query = query.where(or_(Housing.title.ilike(like), Housing.metro.ilike(like), Housing.address.ilike(like),
+                                Housing.description.ilike(like)))
+    if city := (args.get("city") or "").strip():
+        query = query.where(Housing.city.ilike(f"%{city}%"))
+    if args.get("kind") in HOUSING_KINDS:
+        query = query.where(Housing.kind == args["kind"])
+    if args.get("for_whom") in HOUSING_FOR:
+        query = query.where(Housing.for_whom.in_({args["for_whom"], "any"}))
+    if isinstance(args.get("max_price"), (int, float)) and args["max_price"] > 0:
+        query = query.where(Housing.price <= int(args["max_price"]))
+    if args.get("registration"):
+        query = query.where(Housing.registration.is_(True))
+    total = await db.scalar(select(func.count()).select_from(query.subquery()))
+    order = Housing.price if args.get("cheapest") else Housing.created_at.desc()
+    rows = (await db.scalars(query.order_by(order).limit(MAX_JOBS))).unique().all()
+    return {"total": total, "housing": [
+        {"id": h.id, "title": h.title, "kind": h.kind, "price_rub": h.price, "per": h.period, "city": h.city, "metro": h.metro,
+         "address": h.address, "for_whom": h.for_whom, "registration": h.registration,
+         "utilities_included": h.utilities_included, "no_deposit": h.no_deposit, "phone": h.phone,
+         "source": h.source} for h in rows]}
+
+
+async def _find_shops(db, args):
+    query = select(Shop).where(Shop.status == "approved")
+    words = (args.get("search") or "").strip()
+    if words:
+        query = query.where(or_(Shop.name.ilike(f"%{words}%"), Shop.description.ilike(f"%{words}%"),
+                                Shop.id.in_(select(Product.shop_id).where(Product.name.ilike(f"%{words}%")))))
+    if city := (args.get("city") or "").strip():
+        query = query.where(Shop.city.ilike(f"%{city}%"))
+    if args.get("category") in SHOP_CATEGORIES:
+        query = query.where(Shop.category == args["category"])
+    total = await db.scalar(select(func.count()).select_from(query.subquery()))
+    shops = (await db.scalars(query.order_by(Shop.created_at.desc()).limit(MAX_JOBS))).unique().all()
+    found = []
+    for shop in shops:
+        products = []
+        if words:
+            products = (await db.execute(select(Product.name, Product.price).where(
+                Product.shop_id == shop.id, Product.name.ilike(f"%{words}%")).limit(3))).all()
+        found.append({"id": shop.id, "name": shop.name, "category": shop.category, "city": shop.city, "address": shop.address,
+                      "phone": shop.phone, "delivery": shop.delivery, "opening_hours": shop.opening_hours,
+                      "products": [{"name": n, "price_rub": float(p) if p is not None else None} for n, p in products]})
+    return {"total": total, "shops": found}
+
+
+async def _exchange_rate(db, args):
+    try:
+        await rates.ensure_fresh(db)
+    except Exception:
+        pass
+    latest = await rates.latest(db)
+    if not latest:
+        return {"error": "the rate is not available right now"}
+    result = {source: {"tjs_for_1_rub": round(r["value"], 4), "date": r["day"].strftime("%d.%m.%Y")}
+              for source, r in latest.items()}
+    rate = (latest.get("nbt") or next(iter(latest.values())))["value"]
+    amount = args.get("amount")
+    if isinstance(amount, (int, float)) and amount > 0:
+        if args.get("direction") == "tjs_to_rub":
+            result["converted"] = {"tjs": amount, "rub": round(amount / rate, 2)}
+        else:
+            result["converted"] = {"rub": amount, "tjs": round(amount * rate, 2)}
+    result["note"] = "nbt = National Bank of Tajikistan, cbr = Bank of Russia; transfer services use their own rate"
+    return result
+
+
+async def _check_employer(db, args):
+    name = (args.get("name") or "").strip()
+    if len(name) < 2:
+        return {"error": "give a company name"}
+    rows = (await db.scalars(select(Employer).where(or_(Employer.name.ilike(f"%{name}%"), Employer.inn == name))
+                             .order_by(Employer.is_blacklisted.desc(), Employer.reports_count.desc()).limit(5))).all()
+    return {"found": [{"id": e.id, "name": e.name, "city": e.city, "inn": e.inn, "blacklisted": e.is_blacklisted,
+                       "reason": e.blacklist_reason, "reports": e.reports_count, "verified": e.is_verified}
+                      for e in rows]}
+
+
+async def _my_course(db, user):
+    if user is None:
+        return {"error": "the visitor is not logged in"}
+    data = await stats.course_stats(db, user)
+    nxt = None
+    for level in data["levels"]:
+        if level["passed"]:
+            continue
+        if level["done"] < level["total"]:
+            number = level["done"] + 1
+            nxt = {"level": level["level"], "lesson": number,
+                   "title": (course.lesson(level["level"], number) or {}).get("title", "")}
+        else:
+            nxt = {"level": level["level"], "exam": True}
+        break
+    return {"lessons_done": data["lessons_done"], "lessons_total": data["lessons_total"],
+            "levels_passed": data["levels_passed"], "average_score": data["average_score"],
+            "days_in_a_row": data["streak"], "this_week": data["this_week"], "certificate": bool(data["certificate"]),
+            "next": nxt, "last_lessons": [{"level": r["level"], "lesson": r["number"], "title": r["title"],
+                                            "score": r["score"]} for r in data["recent"][:3]]}
+
+
+async def _my_activity(db, user):
+    if user is None:
+        return {"error": "the visitor is not logged in"}
+    data = await stats.activity(db, user)
+    return {"days_with_muhojir": data["member_days"], "total_actions": data["total"],
+            "totals": {k: v for k, v in data["totals"].items() if v}, "days_in_a_row": data["streak"],
+            "active_days_last_half_year": data["active_days"], "paid_rub": data["paid"],
+            "recent": [{"kind": r["kind"], "title": r["title"], "date": r["at"][:10]} for r in data["recent"][:5]]}
+
+
+async def _latest_news(db, args):
+    query = select(LawNews).where(LawNews.is_published.is_(True))
+    if words := (args.get("search") or "").strip():
+        query = query.where(or_(LawNews.title.ilike(f"%{words}%"), LawNews.body.ilike(f"%{words}%")))
+    rows = (await db.scalars(query.order_by(LawNews.published_at.desc()).limit(MAX_JOBS))).all()
+    return {"news": [{"id": n.id, "title": n.title, "date": n.published_at.strftime("%d.%m.%Y") if n.published_at else ""}
+                     for n in rows]}
+
+
 async def run_tool(db, name, tool_input, user=None):
     tool_input = tool_input if isinstance(tool_input, dict) else {}
     if name == "navigate":
-        result = await _navigate(db, tool_input)
+        result = await _navigate(db, tool_input, user)
     elif name == "patent_price":
         result = await _patent_price(db, tool_input)
     elif name == "guide_steps":
@@ -299,6 +581,20 @@ async def run_tool(db, name, tool_input, user=None):
         result = await _flight_prices(db, tool_input)
     elif name == "my_documents":
         result = await _my_documents(db, user)
+    elif name == "find_housing":
+        result = await _find_housing(db, tool_input)
+    elif name == "find_shops":
+        result = await _find_shops(db, tool_input)
+    elif name == "exchange_rate":
+        result = await _exchange_rate(db, tool_input)
+    elif name == "check_employer":
+        result = await _check_employer(db, tool_input)
+    elif name == "my_course":
+        result = await _my_course(db, user)
+    elif name == "my_activity":
+        result = await _my_activity(db, user)
+    elif name == "latest_news":
+        result = await _latest_news(db, tool_input)
     else:
         return f"Unknown tool {name}", True, None
     return json.dumps(result, ensure_ascii=False), "error" in result, result.get("opened")

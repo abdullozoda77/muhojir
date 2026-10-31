@@ -1099,7 +1099,7 @@ A generic, single database configuration.
 
 ### `app/assistant/knowledge.py`
 
-**What it is for:** What the AI assistant is told: who it is, how to behave, and how the site is built (pages and what they do). It tells the model its name is Ошно.
+**What it is for:** What the AI assistant is told: who it is, how to behave (polite, legal, warns about fraud, uses tools and real numbers, suggests a next step), and every page of the site including housing, shops, the rate, the Russian course and single items. It tells the model its name is Ошно. Today's date and the current page go into the visitor note (app/routers/assistant.py).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1124,11 +1124,13 @@ A generic, single database configuration.
 
 ### `app/assistant/tools.py`
 
-**What it is for:** Tools the assistant can call: open a page of the site, and look up patent prices, guides, vacancies and the visitor's own documents. Every tool returns plain data; the model writes the answer.
+**What it is for:** Tools the assistant can call: open any page or one item of the site, and look up patent prices, guides, vacancies, places, tickets, housing, Tajik shops, the ruble rate, the employers blacklist, law news, and the visitor's own documents, course progress and activity. Every tool returns plain data; the model writes the answer.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `_navigate(db, args)` | async function | — |
+| `PAGES` | const | Page names the model may open and their addresses. |
+| `ITEM_PAGES` | const | Pages of one item (job, housing ad, shop, employer, news) opened with item_id from a search tool. |
+| `_navigate(db, args, user)` | async function | Builds the address to open, with filters for jobs, places, tickets, housing and shops, a lesson or level exam, the visitor's certificate or one item. |
 | `_patent_price(db, args)` | async function | — |
 | `_guide_steps(db, args)` | async function | — |
 | `_find_jobs(db, args)` | async function | — |
@@ -1136,6 +1138,13 @@ A generic, single database configuration.
 | `_airports(db)` | async function | — |
 | `_flight_prices(db, args)` | async function | — |
 | `_my_documents(db, user)` | async function | — |
+| `_find_housing(db, args)` | async function | Approved housing ads by words/metro, city, kind, for whom, max price, registration; newest or cheapest first. |
+| `_find_shops(db, args)` | async function | Approved shops by name or product, city and category, with matching products and prices. |
+| `_exchange_rate(db, args)` | async function | Today's official rate (NBT and CBR) and an optional conversion rubles ⇄ somoni. |
+| `_check_employer(db, args)` | async function | Employers by name or INN: blacklisted or not, reason, number of reports. |
+| `_my_course(db, user)` | async function | The visitor's course progress and the next lesson or level exam. |
+| `_my_activity(db, user)` | async function | The visitor's activity: days with Muhojir, totals, streak, recent actions. |
+| `_latest_news(db, args)` | async function | Latest published law news with ids. |
 | `run_tool(db, name, tool_input, user)` | async function | Runs a tool and returns (text for the model, is_error, path to open or None). |
 
 
@@ -1397,6 +1406,10 @@ A generic, single database configuration.
 | `test_last_message_must_be_from_user(client)` | async function | — |
 | `test_tools()` | async function | — |
 | `test_answer_opens_a_page(client, monkeypatch)` | async function | — |
+| `test_new_navigation_targets()` | async function | Housing and shops filters, a lesson and the course statistics page. |
+| `test_search_tools_and_rate(monkeypatch)` | async function | Rate conversion, housing, shops and employer search; my_course needs a login. |
+| `test_my_course_and_activity(client, user)` | async function | After one lesson the next lesson is 1.2 and the activity counts it. |
+| `test_every_page_and_items_open(client, user)` | async function | Every page name opens an address; items need item_id; the certificate needs one. |
 
 ### `tests/test_auth.py`
 
@@ -1791,6 +1804,8 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `STORE` | const | The AI assistant: a chat in the corner. It answers about migration and the site, and when you ask it to open something ("кори курьер дар Маскав нишон деҳ") the server says which page, and we open it. The conversation stays while the tab is open (sessionStorage), so it continues after changing pages. |
+| `SUGGESTIONS` | const | Starter questions by page (housing, shops, course, jobs, rate, places, tickets) and a default set. |
+| `suggestionsFor` | function | — |
 | `load` | function | — |
 | `Message` | function | **bold** and "- " lists from the model, drawn safely (no HTML from the answer is used). |
 | `AssistantMark` | function | The assistant's own mark: a chat bubble with a four-pointed spark inside, drawn in the current text color. |
