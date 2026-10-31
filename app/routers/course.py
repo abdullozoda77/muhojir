@@ -11,7 +11,7 @@ from app.core.errors import ApiError, FieldError
 from app.db.types import utcnow
 from app.models import Certificate, ExamAttempt, LessonProgress
 from app.schemas.common import Form
-from app.services import course
+from app.services import course, stats
 from app.services.notify import notify
 
 router = APIRouter(prefix="/api/course", tags=["course"])
@@ -157,6 +157,11 @@ async def overview(db: DB, user: OptionalUser):
     return {"levels": result, "certificate": certificate_json(certificate) if certificate else None,
             "exam_size": course.EXAM_SIZE, "exam_minutes": course.EXAM_MINUTES,
             "pass_percent": course.PASS_PERCENT, "lesson_pass": course.LESSON_PASS}
+
+
+@router.get("/stats/")
+async def course_stats(db: DB, user: CurrentUser):
+    return await stats.course_stats(db, user)
 
 
 @router.get("/levels/{level}/lessons/{number}/")

@@ -2,17 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight, Bell, Bookmark, Building2, Camera, ChevronRight, Loader2, Trash2, Eye, EyeOff, FileText, Languages, LogOut, Mail, Moon, PenSquare, Phone,
-  ReceiptText, Save, Sun, UserRound,
+  ReceiptText, Save, Sun, UserRound, Activity, BellPlus, BarChart3, CalendarDays, Clock, Flame, GraduationCap, MapPin, MessageSquare, PenLine,
+  Plane, ShieldAlert, ShoppingBag, Sparkles, Star,
 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { lang, setLang, t } from "../i18n.js";
-import { date } from "../format.js";
 import { useApi } from "../hooks.js";
 import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
 import { Button, ErrorBox, Field } from "../components/ui.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
+import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
+import { ago, date, rub } from "../format.js";
 
 const ROLE_NAMES = { editor: () => t("Муҳаррир"), admin: () => t("Админ") };
 
@@ -153,6 +155,84 @@ function IconInput({ icon: Icon, ...props }) {
   );
 }
 
+const SECTIONS = [
+  ["documents", FileText, () => t("Ҳуҷҷатҳо")],
+  ["payments", ReceiptText, () => t("Пардохтҳо")],
+  ["lessons", GraduationCap, () => t("Дарсҳои забони русӣ")],
+  ["exams", PenLine, () => t("Имтиҳонҳо")],
+  ["saved_jobs", Bookmark, () => t("Кори захирашуда")],
+  ["job_alerts", BellPlus, () => t("Огоҳии кори нав")],
+  ["reviews", Star, () => t("Баҳо ва шарҳҳо")],
+  ["blacklist_reports", ShieldAlert, () => t("Шикоят аз корфармо")],
+  ["housing", Building2, () => t("Эълонҳои манзил")],
+  ["places", MapPin, () => t("Ҷойҳои пешниҳодшуда")],
+  ["shops", ShoppingBag, () => t("Мағозаҳо")],
+  ["feedback", MessageSquare, () => t("Фикру мулоҳиза")],
+  ["flights", Plane, () => t("Пайгирии чипта")],
+];
+
+const KIND = Object.fromEntries(SECTIONS.map(([key, icon, label]) => [key, { icon, label }]));
+
+const merged = (source) => ({
+  ...source,
+  reviews: (source.place_reviews || 0) + (source.shop_reviews || 0) + (source.employer_reviews || 0),
+});
+
+function MyActivity() {
+  const { data } = useApi("/auth/activity/");
+  if (!data) return <div className="h-64 animate-pulse rounded-2xl bg-surface-container" />;
+  const totals = merged(data.totals);
+  const share = SECTIONS.map(([key, icon, label]) => ({ key, icon, label: label(), count: totals[key] || 0 }))
+    .filter((i) => i.count > 0)
+    .sort((a, b) => b.count - a.count);
+  return (
+    <section className="flex flex-col gap-3" aria-label={t("Фаъолияти шумо")}>
+      <h2 className="flex items-center gap-2 px-1 text-[18px] font-semibold">
+        <Activity className="h-5 w-5 text-primary" aria-hidden />
+        {t("Фаъолияти шумо")}
+      </h2>
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile icon={CalendarDays} value={data.member_days} label={t("Рӯз бо Muhojir")} />
+        <StatTile icon={Sparkles} value={data.total} label={t("Ҳамаи амалҳо")} />
+        <StatTile icon={Flame} accent="text-orange-500" value={data.streak} label={t("Рӯз пай дар пай")} hint={t("беҳтарин: {0}", data.best_streak)} />
+        <StatTile icon={ReceiptText} value={rub(data.paid)} label={t("Пардохт сабт шуд")} hint={t("{0} чек", totals.payments)} />
+      </div>
+      <StatCard title={t("Рӯзҳои фаъол")} icon={CalendarDays} aside={t("{0} дар ин ҳафта", data.this_week)}>
+        <Heatmap days={data.days} unit={t("амал")} />
+      </StatCard>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <StatCard title={t("Дар куҷо фаъол ҳастед")} icon={BarChart3}>
+          {share.length ? <ShareBars items={share.slice(0, 6)} /> : <p className="text-body-sm text-on-surface-variant">{t("Ҳоло амал нест. Ҳуҷҷат илова кунед ё дарси аввалро хонед.")}</p>}
+        </StatCard>
+        <StatCard title={t("Охирин амалҳо")} icon={Clock}>
+          {data.recent.length ? (
+            <ol className="relative flex flex-col gap-3 before:absolute before:bottom-2 before:left-[15px] before:top-2 before:w-px before:bg-outline-variant">
+              {data.recent.map((r, i) => {
+                const k = KIND[r.kind] || KIND.documents;
+                return (
+                  <li key={`${r.kind}-${r.at}-${i}`} className="relative">
+                    <Link to={r.to} className="flex items-center gap-3 transition-colors hover:text-primary">
+                      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-container-lowest text-primary ring-1 ring-outline-variant">
+                        <k.icon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-label-md">{r.title || k.label()}</span>
+                        <span className="text-body-sm text-on-surface-variant">{r.title ? `${k.label()} · ` : ""}{ago(r.at)}</span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="text-body-sm text-on-surface-variant">{t("Ҳоло амал нест.")}</p>
+          )}
+        </StatCard>
+      </div>
+    </section>
+  );
+}
+
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
   const { dark, setDark } = useTheme();
@@ -246,6 +326,8 @@ export default function Profile() {
           </StaggerItem>
         ))}
       </Stagger>
+
+      <MyActivity />
 
       <form onSubmit={submit} className="flex flex-col gap-6">
         <Section title={t("Маълумоти шахсӣ")}>

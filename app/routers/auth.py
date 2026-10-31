@@ -21,6 +21,7 @@ from app.schemas.accounts import (
 from app.services.emails import send_code
 from app.services.google import verify_google_token
 from app.services.live import notification_json, push_count
+from app.services.stats import activity
 from app.services.notify import PASSWORD_TEXT, PASSWORD_TITLE, notify, welcome
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -230,6 +231,11 @@ async def logout(data: RefreshIn, db: DB):
 @router.get("/profile/")
 async def profile(user: CurrentUser):
     return user_json(user)
+
+
+@router.get("/activity/")
+async def my_activity(user: CurrentUser, db: DB):
+    return await activity(db, user)
 
 
 @router.patch("/profile/")

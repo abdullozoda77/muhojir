@@ -599,6 +599,7 @@ A generic, single database configuration.
 | `refresh_token(data, db)` | async function · `POST /api/auth/token/refresh/` | A new access token and a new refresh token; the old refresh token stops working. |
 | `logout(data, db)` | async function · `POST /api/auth/logout/` | Log out: the refresh token goes on the blacklist, so it can not be used again. |
 | `profile(user)` | async function · `GET /api/auth/profile/` | — |
+| `my_activity(user, db)` | async function · `GET /api/auth/activity/` | «Your activity» on the profile: totals per section, active days, streak, recent actions (app/services/stats.py). |
 | `update_profile(data, user, db)` | async function · `PATCH /api/auth/profile/` | Change name, phone, city, language, email reminders. |
 | `upload_avatar(user, db, avatar)` | async function · `POST /api/auth/profile/avatar/` | The profile photo (JPG, PNG or WEBP, up to 3 MB); it replaces the old one. |
 | `remove_avatar(user, db)` | async function · `DELETE /api/auth/profile/avatar/` | — |
@@ -618,6 +619,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `GET /api/course/` | async function | All levels with lessons, the user's scores, which lessons are open, exam state of each level (ready, passed, percent, wait_until, open) and the user's certificate. Works for guests too. |
+| `GET /api/course/stats/` | async function | The user's course statistics (see app/services/stats.py). Login needed. |
 | `GET /api/course/levels/{level}/lessons/{number}/` | async function | One lesson: theory, words and exercises. 403 with code «locked» if the previous lesson is not finished. |
 | `POST /api/course/levels/{level}/lessons/{number}/complete/` | async function | Saves the lesson score (at least 60%); the best score is kept. |
 | `POST /api/course/levels/{level}/exam/` | async function | Starts the level exam (all 10 lessons needed, previous level passed) or returns the open one. full_name is the name for the certificate. 429 with wait_until after a failed try. |
@@ -1058,6 +1060,22 @@ A generic, single database configuration.
 | `reminder_text(document, days)` | function | The reminder text: in N days, tomorrow, or «expired today» (days = 0). |
 | `send_due_reminders(db, today)` | async function | Sends today's reminders: on the day the owner chose (remind_days_before) and the day before the end. Safe to run many times a day: ReminderLog remembers what was already sent. Returns how many were sent. Also on the expiry day itself («expired today»). |
 
+### `app/services/stats.py`
+
+**What it is for:** Statistics for the course page and the profile. Days are counted in Moscow time (UTC+3).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `local_day(moment)` | function | The Moscow calendar day of a moment. |
+| `today()` | function | — |
+| `calendar(counter, days)` | function | The last `days` days as [{date, count}], starting on a Monday, for the activity calendar. |
+| `streaks(days)` | function | (current, best): days in a row; the current streak still counts if today is empty but yesterday was active. |
+| `week_count(counter)` | function | Actions in the last 7 days. |
+| `course_stats(db, user)` | async function | Lessons done, average and 100% scores, exams, streaks, 12-week calendar, progress per level and the last 5 lessons. |
+| `SECTIONS` | const | Sections of the site with the model and the owner column used for «Your activity». |
+| `moment_of(model)` | function | Which date column counts as the action time. |
+| `activity(db, user)` | async function | Days with Muhojir, totals per section, sum of payments, streaks, 26-week calendar and the last 8 actions with links. |
+
 ### `app/services/trudvsem.py`
 
 **What it is for:** Real job ads from «Работа России» (trudvsem.ru), the state job portal. Its ads are open data with a free API (no key): https://opendata.trudvsem.ru/api/v1/vacancies/region/<code>?text=...&offset=<page>&limit=<n> We import the jobs migrants usually look for, in the regions where most of them work. Ads of recruitment agencies are skipped (a common way to cheat migrants), and contact persons' names and phones are not copied: people apply on the source page (external_url).
@@ -1477,6 +1495,17 @@ A generic, single database configuration.
 | `test_password_change_is_reported(client, user)` | async function | Reset password -> «Your password was changed». |
 | `test_document_expired_today(client, user)` | async function | A document ending today gets the «expired today» reminder. |
 | `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | async function | Editors hear about a submitted shop, a suggested place and a moved shop; the owner hears about the first review only. |
+
+### `tests/test_stats.py`
+
+**What it is for:** Tests of streaks, the calendar and both statistics endpoints.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_streaks_count_days_in_a_row()` | function | — |
+| `test_calendar_starts_on_monday_and_ends_today()` | function | — |
+| `test_course_stats(client, user)` | async function | Empty stats, then two lessons: average, 100% count, streak, calendar. |
+| `test_activity(client, user)` | async function | A lesson shows in totals, sections, streak and recent actions. |
 
 ### `tests/test_rates.py`
 
@@ -1920,6 +1949,7 @@ A generic, single database configuration.
 | `LangSwitch` | export function | — |
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
+| `TONES` | const | A soft colour of the icon tile for each sidebar link. |
 | `SideLink` | function | One link of the sidebar: icon, name, counter. The "News" link (/guides#news) is never shown as active, so it does not light up together with "Guides". |
 | `useSidebarOpen` | function | Whether the sidebar is open; the "Menu" button left of the logo (☰ icon and the word, highlighted with ✕ while the sidebar is open) toggles it, the choice is kept in localStorage ("sidebar"). When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
 | `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
@@ -2030,6 +2060,19 @@ A generic, single database configuration.
 | `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. At the top: round flags of Russia and Tajikistan with the pair (RUB → TJS or TJS → RUB), the result in big type on one line and "for 1 000 ₽" (or "for 100 somoni") under it. In the somoni direction the CBR box shows 100 somoni in roubles. |
 | `Flag` | function | A round flag: Russia drawn in SVG, Tajikistan from /flag-tj.svg. |
 | `Pair` | function | The two flags overlapping and the currency codes in the chosen direction. |
+
+### `frontend/src/components/Stats.jsx`
+
+**What it is for:** Charts and number cards for statistics (course page, profile). One colour per chart, hover/tap tooltips.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `StatTile` | export function | A card with an icon, a big number, a label and a hint. |
+| `Ring` | export function | A round progress ring with content in the middle. |
+| `Heatmap` | export function | Activity calendar: weeks as columns, 5 shades of the primary colour, month names, a tooltip with the date and count. |
+| `LevelBars` | export function | Bars of lessons done per course level (green = level passed); hover/tap shows the level details below. |
+| `ShareBars` | export function | Horizontal bars: where the user is active. |
+| `StatCard` | export function | A card with a title, an icon and a small note on the right. |
 
 ### `frontend/src/components/SeasonFall.jsx`
 
@@ -2183,6 +2226,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `CourseStats` | function | «My statistics» for logged-in users: dark card with the ring and 4 numbers, 4 tiles, the activity calendar, bars per level and the last lessons. Can be hidden. |
 | `Course` | export function | — |
 
 ### `frontend/src/pages/Lesson.jsx`
@@ -2422,6 +2466,7 @@ A generic, single database configuration.
 | `Toggle` | function | — |
 | `Section` | function | — |
 | `IconInput` | function | An input with an icon inside it on the left. |
+| `MyActivity` | function | «Your activity»: 4 tiles (days with Muhojir, actions, streak, payments), the 26-week calendar, «where you are active» and the last actions. |
 | `Profile` | export function | — |
 
 ### `frontend/src/pages/SavedJobs.jsx`
