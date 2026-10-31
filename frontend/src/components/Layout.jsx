@@ -132,16 +132,44 @@ export function ThemeToggle() {
   );
 }
 
+const TONES = {
+  "/calculator": "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  "/guides": "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+  "/checks": "bg-violet-500/15 text-violet-600 dark:text-violet-400",
+  "/course": "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  "/exam": "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  "/help": "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+  "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
+  "/rate": "bg-lime-500/15 text-lime-700 dark:text-lime-400",
+  "/guides#news": "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  "/feedback": "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400",
+};
+
 function SideLink({ item, counts }) {
-  const base = "flex min-h-[38px] items-center gap-3 rounded-lg px-2.5 py-1.5 text-label-md transition-colors";
-  const idle = "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface";
+  const tone = TONES[item.to] || "bg-primary-fixed text-primary";
   return (
-    <NavLink to={item.to} end={item.end} className={({ isActive }) => `${base} ${isActive && !item.hash ? "bg-primary-fixed text-on-primary-fixed" : idle}`}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-outline-variant">
-        <item.icon className="h-4 w-4" aria-hidden />
-      </span>
-      <span className="flex-1 leading-tight">{item.label}</span>
-      {item.badge && <Count n={counts[item.badge]} />}
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) => {
+        const on = isActive && !item.hash;
+        return `group relative flex min-h-[42px] items-center gap-3 rounded-xl px-2 py-1.5 text-[14px] transition-all duration-200 ${on ? "bg-surface-container-high font-semibold text-on-surface ring-1 ring-inset ring-outline-variant" : "text-on-surface-variant hover:translate-x-0.5 hover:bg-surface-container-low hover:text-on-surface"}`;
+      }}
+    >
+      {({ isActive }) => {
+        const on = isActive && !item.hash;
+        return (
+          <>
+            {on && <span className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary" aria-hidden />}
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] transition-colors ${on ? "bg-primary text-on-primary shadow-sm" : tone}`}>
+              <item.icon className="h-[17px] w-[17px]" strokeWidth={2.2} aria-hidden />
+            </span>
+            <span className="flex-1 truncate leading-tight">{item.label}</span>
+            {item.badge && <Count n={counts[item.badge]} />}
+          </>
+        );
+      }}
     </NavLink>
   );
 }
@@ -174,10 +202,10 @@ function Sidebar({ items, counts, user, open }) {
   ].filter(([, list]) => list.length);
   return (
     <aside id="sidebar" inert={!open} className={`fixed bottom-0 left-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-r border-outline-variant bg-background transition-transform duration-300 ease-out lg:flex ${open ? "translate-x-0" : "-translate-x-full"}`} aria-label={t("Боз")}>
-      <nav className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-3 py-4">
-        {groups.map(([title, list]) => (
-          <div key={title || "main"} className="flex flex-col gap-0.5">
-            {title && <span className="px-2.5 pb-1 text-label-sm font-medium uppercase tracking-wide text-outline">{title}</span>}
+      <nav className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-3 py-5">
+        {groups.map(([title, list], index) => (
+          <div key={title || "main"} className={`flex flex-col gap-1 ${index ? "border-t border-outline-variant/70 pt-5" : ""}`}>
+            {title && <span className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-outline">{title}</span>}
             {list.map((i) => (
               <SideLink key={i.to} item={i} counts={counts} />
             ))}
