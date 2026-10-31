@@ -9,7 +9,8 @@ OpenStreetMap, with ratings, reviews, "near me" and suggestions of new places) a
 (owners add their shop, products, prices and photos, prove the shop is real with photos and its place on the map;
 an editor approves it; buyers search and contact the seller by phone, WhatsApp or Telegram) and
 **housing** (beds, rooms and flats for migrants posted by landlords: search by city, metro and price, filters for
-registration, utilities and no deposit, photos; an editor approves each listing).
+registration, utilities and no deposit, photos; an editor approves each listing; real offers are also imported
+three times a day from public Telegram rental channels, skipping ads, people who search, and listings that refuse migrants).
 
 Everything is async: FastAPI, the database (SQLAlchemy asyncio), email (aiosmtplib), outside APIs (httpx), files
 (anyio) and the AI models.

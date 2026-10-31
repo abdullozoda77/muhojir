@@ -28,6 +28,7 @@ class HousingIn(ShopFields):
     phone: str = ""
     whatsapp: str = ""
     telegram: str = ""
+    confirmed: bool = False
 
     @model_validator(mode="after")
     def has_contact(self):
@@ -65,7 +66,8 @@ def housing_json(h, viewer=None):
         "registration": h.registration, "utilities_included": h.utilities_included, "no_deposit": h.no_deposit,
         "phone": h.phone, "whatsapp": h.whatsapp, "telegram": h.telegram, "is_active": h.is_active,
         "photos": [{"id": p.id, "url": media(p.file)} for p in h.photos], "status": h.status,
-        "owner_name": owner_name(h.owner), "is_mine": bool(viewer and h.owner_id == viewer.id),
+        "owner_name": owner_name(h.owner) if h.owner_id else h.source_name, "is_mine": bool(viewer and h.owner_id == viewer.id),
+        "source": h.source, "source_name": h.source_name, "source_url": h.source_url,
         "created_at": h.created_at, "updated_at": h.updated_at,
     }
     if viewer and (viewer.id == h.owner_id or viewer.is_editor):

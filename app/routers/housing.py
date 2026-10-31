@@ -23,6 +23,7 @@ MAX_WAITING = 5
 MAX_PHOTOS = 8
 NO_RIGHTS = "У вас недостаточно прав для выполнения данного действия."
 NOT_FOUND = "No Housing matches the given query."
+NEED_CONFIRM = "Confirm that the place is real and the information is true."
 
 
 def as_json(user):
@@ -49,6 +50,8 @@ def housing_filters(query, request):
     for flag in ("registration", "utilities_included", "no_deposit"):
         if bool_param(request, flag):
             query = query.where(getattr(Housing, flag).is_(True))
+    if (source := param(request, "source")) in ("user", "telegram"):
+        query = query.where(Housing.source == source)
     if bool_param(request, "with_photos"):
         query = query.where(Housing.id.in_(select(HousingPhoto.housing_id)))
     return query
@@ -105,7 +108,7 @@ async def ask_editors(db, housing, user, title):
 
 
 async def tell_owner(db, housing):
-    owner = await db.get(User, housing.owner_id)
+    owner = await db.get(User, housing.owner_id) if housing.owner_id else None
     if owner is None:
         return
     if housing.status == "approved":
@@ -125,11 +128,13 @@ async def housing_detail(housing_id: int, db: DB, user: OptionalUser):
 @router.post("/", status_code=201, dependencies=[Depends(throttle("housing"))])
 async def create_housing(data: HousingIn, db: DB, user: CurrentUser):
     if not user.is_editor:
+        if not data.confirmed:
+            raise FieldError("confirmed", NEED_CONFIRM)
         waiting = await db.scalar(select(func.count()).select_from(Housing).where(
             Housing.owner_id == user.id, Housing.status == "pending"))
         if waiting >= MAX_WAITING:
             raise ApiError({"detail": [f"You already have {MAX_WAITING} listings waiting for checking."]})
-    housing = Housing(**data.model_dump(), owner_id=user.id, status="approved" if user.is_editor else "pending")
+    housing = Housing(**data.model_dump(exclude={"confirmed"}), owner_id=user.id, status="approved" if user.is_editor else "pending")
     db.add(housing)
     await db.commit()
     if housing.status == "pending":
@@ -143,7 +148,7 @@ async def update_housing(housing_id: int, data: HousingPatch, db: DB, user: Curr
     changes = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None or k in ("rooms", "places")}
     for field, value in changes.items():
         setattr(housing, field, value)
-    if not (housing.phone or housing.whatsapp or housing.telegram):
+    if housing.owner_id and not (housing.phone or housing.whatsapp or housing.telegram):
         raise ApiError({"non_field_errors": [NO_CONTACT]})
     recheck = not user.is_editor and housing.status != "pending" and bool(set(changes) - {"is_active"})
     if recheck:

@@ -12,6 +12,7 @@ celery.conf.update(
     task_always_eager=not settings.celery_broker_url,
     beat_schedule={
         "daily-import-jobs": {"task": "app.worker.import_jobs", "schedule": crontab(hour=6, minute=0)},
+        "import-housing": {"task": "app.worker.import_housing", "schedule": crontab(hour="7,13,19", minute=20)},
         "daily-reminders": {"task": "app.worker.send_reminders", "schedule": crontab(hour=6, minute=30)},
         "daily-flight-watches": {"task": "app.worker.check_flight_watches", "schedule": crontab(hour=7, minute=0)},
         "update-rates": {"task": "app.worker.update_rates", "schedule": crontab(hour="8,11,15", minute=10)},
@@ -61,3 +62,10 @@ def update_rates():
     from app.tasks import run_update_rates
 
     asyncio.run(run_update_rates())
+
+
+@celery.task
+def import_housing():
+    from app.tasks import run_import_housing
+
+    asyncio.run(run_import_housing())

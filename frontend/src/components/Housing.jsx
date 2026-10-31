@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
-  Ban, BedDouble, BedSingle, Building2, Camera, DoorOpen, FileCheck2, Hourglass, ImagePlus, MapPin, PiggyBank, Receipt, Save, Train, Trash2, Users, X,
+  Ban, BedDouble, BedSingle, Building2, Camera, DoorOpen, FileCheck2, Hourglass, ImagePlus, MapPin, PiggyBank, Receipt, Save, Send, Train, Trash2, Users, X,
 } from "lucide-react";
 import { api } from "../api.js";
 import { t } from "../i18n.js";
@@ -83,6 +83,12 @@ export function HousingCard({ item, children }) {
             <kind.icon className="h-3.5 w-3.5" aria-hidden />
             {kind.label}
           </span>
+          {item.source === "telegram" && (
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#229ed9] px-2 py-0.5 text-label-sm text-white">
+              <Send className="h-3 w-3" aria-hidden />
+              Telegram
+            </span>
+          )}
           {item.photos?.length > 1 && (
             <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-label-sm text-white">
               <Camera className="h-3.5 w-3.5" aria-hidden />
@@ -180,12 +186,14 @@ function Photos({ item, onChange }) {
 export function HousingForm({ open, item, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY);
   const [saved, setSaved] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setSaved(item || null);
+    setConfirmed(false);
     setError(null);
     setForm(item ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, item[k] ?? ""])) : EMPTY);
   }, [open, item]);
@@ -197,7 +205,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const body = { ...form, price: Number(form.price) || 0, rooms: form.rooms ? Number(form.rooms) : null, places: form.places ? Number(form.places) : null };
+    const body = { ...form, confirmed, price: Number(form.price) || 0, rooms: form.rooms ? Number(form.rooms) : null, places: form.places ? Number(form.places) : null };
     try {
       const data = saved
         ? await api(`/housing/${saved.id}/`, { method: "PATCH", body })
@@ -285,8 +293,18 @@ export function HousingForm({ open, item, onClose, onSaved }) {
             <input className="input" value={form.telegram} onChange={set("telegram")} placeholder="@username" />
           </Field>
         </div>
-        <ErrorBox error={error && !["title", "price", "city", "phone", "whatsapp", "telegram", "metro", "address", "rooms", "places", "description"].some((k) => error.data?.[k]) ? error : null} />
-        <Button type="submit" loading={saving} icon={Save} disabled={!form.title.trim() || !form.city.trim() || form.price === ""}>
+        {!saved && (
+          <label className={`flex cursor-pointer items-start gap-3 rounded-xl p-3.5 ring-1 ring-inset transition-colors ${confirmed ? "bg-primary-fixed/60 ring-primary/40" : "ring-outline-variant hover:bg-surface-container-low"}`}>
+            <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-primary,#1447a8)]" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body-md font-medium">{t("Тасдиқ мекунам")}</span>
+              <span className="text-body-sm text-on-surface-variant">{t("Ин манзил воқеан ҳаст, ман соҳиб ё сокини он ҳастам ва нарху маълумот дуруст аст. Барои эълони дурӯғ ҳисоб баста мешавад.")}</span>
+              {error?.data?.confirmed && <span className="text-body-sm text-error">{[].concat(error.data.confirmed).join(" ")}</span>}
+            </span>
+          </label>
+        )}
+        <ErrorBox error={error && !["confirmed", "title", "price", "city", "phone", "whatsapp", "telegram", "metro", "address", "rooms", "places", "description"].some((k) => error.data?.[k]) ? error : null} />
+        <Button type="submit" loading={saving} icon={Save} disabled={!form.title.trim() || !form.city.trim() || form.price === "" || (!saved && !confirmed)}>
           {saved ? t("Нигоҳ доштан") : t("Фиристодан ба санҷиш")}
         </Button>
       </form>

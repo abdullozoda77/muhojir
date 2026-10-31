@@ -2,6 +2,7 @@ from app.db.session import SessionLocal
 from app.db.types import utcnow
 from app.services.alerts import notify_alerts
 from app.services.flights import check_watches
+from app.services.housing_import import import_housing
 from app.services.rates import update_rates
 from app.services.places import import_places
 from app.services.reminders import send_due_reminders
@@ -43,3 +44,10 @@ async def run_update_rates(log=print):
         saved = await update_rates(db)
     log(f"Exchange rates: {saved}")
     return saved
+
+
+async def run_import_housing(log=print, **options):
+    async with SessionLocal() as db:
+        counts = await import_housing(db, log=log, **options)
+    log(f"Housing: {counts}")
+    return counts

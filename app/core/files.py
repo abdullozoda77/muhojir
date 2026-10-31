@@ -53,9 +53,16 @@ async def save_image(file: UploadFile, folder, field, max_mb=MAX_AVATAR_MB):
         raise FieldError(field, "Загруженный файл пуст.")
     if len(data) > max_mb * 1024 * 1024:
         raise FieldError(field, f"The photo is too big. The limit is {max_mb} MB.")
+    name = await store_image(data, folder)
+    if name is None:
+        raise FieldError(field, "Upload a photo: JPG, PNG or WEBP.")
+    return name
+
+
+async def store_image(data, folder):
     ext = image_ext(data)
     if ext is None:
-        raise FieldError(field, "Upload a photo: JPG, PNG or WEBP.")
+        return None
     name = f"{folder}/{uuid.uuid4().hex}{ext}"
     path = anyio.Path(MEDIA_ROOT / name)
     await path.parent.mkdir(parents=True, exist_ok=True)

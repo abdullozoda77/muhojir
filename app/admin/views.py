@@ -472,9 +472,9 @@ class FeedbackAdmin(Base, model=Feedback):
 
 class HousingAdmin(Base, model=Housing):
     name, name_plural, icon, category = "Манзил", "Манзил", "fa-solid fa-bed", "Мағозаҳо"
-    column_list = [Housing.title, Housing.kind, Housing.city, Housing.price, Housing.owner, Housing.status, Housing.is_active,
-                   Housing.created_at]
-    column_searchable_list = [Housing.title, Housing.city, Housing.address, Housing.phone]
+    column_list = [Housing.title, Housing.kind, Housing.city, Housing.price, Housing.source, Housing.owner, Housing.status,
+                   Housing.is_active, Housing.created_at]
+    column_searchable_list = [Housing.title, Housing.city, Housing.address, Housing.phone, Housing.source_name]
     column_sortable_list = [Housing.price, Housing.city, Housing.status, Housing.created_at]
     column_default_sort = [(Housing.created_at, True)]
     column_formatters = {"kind": lambda m, a: m.kind_label}

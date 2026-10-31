@@ -13,6 +13,8 @@ async def test_a_listing_is_shown_only_after_an_editor_approves_it(client, user)
     r = await client.post("/api/housing/", headers=owner, json={**LISTING, "phone": "", "whatsapp": ""})
     assert r.status_code == 400
     r = await client.post("/api/housing/", headers=owner, json=LISTING)
+    assert "confirmed" in r.json()
+    r = await client.post("/api/housing/", headers=owner, json={**LISTING, "confirmed": True})
     assert r.status_code == 201, r.text
     listing = r.json()
     assert listing["status"] == "pending" and listing["phone"] == "+79991234567" and listing["for_whom_label"] == "Танҳо мардон"
@@ -75,7 +77,7 @@ async def test_photos_only_the_owner_adds_and_removes(client, user):
     await set_role(data["user"]["id"], "editor")
     owner = await register(client, "photos@example.com", "Нигина Раҳимова")
     stranger = await register(client, "nosy@example.com", "Бегона Одам")
-    listing = (await client.post("/api/housing/", headers=owner, json=LISTING)).json()
+    listing = (await client.post("/api/housing/", headers=owner, json={**LISTING, "confirmed": True})).json()
     r = await client.post(f"/api/housing/{listing['id']}/photos/", headers=owner, files={"photo": ("a.txt", b"hello", "text/plain")})
     assert "photo" in r.json()
     r = await client.post(f"/api/housing/{listing['id']}/photos/", headers=owner, files={"photo": ("room.png", PNG, "image/png")})
@@ -91,3 +93,71 @@ async def test_photos_only_the_owner_adds_and_removes(client, user):
     assert r.json()["photos"] == []
     assert (await client.delete(f"/api/housing/{listing['id']}/", headers=stranger)).status_code == 403
     assert (await client.delete(f"/api/housing/{listing['id']}/", headers=owner)).status_code == 204
+
+
+def tg_page(posts):
+    blocks = []
+    for number, when, text in posts:
+        blocks.append(
+            f'<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="test_flats/{number}">'
+            f'<a class="tgme_widget_message_photo_wrap" style="width:800px;background-image:url(\'https://cdn.test/{number}.jpg\')"></a>'
+            f'<div class="tgme_widget_message_text js-message_text" dir="auto">{text}</div>'
+            f'<time datetime="{when}" class="time">10:00</time></div></div>')
+    return "<html>" + "".join(blocks) + "</html>"
+
+
+async def test_telegram_import_keeps_only_real_offers(client):
+    from datetime import timedelta
+
+    import httpx
+
+    from app.db.session import SessionLocal
+    from app.db.types import utcnow
+    from app.services import housing_import
+
+    fresh = (utcnow() - timedelta(days=1)).isoformat()
+    old = (utcnow() - timedelta(days=60)).isoformat()
+    posts = [
+        (1, fresh, "Сдам без посредников: комната, 14м²<br/>Цена: 16000<br/>Адрес: Тестоград, ул. Ленина, 5<br/>"
+                   "Только для мужчин, помогу с регистрацией, всё включено. Звоните +7 (999) 111-22-33"),
+        (2, fresh, "3-к квартира<br/>м.Балтийская<br/>Стоимость: 75.000₽ + жкх.<br/>Контакт: @good_owner"),
+        (3, fresh, "Ищу комнату в Тестограде до 15000, пишите @someone_here"),
+        (4, fresh, "Сдаю однокомнатную квартиру, 30 000 руб, только славянам, без животных"),
+        (5, fresh, "Подписывайтесь на наш закрытый telegram-канал, 300 квартир в месяц от 20 000 руб"),
+        (6, fresh, "Сдам без посредников: комната, 14м²<br/>Цена: 16000<br/>Адрес: Тестоград, ул. Ленина, 5<br/>"
+                   "Только для мужчин, помогу с регистрацией, всё включено. Звоните +7 (999) 111-22-33"),
+        (7, old, "Сдам квартиру-студию в Тестограде, цена 20000, тел. +7 999 000-00-01"),
+    ]
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 64
+
+    def answer(request):
+        if request.url.host == "cdn.test":
+            return httpx.Response(200, content=png)
+        if "before" in str(request.url):
+            return httpx.Response(200, text="<html></html>")
+        return httpx.Response(200, text=tg_page(posts))
+
+    monkey = dict(housing_import.CHANNELS)
+    housing_import.CHANNELS["test_flats"] = "Тестоград"
+    try:
+        async with SessionLocal() as db:
+            counts = await housing_import.import_housing(db, channels=["test_flats"], pause=0, log=lambda *_: None,
+                                                         transport=httpx.MockTransport(answer))
+            again = await housing_import.import_housing(db, channels=["test_flats"], pause=0, log=lambda *_: None,
+                                                        transport=httpx.MockTransport(answer))
+    finally:
+        housing_import.CHANNELS.clear()
+        housing_import.CHANNELS.update(monkey)
+    assert counts["created"] == 2 and counts["duplicates"] == 1 and counts["skipped"] == 3
+    assert again["created"] == 0 and again["known"] == 2
+
+    r = await client.get("/api/housing/?city=Тестоград&source=telegram")
+    assert r.json()["count"] == 2
+    room = next(h for h in r.json()["results"] if h["kind"] == "room")
+    assert room["kind"] == "room" and room["price"] == 16000 and room["for_whom"] == "men"
+    assert room["registration"] and room["utilities_included"] and room["phone"] == "+79991112233"
+    assert room["source_name"] == "@test_flats" and room["source_url"] == "https://t.me/test_flats/1"
+    assert len(room["photos"]) == 1 and room["is_mine"] is False
+    r = await client.get("/api/housing/?search=Балтийская")
+    flat = next(h for h in r.json()["results"] if h["source"] == "telegram")
+    assert flat["kind"] == "flat" and flat["rooms"] == 3 and flat["price"] == 75000 and flat["telegram"] == "good_owner"

@@ -110,7 +110,7 @@ A generic, single database configuration.
 
 ### `app/cli.py`
 
-**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now
+**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos] housing listings from Telegram channels now
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -138,10 +138,11 @@ A generic, single database configuration.
 | `run_import_places(log)` | async function | Real places from OpenStreetMap (migration centers, notaries, mosques, Tajik cafes...). |
 | `run_check_flight_watches(log)` | async function | — |
 | `run_update_rates(log)` | async function | Fetches today's official rouble to somoni rate (NBT and CBR). |
+| `run_import_housing(log, **options)` | async function | Imports housing listings from Telegram channels (app/services/housing_import.py). |
 
 ### `app/worker.py`
 
-**What it is for:** Celery: emails in the background and the daily jobs on schedule (Celery Beat): vacancies, reminders, ticket price alerts, and every week the places from OpenStreetMap. Run on the server: celery -A app.worker worker and celery -A app.worker beat Without CELERY_BROKER_URL nothing has to run: emails are sent at once and the daily jobs are started from cron or by hand (python -m app.cli import-jobs / send-reminders).
+**What it is for:** Celery: emails in the background and the daily jobs on schedule (Celery Beat): vacancies, reminders, ticket price alerts, housing from Telegram channels three times a day, and every week the places from OpenStreetMap. Run on the server: celery -A app.worker worker and celery -A app.worker beat Without CELERY_BROKER_URL nothing has to run: emails are sent at once and the daily jobs are started from cron or by hand (python -m app.cli import-jobs / send-reminders).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -150,6 +151,7 @@ A generic, single database configuration.
 | `send_reminders()` | function | — |
 | `check_flight_watches()` | function | — |
 | `update_rates()` | function | Celery task: the official rate, at 08:10, 11:10 and 15:10. |
+| `import_housing()` | function | Celery task: housing from Telegram at 07:20, 13:20 and 19:20. |
 | `import_places()` | function | — |
 
 
@@ -224,6 +226,7 @@ A generic, single database configuration.
 | `image_ext(data)` | function | The real type of the picture from its first bytes (not from the file name); None if it is not one. |
 | `save_avatar(file, field)` | async function | — |
 | `save_image(file, folder, field, max_mb)` | async function | Checks a public picture by its bytes (JPG, PNG, WEBP, size) and saves it in MEDIA_ROOT/folder. |
+| `store_image(data, folder)` | async function | Saves picture bytes (JPG, PNG, WEBP) in MEDIA_ROOT/folder and returns the name, or None if it is not a picture. Used by save_image and the housing import. |
 | `delete_image(name, folder)` | async function | Deletes a picture, only inside that folder. |
 | `delete_avatar(name)` | async function | — |
 
@@ -355,7 +358,7 @@ A generic, single database configuration.
 | `HOUSING_FOR` | const | Who may live there: any, men, women, family. |
 | `HOUSING_PERIODS` | const | The price is per month or per day. |
 | `HOUSING_STATUSES` | const | pending (waits for an editor), approved, rejected. |
-| `Housing` | class · table `housing` | A listing: kind, title, description, city, address, metro, price and period, rooms, free places, for whom, registration (the landlord registers the migrant), utilities included, no deposit, phone/WhatsApp/Telegram, is_active (false = already rented, hidden), status, reject_reason. kind_label and for_whom_label give the Tajik names. |
+| `Housing` | class · table `housing` | A listing (posted by a user, or imported: source telegram, source_name «@channel», source_url to the original, external_id of the post, fingerprint against doubles, no owner): kind, title, description, city, address, metro, price and period, rooms, free places, for whom, registration (the landlord registers the migrant), utilities included, no deposit, phone/WhatsApp/Telegram, is_active (false = already rented, hidden), status, reject_reason. kind_label and for_whom_label give the Tajik names. |
 | `HousingPhoto` | class · table `housing_photos` | A photo of a listing (public file in media/housing/), deleted together with the listing. |
 
 ### `app/models/jobs.py`
@@ -507,9 +510,9 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `HousingIn` | class | A new listing; phones are normalized, Telegram checked (as for shops); at least one contact is required. |
+| `HousingIn` | class | A new listing with confirmed; phones are normalized, Telegram checked (as for shops); at least one contact is required. |
 | `HousingPatch` | class | The same fields, all optional, plus is_active. |
-| `housing_json(h, viewer)` | function | A listing with photos, the owner's first name and is_mine; reject_reason only for the owner and editors. |
+| `housing_json(h, viewer)` | function | A listing with photos, the owner's first name (for imported ones the channel) and is_mine, source, source_name, source_url; reject_reason only for the owner and editors. |
 
 ### `app/schemas/jobs.py`
 
@@ -709,14 +712,14 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `housing_filters(query, request)` | function | ?search= (title, description, address, metro), ?city=, ?kind=, ?for_whom= (also shows listings for any), ?period=, ?min_price=, ?max_price=, ?registration=, ?utilities_included=, ?no_deposit=, ?with_photos=. |
+| `housing_filters(query, request)` | function | ?search= (title, description, address, metro), ?city=, ?kind=, ?for_whom= (also shows listings for any), ?period=, ?min_price=, ?max_price=, ?registration=, ?utilities_included=, ?no_deposit=, ?with_photos=, ?source= (user or telegram). |
 | `list_housing(request, db, user, page)` | async function · `GET /api/housing/` | Approved and active listings with the filters; ?mine=true — the user's own listings in any status; editors: ?status=. ?ordering=price / -price / -created_at (default newest). |
 | `summary(db)` | async function · `GET /api/housing/summary/` | How many listings are shown, per kind, and the top cities. |
 | `get_housing(db, user, housing_id)` | async function | A listing that this user may see (others see only approved and active ones), else 404. |
 | `own_housing(db, user, housing_id)` | async function | The same, but only for the owner or an editor (403). |
 | `tell_owner(db, housing)` | async function | Notifies the owner that the listing was approved or rejected (with the reason). |
 | `housing_detail(housing_id, db, user)` | async function · `GET /api/housing/{housing_id}/` | One listing. |
-| `create_housing(data, db, user)` | async function · `POST /api/housing/` | A new listing: from editors approved at once, from others pending and editors are notified. At most 5 waiting listings per user, 10 posts per hour. |
+| `create_housing(data, db, user)` | async function · `POST /api/housing/` | A new listing; non-editors must send confirmed=true (the place is real and the data true): from editors approved at once, from others pending and editors are notified. At most 5 waiting listings per user, 10 posts per hour. |
 | `update_housing(housing_id, data, db, user)` | async function · `PATCH /api/housing/{housing_id}/` | Changes a listing. Any change except is_active by a non-editor sends it back to checking. |
 | `delete_housing(housing_id, db, user)` | async function · `DELETE /api/housing/{housing_id}/` | Deletes the listing and its photo files. |
 | `moderate_housing(housing_id, data, db, user)` | async function · `POST /api/housing/{housing_id}/moderate/` | Editors: approved or rejected (a reason is required); the owner is notified. |
@@ -946,6 +949,28 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `verify_google_token(credential)` | function | Returns the token's claims (email, name...) or None. Synchronous: the router calls it in a thread. |
+
+### `app/services/housing_import.py`
+
+**What it is for:** Imports housing listings from public Telegram rental channels (their open web pages t.me/s/…, no account needed) and keeps only real offers. Run by Celery at 07:20, 13:20 and 19:20 or by hand: python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos].
+
+| Name | Kind | What it does |
+|---|---|---|
+| `CHANNELS` | const | The channels and the city of each: «Без посредников» channels of Moscow, Kazan, Novosibirsk, Krasnodar, Samara, Nizhny Novgorod, Rostov, and city rental channels of Moscow, Saint Petersburg, Kazan, Novosibirsk, Yekaterinburg. |
+| `FRESH_DAYS` / `KEEP_DAYS` | const | Only posts of the last 21 days are taken; imported listings older than 30 days are hidden. |
+| `SEEKING`, `SPAM`, `UNFAIR` | const | Posts that are skipped: people looking for housing, ads of closed channels and the like, and listings that refuse migrants (only Slavs, only citizens of Russia, no foreigners…). |
+| `parse_page(page, channel)` | function | The posts of one channel page: number, time, text, photo addresses. |
+| `body(text)` | function | Cuts the channel's footer (links to its site and groups). |
+| `find_price(text, daily)` | function | The price: after «Цена/Стоимость/Аренда…», before ₽/руб, or a number like «23 000»; «57.000», «24 тыс» are understood; only believable prices are kept. |
+| `find_kind(text)` / `find_rooms(text, kind)` | function | Bed, hostel, flat or room, and the number of rooms. |
+| `find_city(address, default)` | function | The city from «Адрес: …» (skips district and street parts); otherwise the channel's city. |
+| `parse_post(post, default_city)` | function | A post → listing fields, or None if it is not a real offer: needs a price and a kind. Also metro, phone, WhatsApp, Telegram, registration, utilities included, no deposit, for whom, day or month, title, and the link to the original (the owner's page on bezposrednikov.ru or the Telegram post). |
+| `fingerprint(data)` | function | City, price and the start of the text: the same listing posted twice is saved once. |
+| `fetch_channel(client, channel, since, pages, pause)` | async function | Reads up to 4 pages back (?before=), a pause of 1 s between pages. |
+| `save_photos(client, housing, urls)` | async function | Downloads up to 3 photos into media/housing/. |
+| `save_post(db, client, post, data, counts, with_photos)` | async function | Saves a new listing as approved (source telegram, no owner); skips known posts and duplicates (same fingerprint, or same phone + price + city). |
+| `expire_old(db)` | async function | Hides imported listings older than 30 days. |
+| `import_housing(db, channels, pages, with_photos, pause, log, transport)` | async function | The whole import; returns the counts created / known / duplicates / skipped / failed / expired. |
 
 ### `app/services/live.py`
 
@@ -1665,7 +1690,7 @@ A generic, single database configuration.
 
 ### `frontend/src/index.css`
 
-**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px. Page dividers are flag stripes: .flag-border-t / .flag-border-b draw a 3px red-white-green line instead of a border (--flag-pad adds space under it).
+**What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px. Scrollbars are hidden everywhere (scrolling still works). Page dividers are flag stripes: .flag-border-t / .flag-border-b draw a 3px red-white-green line instead of a border (--flag-pad adds space under it).
 
 ### `frontend/src/live.js`
 
@@ -1845,9 +1870,9 @@ A generic, single database configuration.
 | `HousingPrice` | export function | «9 000 ₽ / month» (or «/ day»). |
 | `HousingStatus` | export function | A badge: rented (inactive), waiting for checking or rejected; nothing for approved. |
 | `HousingCover` | export function | The first photo, or the kind's icon on a plain background. |
-| `HousingCard` | export function | A card: photo with the kind and photo count, price, title, city, metro, for whom and the green flags; children go under it (owner buttons). |
+| `HousingCard` | export function | A card (imported ones have a blue Telegram badge): photo with the kind and photo count, price, title, city, metro, for whom and the green flags; children go under it (owner buttons). |
 | `Photos` | function | Photos of a saved listing: add several at once (made smaller with fitPhoto), remove each; at most 8. |
-| `HousingForm` | export function | The side panel (rendered into document.body, above the header) to post or edit a listing; after the first save the photos part appears. |
+| `HousingForm` | export function | The side panel (rendered into document.body, above the header) to post or edit a listing; after the first save the photos part appears. A new listing needs the «I confirm» box (the place is real, I am its owner or live there, the data is true; false listings get the account blocked). |
 | `DeleteHousing` | export function | The delete button with a confirmation. |
 
 ### `frontend/src/components/JobCard.jsx`
@@ -2238,7 +2263,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Housing.jsx`
 
-**What it is for:** /housing — the «Housing» page (main tab in the header): search by metro/area/word, city and «price up to» with quick buttons, kind chips with counts, for whom, registration / utilities / no deposit / with photos, ordering (newest, cheaper, more expensive), cards with «show more». The «My listings» tab shows the user's own listings with status, the reject reason, edit and delete. On the side: «Have a free place?» and a warning about fraud. Filters live in the address (?kind=, ?max_price= …).
+**What it is for:** /housing — the «Housing» page (main tab in the header): search by metro/area/word, city and «price up to» with quick buttons, kind chips with counts, for whom, registration / utilities / no deposit / with photos, source (all, users of the site, Telegram), ordering (newest, cheaper, more expensive), cards with «show more». The «My listings» tab shows the user's own listings with status, the reject reason, edit and delete. On the side: «Have a free place?» and a warning about fraud. Filters live in the address (?kind=, ?max_price= …).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2249,7 +2274,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/HousingDetail.jsx`
 
-**What it is for:** /housing/:id — one listing: photo gallery, title, city/address/metro, facts (kind, rooms, free places, for whom), description, the three flags (shown dimmed when absent), price with contact buttons (phone, WhatsApp, Telegram), edit for the owner, the editor's approve/reject box for listings not yet approved, and the fraud warning.
+**What it is for:** /housing/:id — one listing: photo gallery, title, city/address/metro, facts (kind, rooms, free places, for whom), description, the three flags (shown dimmed when absent), price with contact buttons (phone, WhatsApp, Telegram), «Original listing and contacts» link, for imported ones the channel name and a note to see the place before paying, edit for the owner, the editor's approve/reject box for listings not yet approved, and the fraud warning.
 
 | Name | Kind | What it does |
 |---|---|---|

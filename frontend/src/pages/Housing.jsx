@@ -135,7 +135,7 @@ export default function Housing() {
   const forWhom = params.get("for_whom") || "";
   const ordering = params.get("ordering") || "";
   const cities = summary?.cities?.length ? summary.cities.map((c) => c.name) : CITIES;
-  const filtered = ["kind", "for_whom", "max_price", "registration", "utilities_included", "no_deposit", "with_photos", "search", "city"].some((k) => params.get(k));
+  const filtered = ["kind", "for_whom", "max_price", "registration", "utilities_included", "no_deposit", "with_photos", "source", "search", "city"].some((k) => params.get(k));
 
   const saved = (item) => {
     if (mine) {
@@ -237,6 +237,11 @@ export default function Housing() {
             {params.get("with_photos") === "true" ? <Check className="h-4 w-4" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
             {t("Бо акс")}
           </button>
+          <select aria-label={t("Манбаъ")} value={params.get("source") || ""} onChange={(e) => update("source", e.target.value)} className="min-h-[40px] rounded-lg border-0 bg-transparent py-0 pl-3 pr-8 text-label-md text-on-surface-variant ring-1 ring-inset ring-outline-variant focus:ring-2 focus:ring-primary/40">
+            <option value="">{t("Ҳамаи манбаъҳо")}</option>
+            <option value="user">{t("Аз корбарони сайт")}</option>
+            <option value="telegram">{t("Аз Telegram")}</option>
+          </select>
           <div className="ml-auto inline-flex rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant">
             {[
               ["", t("Навтаринҳо")],

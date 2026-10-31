@@ -31,7 +31,12 @@ class Housing(Base):
     __table_args__ = (Index("ix_housing_status_city", "status", "city"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    source: Mapped[str] = mapped_column(String(20), default="user", index=True)
+    source_name: Mapped[str] = mapped_column(String(120), default="")
+    source_url: Mapped[str] = mapped_column(String(300), default="")
+    external_id: Mapped[str | None] = mapped_column(String(120), unique=True, index=True)
+    fingerprint: Mapped[str] = mapped_column(String(40), default="", index=True)
     kind: Mapped[str] = mapped_column(String(10), index=True)
     title: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(Text, default="")

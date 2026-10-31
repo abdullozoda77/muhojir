@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { BedDouble, DoorOpen, MapPin, Pencil, ShieldAlert, Train, Users } from "lucide-react";
+import { BedDouble, DoorOpen, ExternalLink, MapPin, Pencil, Send, ShieldAlert, Train, Users } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -91,7 +91,7 @@ export default function HousingDetail() {
             </div>
             <h1 className="font-display text-[26px] font-semibold leading-tight [overflow-wrap:anywhere] md:text-[34px]">{current.title}</h1>
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-md text-on-surface-variant">
-              <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" aria-hidden />{[current.city, current.address].filter(Boolean).join(", ")}</span>
+              <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" aria-hidden />{current.address.toLowerCase().startsWith(current.city.toLowerCase()) ? current.address : [current.city, current.address].filter(Boolean).join(", ")}</span>
               {current.metro && <span className="inline-flex items-center gap-1.5"><Train className="h-4 w-4" aria-hidden />{current.metro}</span>}
             </p>
           </div>
@@ -120,8 +120,24 @@ export default function HousingDetail() {
         <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
           <div className="card flex flex-col gap-4 p-5">
             <HousingPrice item={current} className="text-[28px]" />
-            <span className="text-body-sm text-on-surface-variant">{t("Соҳибхона: {0} · {1}", current.owner_name, date(current.created_at))}</span>
+            {current.source === "telegram" ? (
+              <span className="inline-flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+                <Send className="h-4 w-4 text-[#229ed9]" aria-hidden />
+                {t("Аз канали {0} · {1}", current.source_name, date(current.created_at))}
+              </span>
+            ) : (
+              <span className="text-body-sm text-on-surface-variant">{t("Соҳибхона: {0} · {1}", current.owner_name, date(current.created_at))}</span>
+            )}
             <ContactButtons shop={current} />
+            {current.source_url && (
+              <a href={current.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+                <ExternalLink className="h-4 w-4" aria-hidden />
+                {t("Эълони аслӣ ва тамос")}
+              </a>
+            )}
+            {current.source === "telegram" && (
+              <p className="text-body-sm text-on-surface-variant">{t("Ин эълон худкор аз канали ҷамъиятии Telegram гирифта шуд. Пеш аз пардохт хонаро бинед ва бо соҳиб гап занед.")}</p>
+            )}
             {current.is_mine && (
               <Button variant="plain" icon={Pencil} onClick={() => setEditing(true)}>{t("Таҳрир")}</Button>
             )}
