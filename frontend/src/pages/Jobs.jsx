@@ -9,7 +9,8 @@ import { INDUSTRIES } from "../constants.js";
 import { JobRow } from "../components/JobCard.jsx";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
-import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { ActiveFilters, ChipRow, FilterBar, FilterGroup, FilterSheet, OptionGrid, SortSelect, chipClass } from "../components/Filters.jsx";
+import { Button, EmptyState, ErrorBox, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
 
 const TOGGLES = [
   ["housing_provided", BedDouble, () => t("Манзил медиҳанд")],
@@ -93,9 +94,9 @@ function AlertButton({ params }) {
 
   if (state === "done") {
     return (
-      <Link to="/saved-jobs" className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-tertiary-fixed px-3.5 text-label-md text-on-tertiary-fixed">
+      <Link to="/saved-jobs" aria-label={t("Огоҳӣ сабт шуд")} className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-tertiary-fixed px-3 text-label-md text-on-tertiary-fixed">
         <Check className="h-4 w-4" aria-hidden />
-        {t("Огоҳӣ сабт шуд")}
+        <span className="hidden sm:inline">{t("Огоҳӣ сабт шуд")}</span>
       </Link>
     );
   }
@@ -104,11 +105,12 @@ function AlertButton({ params }) {
       type="button"
       onClick={save}
       disabled={empty || state === "busy"}
-      title={empty ? t("Аввал касб, шаҳр ё соҳаро интихоб кунед") : undefined}
-      className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3.5 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"
+      title={empty ? t("Аввал касб, шаҳр ё соҳаро интихоб кунед") : t("Дар бораи кори нав хабар диҳед")}
+      aria-label={t("Дар бораи кори нав хабар диҳед")}
+      className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-surface-container-lowest px-3 text-label-md text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"
     >
       <BellPlus className="h-4 w-4" aria-hidden />
-      {state === "error" ? t("Нашуд, боз кӯшиш кунед") : t("Дар бораи кори нав хабар диҳед")}
+      <span className="hidden sm:inline">{state === "error" ? t("Нашуд, боз кӯшиш кунед") : t("Дар бораи кори нав хабар диҳед")}</span>
     </button>
   );
 }
@@ -121,6 +123,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
   const [error, setError] = useState(null);
+  const [sheet, setSheet] = useState(false);
 
   const query = params.toString();
   const update = (key, value) => {
@@ -182,6 +185,17 @@ export default function Jobs() {
   const activeIndustry = params.get("industry");
   const ordering = params.get("ordering") || "-created_at";
   const jobs = page.results;
+  const active = TOGGLES.filter(([key]) => params.get(key) === "true").map(([key, , label]) => ({ key, label: label(), onRemove: () => update(key, "") }));
+  const resetFilters = () => {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        for (const [key] of TOGGLES) next.delete(key);
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -201,7 +215,7 @@ export default function Jobs() {
               <input className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Масалан: кафшергар, ронанда, анбор")} />
             </span>
           </label>
-          <span className="hidden h-10 w-px bg-outline-variant md:block" />
+          <span className="mx-4 h-px bg-outline-variant md:mx-0 md:h-10 md:w-px" />
           <label className="flex flex-1 items-center gap-3 rounded-xl px-4 py-2 transition-colors hover:bg-surface-container-low">
             <MapPin className="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden />
             <span className="flex flex-1 flex-col">
@@ -214,54 +228,66 @@ export default function Jobs() {
               ))}
             </datalist>
           </label>
-          <span className="flex h-12 items-center justify-center gap-2 rounded-xl bg-ink px-6 text-label-lg tabular-nums text-on-ink">
+          <span className="hidden h-12 items-center justify-center gap-2 rounded-xl bg-ink px-6 text-label-lg tabular-nums text-on-ink md:flex">
             <Search className="h-4 w-4" aria-hidden />
             {loading ? "…" : t("{0} ҷой", page.count)}
           </span>
         </div>
 
-        <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-          <button type="button" onClick={() => update("industry", "")} aria-pressed={!activeIndustry} className={`min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-4 text-label-md transition-colors ${!activeIndustry ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+        <ChipRow>
+          <button type="button" onClick={() => update("industry", "")} aria-pressed={!activeIndustry} className={chipClass(!activeIndustry)}>
             {t("Ҳама соҳаҳо")}
           </button>
           {INDUSTRIES.map((i) => (
-            <button key={i.value} type="button" onClick={() => update("industry", activeIndustry === i.value ? "" : i.value)} aria-pressed={activeIndustry === i.value} className={`flex min-h-[40px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${activeIndustry === i.value ? "bg-ink text-on-ink" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
+            <button key={i.value} type="button" onClick={() => update("industry", activeIndustry === i.value ? "" : i.value)} aria-pressed={activeIndustry === i.value} className={chipClass(activeIndustry === i.value)}>
               <i.icon className="h-4 w-4" aria-hidden />
               {i.label}
             </button>
           ))}
-        </div>
+        </ChipRow>
 
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <div className="flex flex-wrap gap-2">
-            {TOGGLES.map(([key, Icon, label]) => {
-              const on = params.get(key) === "true";
-              return (
-                <button key={key} type="button" onClick={() => update(key, on ? "" : "true")} aria-pressed={on} className={`flex min-h-[40px] items-center gap-2 rounded-lg px-3 text-label-md transition-colors ${on ? "bg-tertiary-fixed text-on-tertiary-fixed ring-1 ring-inset ring-tertiary-container" : "text-on-surface-variant ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low hover:text-on-surface"}`}>
-                  {on ? <Check className="h-4 w-4" aria-hidden /> : <Icon className="h-4 w-4" aria-hidden />}
-                  {label()}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-3 self-end lg:self-auto">
+        <div className="flex flex-col gap-3">
+          <FilterBar
+            count={active.length}
+            onOpen={() => setSheet(true)}
+            sort={
+              <SortSelect
+                value={ordering}
+                onChange={(v) => update("ordering", v === "-created_at" ? "" : v)}
+                options={[
+                  ["-created_at", t("Навтаринҳо")],
+                  ["-salary_to", t("Маоши баланд")],
+                ]}
+              />
+            }
+          >
             <AlertButton params={params} />
-            <div className="inline-flex rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant">
-              {[
-                ["-created_at", t("Навтаринҳо")],
-                ["-salary_to", t("Маоши баланд")],
-              ].map(([value, label]) => (
-                <button key={value} type="button" onClick={() => update("ordering", value === "-created_at" ? "" : value)} aria-pressed={ordering === value} className={`min-h-[34px] rounded-lg px-3.5 text-label-md transition-colors ${ordering === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </FilterBar>
+          <ActiveFilters items={active} onReset={resetFilters} />
         </div>
       </div>
 
+      <FilterSheet open={sheet} onClose={() => setSheet(false)} onReset={resetFilters} count={active.length} total={page.count} loading={loading}>
+        <FilterGroup title={t("Шароит")}>
+          {TOGGLES.map(([key, Icon, label]) => (
+            <Switch key={key} checked={params.get(key) === "true"} onChange={(on) => update(key, on ? "true" : "")} icon={Icon} title={label()} />
+          ))}
+        </FilterGroup>
+        <FilterGroup title={t("Тартиб")}>
+          <OptionGrid
+            value={ordering}
+            onChange={(v) => update("ordering", v === "-created_at" ? "" : v)}
+            options={[
+              ["-created_at", t("Навтаринҳо")],
+              ["-salary_to", t("Маоши баланд")],
+            ]}
+          />
+        </FilterGroup>
+      </FilterSheet>
+
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-5">
+          <p className="-mb-2 text-label-md tabular-nums text-on-surface-variant md:hidden">{loading ? "…" : t("{0} ҷой", page.count)}</p>
           <ErrorBox error={error} />
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-72" />)}</div>

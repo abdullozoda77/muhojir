@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "motion/react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Loader2, X, XCircle } from "lucide-react";
@@ -106,7 +107,7 @@ export function Field({ label, required, error, children, hint }) {
   );
 }
 
-export function Drawer({ open, onClose, title, subtitle, icon: Icon, children }) {
+export function Drawer({ open, onClose, title, subtitle, icon: Icon, footer, children }) {
   useScrollLock(open);
   useEffect(() => {
     if (!open) return;
@@ -115,33 +116,35 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, children })
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <m.div key="drawer" className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={title} exit={{ opacity: 1 }}>
           <m.div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
           <m.div className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto overscroll-contain bg-background pb-[env(safe-area-inset-bottom)] shadow-2xl ring-1 ring-outline-variant md:my-3 md:pb-0 md:mr-3 md:h-[calc(100%-24px)] md:rounded-2xl" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 38 }}>
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 p-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] backdrop-blur md:px-6 md:pt-5">
-              <div className="flex items-center gap-3">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-background/90 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur md:px-6 md:pt-5">
+              <div className="flex min-w-0 items-center gap-3">
                 {Icon && (
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed text-primary ring-1 ring-primary/15">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                 )}
-                <div>
-                  <h2 className="text-[18px] font-semibold leading-tight">{title}</h2>
-                  {subtitle && <p className="text-body-sm text-on-surface-variant">{subtitle}</p>}
+                <div className="min-w-0">
+                  <h2 className="truncate text-[18px] font-semibold leading-tight">{title}</h2>
+                  {subtitle && <p className="truncate text-body-sm text-on-surface-variant">{subtitle}</p>}
                 </div>
               </div>
-              <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">
-                <X className="h-5 w-5" />
+              <button type="button" onClick={onClose} aria-label={t("Пӯшидан")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-highest active:scale-95">
+                <X className="h-5 w-5" strokeWidth={2.5} />
               </button>
             </div>
             <div className="flex-1 p-4 md:p-6">{children}</div>
+            {footer && <div className="sticky bottom-0 z-10 border-t border-outline-variant bg-background/95 p-4 backdrop-blur md:px-6">{footer}</div>}
           </m.div>
         </m.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

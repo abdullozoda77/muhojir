@@ -1811,6 +1811,21 @@ A generic, single database configuration.
 | `FACES` | const | Five ratings 1-5 with face icons, labels and the kind they start with (1 → bug, 5 → praise). |
 | `FeedbackBanner` | export function | The block and the panel (rendered into document.body so it is above the header). |
 
+### `frontend/src/components/Filters.jsx`
+
+**What it is for:** Shared filter parts of the Jobs and Housing pages: one row of chips, a «Filters» button with the number of active filters, a sort select, removable chips of active filters and a side sheet with all filters.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `chipClass` | export function | Classes of a category chip (dark when chosen). |
+| `ChipRow` | export function | One scrollable row of chips on phones, wrapped on big screens. |
+| `FilterBar` | export function | «Filters» button with a counter, extra buttons and the sort control on the right. |
+| `SortSelect` | export function | Compact sort select with an icon. |
+| `ActiveFilters` | export function | Chips of the active filters; a tap removes one, «Reset all» removes all. |
+| `FilterGroup` | export function | Titled block inside the sheet. |
+| `OptionGrid` | export function | Two-column grid of buttons to pick one value. |
+| `FilterSheet` | export function | Drawer with the filters and a sticky footer: «Reset» and «Show (N)». |
+
 ### `frontend/src/components/FlagRibbons.jsx`
 
 **What it is for:** A Tajik flag made of three waving silk ribbons (red, white, green in the flag's 2:3:2 proportions) with a soft blue glow and moving folds. In the footer it fills the empty space under the site description, 40% opaque; in a box lower than 90px it is hidden (.ribbons-box). Stops moving when the visitor asked for less motion.
@@ -2109,7 +2124,7 @@ A generic, single database configuration.
 | `Skeleton` | export function | — |
 | `EmptyState` | export function | — |
 | `Field` | export function | — |
-| `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Closes on Escape and on the dark backdrop; the page behind is locked with useScrollLock. |
+| `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Rendered into document.body (portal) so it covers the site header and the bottom menu and the ✕ button is always visible. Optional footer: a sticky bottom bar. Closes on Escape and on the dark backdrop; the page behind is locked with useScrollLock. |
 | `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). |
 | `BackLink` | export function | "← Back" above a detail page: a quiet text link. |
 | `Switch` | export function | An on/off row with an icon, a title and a hint (role=switch); used for «we deliver» and «in stock». |
