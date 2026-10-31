@@ -31,8 +31,8 @@ EXPIRED = "The code has expired. Ask for a new one."
 BLOCKED = "This account is blocked."
 
 
-def check_password_rules(password, email):
-    problems = password_problems(password, email)
+async def check_password_rules(password, email):
+    problems = await password_problems(password, email)
     if problems:
         raise ApiError({"password": problems})
 
@@ -63,7 +63,7 @@ async def use_code(db, email, code, purpose):
         raise ApiError(EXPIRED)
     if entry.attempts >= LOGIN_CODE_MAX_ATTEMPTS:
         raise ApiError("Too many wrong tries. Ask for a new code.")
-    if not verify_password(code, entry.code_hash):
+    if not await verify_password(code, entry.code_hash):
         await db.execute(update(EmailCode).where(EmailCode.id == entry.id).values(attempts=EmailCode.attempts + 1))
         await db.commit()
         raise ApiError("Wrong code.")
@@ -80,17 +80,17 @@ async def user_by_email(db, email, **filters):
 
 @router.post("/register/", status_code=201, dependencies=[Depends(throttle("login_code"))])
 async def register(data: RegisterIn, db: DB):
-    check_password_rules(data.password, data.email)
+    await check_password_rules(data.password, data.email)
     user = await user_by_email(db, data.email)
     if user and user.email_verified:
         raise ApiError("This email is already registered. Log in or reset the password.", code="registered")
     if user and not user.is_active:
         raise ApiError(BLOCKED, 403)
     if user is None:
-        user = User(email=data.email, password_hash=hash_password(data.password), full_name=data.full_name)
+        user = User(email=data.email, password_hash=await hash_password(data.password), full_name=data.full_name)
         db.add(user)
     else:
-        user.password_hash = hash_password(data.password)
+        user.password_hash = await hash_password(data.password)
         user.full_name = data.full_name or user.full_name
     await db.commit()
     try:
@@ -129,7 +129,7 @@ async def resend_code(data: EmailIn, db: DB):
 @router.post("/login/", dependencies=[Depends(throttle("login"))])
 async def login(data: LoginIn, db: DB):
     user = await user_by_email(db, data.email)
-    if user is None or not verify_password(data.password, user.password_hash):
+    if user is None or not await verify_password(data.password, user.password_hash):
         raise ApiError("Wrong email or password.")
     if not user.is_active:
         raise ApiError(BLOCKED, 403)
@@ -189,12 +189,12 @@ async def forgot_password(data: EmailIn, db: DB):
 
 @router.post("/password/reset/")
 async def reset_password(data: ResetPasswordIn, db: DB):
-    check_password_rules(data.password, data.email)
+    await check_password_rules(data.password, data.email)
     user = await user_by_email(db, data.email, is_active=True)
     if user is None:
         raise ApiError(EXPIRED)
     await use_code(db, data.email, data.code, "reset")
-    user.password_hash = hash_password(data.password)
+    user.password_hash = await hash_password(data.password)
     user.email_verified = True
     await db.commit()
     await notify(db, user, PASSWORD_TITLE, PASSWORD_TEXT)

@@ -2,6 +2,7 @@ import math
 import os
 from typing import Literal
 
+import anyio
 from fastapi import APIRouter, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
@@ -220,7 +221,7 @@ async def place_proof(place_id: int, db: DB, user: CurrentUser):
     if not (user.is_editor or place.created_by_id == user.id):
         raise ApiError("No Place matches the given query.", 404)
     path = private_path(place.proof)
-    if path is None or not path.exists():
+    if path is None or not await anyio.Path(path).exists():
         raise ApiError("File not found.", 404)
     return FileResponse(path, headers={"Cache-Control": "private, no-store"})
 

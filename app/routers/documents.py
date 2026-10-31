@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Annotated
 
+import anyio
 from fastapi import APIRouter, File, Form, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import or_, select
@@ -258,7 +259,7 @@ async def delete_my_document(document_id: int, user: CurrentUser, db: DB):
 async def document_photo(document_id: int, user: CurrentUser, db: DB):
     document = await my_document(db, user, document_id)
     path = private_path(document.photo)
-    if path is None or not path.exists():
+    if path is None or not await anyio.Path(path).exists():
         raise ApiError("Страница не найдена.", 404)
     return FileResponse(path)
 
@@ -350,6 +351,6 @@ async def delete_payment(payment_id: int, user: CurrentUser, db: DB):
 async def payment_receipt(payment_id: int, user: CurrentUser, db: DB):
     payment = await my_payment(db, user, payment_id)
     path = private_path(payment.receipt)
-    if path is None or not path.exists():
+    if path is None or not await anyio.Path(path).exists():
         raise ApiError("Страница не найдена.", 404)
     return FileResponse(path)

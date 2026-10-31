@@ -92,10 +92,10 @@ class UserAdmin(DeletesPrivateFiles, Base, model=User):
         if data.get("email"):
             data["email"] = data["email"].strip().lower()
         if password:
-            problems = password_problems(password, data.get("email") or model.email or "")
+            problems = await password_problems(password, data.get("email") or model.email or "")
             if problems:
                 raise ValueError(" ".join(problems))
-            model.password_hash = hash_password(password)
+            model.password_hash = await hash_password(password)
 
 
 class NotificationAdmin(Base, model=Notification):

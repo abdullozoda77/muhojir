@@ -10,10 +10,15 @@ from app.core.config import MEDIA_ROOT, settings
 from app.core.errors import ApiError, api_error_handler, http_error_handler, validation_error_handler
 from app.routers import assistant, auth, course, documents, feedback, flights, housing, jobs, market, places, rates, support, ws
 from app.services.live import hub
+from app.services import course as course_content
+from app.core.security import warm_up
+from anyio import to_thread
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     listener = asyncio.create_task(hub.listen()) if settings.redis_url else None
+    await to_thread.run_sync(course_content.levels)
+    await to_thread.run_sync(warm_up)
     yield
     if listener:
         listener.cancel()

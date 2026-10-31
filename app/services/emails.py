@@ -62,7 +62,7 @@ async def send_code(db, email, purpose="verify"):
     if entry is None:
         entry = EmailCode(email=email)
         db.add(entry)
-    entry.purpose, entry.code_hash, entry.sent_at, entry.attempts = purpose, hash_password(code), utcnow(), 0
+    entry.purpose, entry.code_hash, entry.sent_at, entry.attempts = purpose, await hash_password(code), utcnow(), 0
     await db.commit()
     if settings.debug:
         print(f"\n*** {purpose} code for {email}: {code} ***\n", flush=True)

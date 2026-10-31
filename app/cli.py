@@ -19,7 +19,7 @@ async def create_superuser(email, password):
         if user is None:
             user = User(email=email)
             db.add(user)
-        user.password_hash = hash_password(password)
+        user.password_hash = await hash_password(password)
         user.role, user.is_superuser, user.email_verified, user.is_active = "admin", True, True, True
         await db.commit()
     print(f"Admin {email} is ready: log in at /admin/")
@@ -63,7 +63,7 @@ def main():
             if password != getpass.getpass("Password (again): "):
                 print("The passwords do not match.")
                 continue
-            problems = password_problems(password, email)
+            problems = asyncio.run(password_problems(password, email))
             if problems:
                 print(" ".join(problems))
                 continue

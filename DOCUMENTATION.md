@@ -125,7 +125,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `lifespan(app)` | async function | — |
+| `lifespan(app)` | async function | Starts the live-notifications listener and, in a worker thread, loads the course levels and the common-password list, so the first requests do not read files. |
 
 ### `app/tasks.py`
 
@@ -245,11 +245,15 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `hash_password(password)` | function | — |
-| `verify_password(password, hashed)` | function | — |
+| `_hash(password)` | function | The hash itself (blocking). |
+| `_verify(password, hashed)` | function | The check itself (blocking). |
+| `_problems(password, email)` | function | The password rules (blocking). |
+| `warm_up()` | function | Loads the common-password list once at startup. |
+| `hash_password(password)` | async function | Makes the password hash in a worker thread (hashing is slow on purpose and would block the event loop). |
+| `verify_password(password, hashed)` | async function | Checks a password against its hash in a worker thread. |
 | `_common_passwords()` | function | — |
 | `_similar(password, value, max_similarity)` | function | — |
-| `password_problems(password, email)` | function | — |
+| `password_problems(password, email)` | async function | The list of password problems (short, common, only digits, like the email), computed in a worker thread. |
 | `_token(user_id, kind, lifetime)` | function | — |
 | `make_tokens(user_id)` | function | — |
 | `read_token(token, kind)` | function | The token's payload, or None when it is broken, expired or of the other kind. |
@@ -580,7 +584,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `check_password_rules(password, email)` | function | — |
+| `check_password_rules(password, email)` | async function | Raises an error if the password is weak. |
 | `logged_in(user, status)` | function | — |
 | `jsonable(data)` | function | — |
 | `email_code(db, email, purpose)` | async function | Sends a code unless one was sent less than a minute ago. Raises ApiError (429 wait / 503 mail down). |

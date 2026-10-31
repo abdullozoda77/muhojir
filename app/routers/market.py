@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import anyio
 from fastapi import APIRouter, Depends, File, Form, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import func, or_, select
@@ -226,7 +227,7 @@ async def get_proof(db, user, shop_id, proof_id):
 @router.get("/shops/{shop_id}/proofs/{proof_id}/")
 async def proof_file(shop_id: int, proof_id: int, db: DB, user: CurrentUser):
     path = private_path((await get_proof(db, user, shop_id, proof_id)).file)
-    if path is None or not path.exists():
+    if path is None or not await anyio.Path(path).exists():
         raise ApiError("File not found.", 404)
     return FileResponse(path, headers={"Cache-Control": "private, no-store"})
 

@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from functools import lru_cache
 
 import jwt
+from anyio import to_thread
 from pwdlib import PasswordHash
 
 from app.core.config import BASE_DIR, settings
@@ -15,11 +16,11 @@ password_hash = PasswordHash.recommended()
 ALGORITHM = "HS256"
 
 
-def hash_password(password):
+def _hash(password):
     return password_hash.hash(password)
 
 
-def verify_password(password, hashed):
+def _verify(password, hashed):
     if not hashed:
         return False
     try:
@@ -46,7 +47,7 @@ def _similar(password, value, max_similarity=0.7):
     )
 
 
-def password_problems(password, email=""):
+def _problems(password, email=""):
     problems = []
     if _similar(password, email):
         problems.append("Введённый пароль слишком похож на email.")
@@ -57,6 +58,22 @@ def password_problems(password, email=""):
     if password.isdigit():
         problems.append("Введённый пароль состоит только из цифр.")
     return problems
+
+
+def warm_up():
+    _common_passwords()
+
+
+async def hash_password(password):
+    return await to_thread.run_sync(_hash, password)
+
+
+async def verify_password(password, hashed):
+    return await to_thread.run_sync(_verify, password, hashed)
+
+
+async def password_problems(password, email=""):
+    return await to_thread.run_sync(_problems, password, email)
 
 
 def _token(user_id, kind, lifetime):

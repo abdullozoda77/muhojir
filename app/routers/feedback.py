@@ -2,6 +2,7 @@ from typing import Literal
 
 import os
 
+import anyio
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
@@ -100,7 +101,7 @@ async def feedback_photo(feedback_id: int, db: DB, user: CurrentUser):
     if feedback is None or not (user.is_editor or feedback.user_id == user.id):
         raise ApiError("No Feedback matches the given query.", 404)
     path = private_path(feedback.photo)
-    if path is None or not path.exists():
+    if path is None or not await anyio.Path(path).exists():
         raise ApiError("File not found.", 404)
     return FileResponse(path, headers={"Cache-Control": "private, no-store"})
 

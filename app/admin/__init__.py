@@ -24,7 +24,7 @@ class StaffLogin(AuthenticationBackend):
         email = str(form.get("username", "")).strip().lower()
         async with SessionLocal() as db:
             user = await db.scalar(select(User).where(User.email == email))
-        if user is None or not user.is_editor or not verify_password(str(form.get("password", "")), user.password_hash):
+        if user is None or not user.is_editor or not await verify_password(str(form.get("password", "")), user.password_hash):
             return False
         request.session.update({"user_id": user.id})
         return True
