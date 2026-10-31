@@ -4,7 +4,7 @@ from pathlib import Path
 
 _tmp = tempfile.mkdtemp(prefix="muhojir-tests-")
 os.environ.update({
-    "DATABASE_URL": f"sqlite+aiosqlite:///{_tmp}/test.sqlite3",
+    "DATABASE_URL": os.environ.get("TEST_DATABASE_URL") or f"sqlite+aiosqlite:///{_tmp}/test.sqlite3",
     "SECRET_KEY": "tests-secret-key-that-is-long-enough-for-hs256",
     "DEBUG": "False",
     "GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "REDIS_URL": "", "CELERY_BROKER_URL": "", "EMAIL_HOST": "",

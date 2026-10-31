@@ -15,7 +15,7 @@ file has **what it is for** and a table of its functions, classes and components
 | Part | Technology |
 |---|---|
 | API | FastAPI + Pydantic, everything async |
-| Database | SQLAlchemy 2 (asyncio), Alembic migrations; SQLite (or PostgreSQL via `DATABASE_URL`) |
+| Database | SQLAlchemy 2 (asyncio), Alembic migrations; SQLite on a laptop, PostgreSQL on the server (`DATABASE_URL`) |
 | Login | email + password, 6-digit email codes, JWT (access 60 min, refresh 30 days, rotated and revoked on logout) |
 | Admin panel | SQLAdmin at `/admin/`, roles `migrant` / `editor` / `admin` |
 | Live notifications | WebSocket `/ws/notifications/` (+ Redis between processes) |
@@ -55,7 +55,7 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - Root files — 5 files
 - Backend — the FastAPI application (`app/`) — 4 files
 - `app/core/` — settings, security, request helpers — 9 files
-- `app/db/` — database connection and column types — 3 files
+- `app/db/` — database connection and column types — 4 files
 - `app/models/` — database tables (SQLAlchemy) — 11 files
 - `app/schemas/` — request bodies and JSON answers — 5 files
 - `app/routers/` — the API endpoints — 12 files
@@ -110,7 +110,7 @@ A generic, single database configuration.
 
 ### `app/cli.py`
 
-**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos] housing listings from Telegram channels now
+**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos] housing listings from Telegram channels now python -m app.cli copy-from-sqlite db.sqlite3 copies every row from a SQLite file into the PostgreSQL of DATABASE_URL (used by deploy/setup.sh)
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -289,6 +289,14 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `get_db()` | async function | — |
+
+### `app/db/copy_sqlite.py`
+
+**What it is for:** Moves the site from SQLite to PostgreSQL without losing anything. Both databases must be on the same migration. It first checks that SQLite has no unknown tables and no text longer than PostgreSQL allows, then empties the PostgreSQL tables (the content seeded by the migrations), copies every table in foreign-key order, compares the row counts and moves the id counters past the copied rows. All of it is one transaction: if anything fails, PostgreSQL stays as it was. The SQLite file is only read.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `copy_sqlite_to_postgres()` | async function | Copies everything from the SQLite file into DATABASE_URL and prints the rows per table. |
 
 ### `app/db/types.py`
 
@@ -1388,7 +1396,7 @@ A generic, single database configuration.
 
 ### `tests/conftest.py`
 
-**What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox.
+**What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1578,7 +1586,7 @@ A generic, single database configuration.
 
 ### `deploy/setup.sh`
 
-**What it is for:** Installs Muhojir (FastAPI) on the server, or brings an installed copy up to date; safe to run again. Run as root after cloning the project to /home/romin/muhojir-api: bash /home/romin/muhojir-api/deploy/setup.sh What runs where: nginx https://king.tj and http://IP:8070 → React site (frontend/dist), /media → /api /admin /swagger /redoc and the WebSocket /ws/ → uvicorn 127.0.0.1:8071 (2 workers) The workers share live notifications and the request limits through Redis (database 15). Celery worker sends the emails in the background and runs the daily jobs; Celery Beat starts them every day (06:00 new vacancies, 06:30 document reminders). Their queue is Redis database 15 too. king.tj belonged to the old Django Muhojir: this script takes the domain from it (the old one stays on :8040 only). Other projects on this server (Rohat 8030, others) are not touched.
+**What it is for:** Installs Muhojir (FastAPI) on the server, or brings an installed copy up to date; safe to run again. Run as root after cloning the project to /home/romin/muhojir-api: bash /home/romin/muhojir-api/deploy/setup.sh What runs where: nginx https://king.tj and http://IP:8070 → React site (frontend/dist), /media → /api /admin /swagger /redoc and the WebSocket /ws/ → uvicorn 127.0.0.1:8071 (2 workers) The workers share live notifications and the request limits through Redis (database 15). Celery worker sends the emails in the background and runs the daily jobs; Celery Beat starts them every day (06:00 new vacancies, 06:30 document reminders). Their queue is Redis database 15 too. king.tj belonged to the old Django Muhojir: this script takes the domain from it (the old one stays on :8040 only). Other projects on this server (Rohat 8030, others) are not touched. PostgreSQL (database and user muhojir, UTF-8 with C.UTF-8 so lower() knows Cyrillic): on the first run without DATABASE_URL=postgresql in .env the script stops the services, keeps a copy db.sqlite3.backup-DATE, copies all data with python -m app.cli copy-from-sqlite and only then writes DATABASE_URL to .env; if the copy fails, the site goes back to SQLite and nothing is changed. db.sqlite3 is never deleted.
 
 ### `deploy/update.sh`
 

@@ -6,6 +6,8 @@ APP=/home/$APP_USER/muhojir-api
 PUBLIC_PORT=8070
 APP_PORT=8071
 REDIS_DB=15
+PG_USER=muhojir
+PG_DB=muhojir
 DOMAIN=king.tj
 OLD_SITE=/etc/nginx/sites-available/muhojir
 NODE_DIR=/home/$APP_USER/.local/node22
@@ -92,6 +94,38 @@ set_env REDIS_URL "redis://127.0.0.1:6379/$REDIS_DB"
 set_env CELERY_BROKER_URL "redis://127.0.0.1:6379/$REDIS_DB"
 chown "$APP_USER:$APP_USER" "$APP/.env"
 chmod 600 "$APP/.env"
+
+step "PostgreSQL"
+command -v psql >/dev/null || { apt-get update -qq && apt-get install -y -qq postgresql; }
+systemctl enable -q --now postgresql
+if ! grep -q "^DATABASE_URL=postgresql" "$APP/.env"; then
+  pg_password=$(python3 -c 'import secrets; print(secrets.token_hex(24))')
+  if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1; then
+    sudo -u postgres psql -qc "ALTER ROLE $PG_USER LOGIN PASSWORD '$pg_password'"
+  else
+    sudo -u postgres psql -qc "CREATE ROLE $PG_USER LOGIN PASSWORD '$pg_password'"
+  fi
+  sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1 \
+    || sudo -u postgres psql -qc "CREATE DATABASE $PG_DB OWNER $PG_USER TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C.UTF-8' LC_CTYPE 'C.UTF-8'"
+  pg_url="postgresql+asyncpg://$PG_USER:$pg_password@127.0.0.1:5432/$PG_DB"
+
+  if [ -f "$APP/db.sqlite3" ]; then
+    step "Moving all data from SQLite to PostgreSQL (the site is off for a few seconds)"
+    systemctl stop muhojir-api muhojir-api-celery muhojir-api-celerybeat 2>/dev/null || true
+    backup="$APP/db.sqlite3.backup-$(date +%Y%m%d-%H%M%S)"
+    cp -p "$APP/db.sqlite3" "$backup"
+    chmod 600 "$backup"
+    if ! { as_user ".venv/bin/alembic upgrade head" \
+        && as_user "DATABASE_URL='$pg_url' .venv/bin/alembic upgrade head" \
+        && as_user "DATABASE_URL='$pg_url' .venv/bin/python -m app.cli copy-from-sqlite db.sqlite3"; }; then
+      systemctl start muhojir-api muhojir-api-celery muhojir-api-celerybeat 2>/dev/null || true
+      echo "Copying failed: nothing changed, the site still runs on SQLite (db.sqlite3). Backup: $backup"
+      exit 1
+    fi
+    echo "All data is in PostgreSQL. db.sqlite3 and $backup are kept untouched."
+  fi
+  set_env DATABASE_URL "$pg_url"
+fi
 
 step "Database (tables and the site's content)"
 as_user ".venv/bin/alembic upgrade head"

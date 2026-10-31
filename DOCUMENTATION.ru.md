@@ -15,7 +15,7 @@ Muhojir — платформа для таджикских мигрантов в
 | Часть | Технология |
 |---|---|
 | API | FastAPI + Pydantic, всё асинхронно |
-| База данных | SQLAlchemy 2 (asyncio), миграции Alembic; SQLite (или PostgreSQL через `DATABASE_URL`) |
+| База данных | SQLAlchemy 2 (asyncio), миграции Alembic; SQLite на ноутбуке, PostgreSQL на сервере (`DATABASE_URL`) |
 | Вход | почта + пароль, 6-значные коды на почту, JWT (access 60 мин, refresh 30 дней, меняется и отзывается при выходе) |
 | Админ-панель | SQLAdmin на `/admin/`, роли `migrant` / `editor` / `admin` |
 | Уведомления в реальном времени | WebSocket `/ws/notifications/` (+ Redis между процессами) |
@@ -55,7 +55,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 - Файлы в корне — 5 файлов
 - Бэкенд — приложение FastAPI (`app/`) — 4 файла
 - `app/core/` — настройки, безопасность, помощники для запросов — 9 файлов
-- `app/db/` — подключение к базе данных и типы столбцов — 3 файла
+- `app/db/` — подключение к базе данных и типы столбцов — 4 файла
 - `app/models/` — таблицы базы данных (SQLAlchemy) — 11 файлов
 - `app/schemas/` — тела запросов и JSON-ответы — 5 файла
 - `app/routers/` — эндпоинты API — 12 файлов
@@ -106,7 +106,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `app/cli.py`
 
-**Для чего:** Команды: `python -m app.cli createsuperuser` — аккаунт админа для /admin/ (спрашивает почту и пароль); `python -m app.cli import-jobs [--limit 20]` — настоящие вакансии с «Работы России» сейчас; `python -m app.cli send-reminders` — сегодняшние напоминания о документах сейчас; `python -m app.cli import-places [--region Москва] [--category mosque]` — настоящие места из OpenStreetMap; `python -m app.cli check-flights` — оповещения о цене билетов сейчас; `python -m app.cli has-jobs` — код выхода 0, если вакансии есть (использует deploy/setup.sh). python -m app.cli import-housing [--channel имя] [--pages 4] [--no-photos] объявления о жилье из Telegram-каналов сейчас python -m app.cli update-rates официальный курс рубля к сомони сейчас
+**Для чего:** Команды: `python -m app.cli createsuperuser` — аккаунт админа для /admin/ (спрашивает почту и пароль); `python -m app.cli import-jobs [--limit 20]` — настоящие вакансии с «Работы России» сейчас; `python -m app.cli send-reminders` — сегодняшние напоминания о документах сейчас; `python -m app.cli import-places [--region Москва] [--category mosque]` — настоящие места из OpenStreetMap; `python -m app.cli check-flights` — оповещения о цене билетов сейчас; `python -m app.cli has-jobs` — код выхода 0, если вакансии есть (использует deploy/setup.sh). python -m app.cli import-housing [--channel имя] [--pages 4] [--no-photos] объявления о жилье из Telegram-каналов сейчас python -m app.cli update-rates официальный курс рубля к сомони сейчас python -m app.cli copy-from-sqlite db.sqlite3 копирует все строки из файла SQLite в PostgreSQL из DATABASE_URL (использует deploy/setup.sh)
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -285,6 +285,14 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 | Имя | Вид | Что делает |
 |---|---|---|
 | `get_db()` | async-функция | Одна сессия базы данных на один запрос. |
+
+### `app/db/copy_sqlite.py`
+
+**Для чего:** Переносит сайт с SQLite на PostgreSQL без потерь. Обе базы должны быть на одной миграции. Сначала проверяет, что в SQLite нет незнакомых таблиц и текста длиннее, чем разрешает PostgreSQL, затем очищает таблицы PostgreSQL (содержимое, засеянное миграциями), копирует все таблицы в порядке внешних ключей, сравнивает число строк и сдвигает счётчики id за скопированные строки. Всё это одна транзакция: если что-то не так, PostgreSQL остаётся прежним. Файл SQLite только читается.
+
+| Имя | Вид | Что делает |
+|---|---|---|
+| `copy_sqlite_to_postgres()` | async-функция | Копирует всё из файла SQLite в DATABASE_URL и печатает число строк по таблицам. |
 
 ### `app/db/types.py`
 
@@ -1374,7 +1382,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `tests/conftest.py`
 
-**Для чего:** Каждый запуск тестов получает свою базу SQLite, созданную настоящими миграциями (поэтому содержимое есть: типы документов, инструкции, 83 региона, новости, 100 вопросов экзамена). Письма не отправляются; коды читаются из «почтового ящика».
+**Для чего:** Каждый запуск тестов получает свою базу SQLite, созданную настоящими миграциями (поэтому содержимое есть: типы документов, инструкции, 83 региона, новости, 100 вопросов экзамена). Письма не отправляются; коды читаются из «почтового ящика». С TEST_DATABASE_URL (пустая база PostgreSQL) те же тесты идут на PostgreSQL.
 
 | Имя | Вид | Что делает |
 |---|---|---|
@@ -1564,7 +1572,7 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 ### `deploy/setup.sh`
 
-**Для чего:** Устанавливает Muhojir (FastAPI) на сервер или обновляет установленную копию; запускать повторно безопасно. Запуск от root после клонирования проекта в /home/romin/muhojir-api: `bash /home/romin/muhojir-api/deploy/setup.sh`. Что где работает: nginx https://king.tj и http://IP:8070 → сайт на React (frontend/dist), /media → /api /admin /swagger /redoc и WebSocket /ws/ → uvicorn 127.0.0.1:8071 (2 воркера). Воркеры делят уведомления в реальном времени и ограничения запросов через Redis (база 15). Воркер Celery отправляет письма в фоне и выполняет ежедневные задачи; Celery Beat запускает их каждый день (06:00 новые вакансии, 06:30 напоминания о документах). Их очередь — тоже Redis, база 15. king.tj принадлежал старому Muhojir на Django: этот скрипт забирает у него домен (старый остаётся только на :8040). Другие проекты на сервере (Rohat 8030 и другие) не затрагиваются.
+**Для чего:** Устанавливает Muhojir (FastAPI) на сервер или обновляет установленную копию; запускать повторно безопасно. Запуск от root после клонирования проекта в /home/romin/muhojir-api: `bash /home/romin/muhojir-api/deploy/setup.sh`. Что где работает: nginx https://king.tj и http://IP:8070 → сайт на React (frontend/dist), /media → /api /admin /swagger /redoc и WebSocket /ws/ → uvicorn 127.0.0.1:8071 (2 воркера). Воркеры делят уведомления в реальном времени и ограничения запросов через Redis (база 15). Воркер Celery отправляет письма в фоне и выполняет ежедневные задачи; Celery Beat запускает их каждый день (06:00 новые вакансии, 06:30 напоминания о документах). Их очередь — тоже Redis, база 15. king.tj принадлежал старому Muhojir на Django: этот скрипт забирает у него домен (старый остаётся только на :8040). Другие проекты на сервере (Rohat 8030 и другие) не затрагиваются. PostgreSQL (база и пользователь muhojir, UTF-8 с C.UTF-8, чтобы lower() знал кириллицу): при первом запуске без DATABASE_URL=postgresql в .env скрипт останавливает сервисы, сохраняет копию db.sqlite3.backup-ДАТА, копирует все данные через `python -m app.cli copy-from-sqlite` и только потом записывает DATABASE_URL в .env; если копирование не удалось, сайт возвращается на SQLite и ничего не меняется. db.sqlite3 никогда не удаляется.
 
 ### `deploy/update.sh`
 

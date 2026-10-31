@@ -6,6 +6,7 @@ import getpass
 from sqlalchemy import select
 
 from app.core.security import hash_password, password_problems
+from app.db.copy_sqlite import copy_sqlite_to_postgres
 from app.db.session import SessionLocal
 from app.models import Job, Place, User
 from app.tasks import (
@@ -54,6 +55,8 @@ def main():
     housing.add_argument("--channel", action="append")
     housing.add_argument("--pages", type=int, default=4)
     housing.add_argument("--no-photos", action="store_true")
+    copy = commands.add_parser("copy-from-sqlite")
+    copy.add_argument("path")
     args = parser.parse_args()
 
     if args.command == "createsuperuser":
@@ -81,6 +84,8 @@ def main():
         asyncio.run(run_update_rates())
     elif args.command == "import-housing":
         asyncio.run(run_import_housing(channels=args.channel, pages=args.pages, with_photos=not args.no_photos))
+    elif args.command == "copy-from-sqlite":
+        asyncio.run(copy_sqlite_to_postgres(args.path))
     elif args.command == "has-places":
         sys.exit(0 if asyncio.run(has_places()) else 1)
     elif args.command == "has-jobs":
