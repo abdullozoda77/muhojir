@@ -126,8 +126,8 @@ def exam_json(attempt):
             "ends_at": attempt.ends_at.isoformat(), "minutes": course.EXAM_MINUTES, "pass_percent": course.PASS_PERCENT}
 
 
-def shuffled(data, index):
-    order = list(range(len(data["exam"][index]["options"])))
+def shuffled(level, index):
+    order = list(range(len(course.exam_question(level, index)["options"])))
     random.shuffle(order)
     return {"i": index, "order": order}
 
@@ -212,9 +212,9 @@ async def exam_start(level: int, body: ExamStart, db: DB, user: CurrentUser):
         return exam_json(attempt)
     if moment := wait_until(attempt):
         raise ApiError(WAIT, 429, wait_until=moment.isoformat())
-    pool = range(len(data["exam"]))
+    seen = [item["i"] for item in attempt.questions] if attempt else []
     attempt = ExamAttempt(user_id=user.id, level=level, full_name=" ".join(body.full_name.split()),
-                          questions=[shuffled(data, i) for i in random.sample(pool, min(course.EXAM_SIZE, len(pool)))],
+                          questions=[shuffled(level, i) for i in course.pick_exam(level, seen)],
                           ends_at=utcnow() + timedelta(minutes=course.EXAM_MINUTES))
     db.add(attempt)
     await db.commit()

@@ -26,6 +26,17 @@ def test_course_content_is_complete():
             assert len(set(q["options"])) == len(q["options"]), (data["level"], q["q"])
 
 
+def test_exam_questions_change_every_attempt():
+    for data in course.levels():
+        n = data["level"]
+        first = course.pick_exam(n)
+        assert len(first) == len(set(first)) == course.EXAM_SIZE, n
+        assert len({course.answer_key(course.exam_question(n, i)) for i in first}) == course.EXAM_SIZE, n
+        assert sum(i >= len(data["exam"]) for i in first) == course.EXAM_FROM_LESSONS, n
+        second = course.pick_exam(n, first)
+        assert len(set(first) & set(second)) <= course.EXAM_SIZE // 2, n
+
+
 async def finish_lessons(client, headers, level):
     for number in range(1, course.LESSONS_PER_LEVEL + 1):
         r = await client.post(f"/api/course/levels/{level}/lessons/{number}/complete/", headers=headers, json={"score": 90})

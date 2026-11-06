@@ -12,9 +12,10 @@ const SECTIONS = [
   { key: "history", icon: Landmark, title: () => t("Таърихи Русия"), text: () => t("Санаҳо, идҳо ва шахсиятҳо") },
   { key: "law", icon: Scale, title: () => t("Асосҳои қонун"), text: () => t("Конститутсия ва ҳуқуқу вазифаҳои муҳоҷир") },
 ];
-const MIXED_COUNT = 15;
+const ROUND_SIZE = 15;
 const PASS = 0.75;
 const BEST_KEY = "exam-best";
+const SEEN_KEY = "exam-seen";
 
 const shuffle = (list) => {
   const copy = [...list];
@@ -34,6 +35,25 @@ function readBest() {
   } catch {
     return {};
   }
+}
+
+function readSeen() {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function pickRound(section, pool) {
+  const seen = new Set(readSeen()[section] || []);
+  const mixed = shuffle(pool);
+  const round = [...mixed.filter((q) => !seen.has(q.id)), ...mixed.filter((q) => seen.has(q.id))].slice(0, ROUND_SIZE);
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify({ ...readSeen(), [section]: round.map((q) => q.id) }));
+  } catch {
+  }
+  return round;
 }
 
 function saveBest(section, percent) {
@@ -63,7 +83,7 @@ function Listen({ text }) {
   );
 }
 
-function Quiz({ section, questions, onExit }) {
+function Quiz({ section, questions, onExit, onNew }) {
   const [list, setList] = useState(() => prepare(questions));
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState(null);
@@ -110,7 +130,7 @@ function Quiz({ section, questions, onExit }) {
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {wrong.length > 0 && <Button icon={RotateCcw} onClick={() => restart(wrong)}>{t("Саволҳои хаторо такрор кардан")}</Button>}
-          <Button variant="plain" icon={Shuffle} onClick={() => restart(questions)}>{t("Аз нав")}</Button>
+          <Button variant="plain" icon={Shuffle} onClick={onNew}>{t("Саволҳои нав")}</Button>
           <Button variant="plain" onClick={onExit}>{t("Қисми дигар")}</Button>
         </div>
       </div>
@@ -185,7 +205,8 @@ export default function Exam() {
     });
   }, []);
 
-  const questionsOf = (key) => (key === "mixed" ? shuffle(all).slice(0, MIXED_COUNT) : all.filter((q) => q.section === key));
+  const poolOf = (key) => (key === "mixed" ? all : all.filter((q) => q.section === key));
+  const start = (key) => setSection({ key, questions: pickRound(key, poolOf(key)), round: Date.now() });
 
   return (
     <div className="flex flex-col gap-8">
@@ -196,18 +217,18 @@ export default function Exam() {
       ) : all.length === 0 ? (
         <EmptyState icon={GraduationCap} title={t("Саволҳо ба наздикӣ илова мешаванд")} />
       ) : section ? (
-        <Quiz key={section.key + section.round} section={section.key} questions={section.questions} onExit={() => setSection(null)} />
+        <Quiz key={section.key + section.round} section={section.key} questions={section.questions} onExit={() => setSection(null)} onNew={() => start(section.key)} />
       ) : (
         <>
           <Stagger className="grid gap-3 sm:grid-cols-2">
             {SECTIONS.map((s) => {
-              const count = s.key === "mixed" ? Math.min(MIXED_COUNT, all.length) : all.filter((q) => q.section === s.key).length;
+              const count = Math.min(ROUND_SIZE, poolOf(s.key).length);
               if (!count) return null;
               return (
                 <StaggerItem key={s.key}>
                 <button
                   type="button"
-                  onClick={() => setSection({ key: s.key, questions: questionsOf(s.key), round: Date.now() })}
+                  onClick={() => start(s.key)}
                   className={`group flex h-full w-full items-start gap-4 rounded-2xl bg-surface-container-lowest p-6 text-left ring-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)] ${s.key === "mixed" ? "ring-2 ring-ink" : "ring-outline-variant hover:ring-outline/50"}`}
                 >
                   <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${s.key === "mixed" ? "bg-ink text-on-ink" : "bg-surface-container-low text-on-surface ring-1 ring-outline-variant"}`}>

@@ -626,7 +626,7 @@ A generic, single database configuration.
 
 ### `app/routers/course.py`
 
-**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
+**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool (course.pick_exam, questions of the previous try are avoided) with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -907,7 +907,10 @@ A generic, single database configuration.
 | `level(number)` | function | The content of one level or None. |
 | `levels()` | function | All levels in order. |
 | `lesson(level, number)` | function | One lesson or None. |
+| `exam_pool(level)` | function | The level's exam pool (cached): the 25 exam questions first, then every «choice» exercise of its 10 lessons (65 questions). |
 | `exam_question(level, index)` | function | One question of the level's exam pool. |
+| `answer_key(question)` | function | The right option in lower case; two questions with the same right answer never go into one exam. |
+| `pick_exam(level, seen)` | function | Picks a new exam: 10 questions from the exam questions and 10 from the lesson exercises (EXAM_FROM_LESSONS), questions not in `seen` (the previous attempt) first, then shuffles them, so each try is different. |
 
 ### `app/services/emails.py`
 
@@ -1438,7 +1441,7 @@ A generic, single database configuration.
 
 ### `tests/test_course.py`
 
-**What it is for:** Tests of the course: every level file is complete, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check.
+**What it is for:** Tests of the course: every level file is complete, each exam attempt gets different questions, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check.
 
 
 ### `tests/test_feedback.py`
@@ -2295,11 +2298,14 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Exam.jsx`
 
-**What it is for:** Practice for the exam in Russian language, history and law that is needed for the patent. Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place.
+**What it is for:** Practice for the exam in Russian language, history and law that is needed for the patent. Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place. Every round (each section and the mixed test) is 15 random questions; the questions of the previous round of that section are put last, so a new round is different.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `BEST_KEY` | const | our goal for practice: three answers out of four |
+| `SEEN_KEY` | const | localStorage key with the question ids of the last round of each section. |
+| `readSeen` | function | Reads those ids. |
+| `pickRound` | function | 15 random questions of a section, not-seen ones first, and remembers them. |
 | `prepare` | const | Each option keeps whether it is the right one, so the order can change freely. |
 | `readBest` | function | — |
 | `saveBest` | function | — |
