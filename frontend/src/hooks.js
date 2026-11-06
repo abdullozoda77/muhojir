@@ -66,3 +66,7 @@ export function useScrollLock(active) {
     };
   }, [active]);
 }
+
+export function pageZoom() {
+  return parseFloat(document.documentElement.style.zoom) || 1;
+}

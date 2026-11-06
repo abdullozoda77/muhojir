@@ -1602,7 +1602,7 @@ A generic, single database configuration.
 
 ### `frontend/index.html`
 
-**What it is for:** The site's only HTML page: title and description for Google and link previews in Telegram/WhatsApp, icon, PWA manifest, the dark theme before the first paint, and the place for React (`#root`).
+**What it is for:** The site's only HTML page: title and description for Google and link previews in Telegram/WhatsApp, icon, PWA manifest, the dark theme before the first paint, the page scale for big screens, and the place for React (`#root`). Page scale: on screens wider than 1366px the whole page gets CSS `zoom` = width / 1366 (at most 2) and the `--zoom` variable, so a 1920px monitor shows exactly the same layout as a 1366px laptop, only bigger; it is recalculated on resize.
 
 ### `frontend/postcss.config.js`
 
@@ -1610,7 +1610,7 @@ A generic, single database configuration.
 
 ### `frontend/tailwind.config.js`
 
-**What it is for:** Tailwind CSS setup: the design colors (Material-style tokens), fonts, text sizes and dark mode.
+**What it is for:** Tailwind CSS setup: the design colors (Material-style tokens), fonts, text sizes and dark mode. `h-screen` and `min-h-screen` are divided by `--zoom`, so they stay one screen high on scaled big screens.
 
 ### `frontend/vite.config.js`
 
@@ -1732,6 +1732,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `useApi` | export function | const { data, error, loading, reload } = useApi("/jobs/jobs/"). Pass null as the path to skip loading. |
+| `pageZoom()` | export function | The page scale set in index.html (1 when not scaled); pointer positions from the browser are divided by it before they are used inside the page (Stats charts). |
 | `useScrollLock(active)` | export function | While active the page behind a menu or drawer cannot scroll (also on iPhone: the body is fixed at its place); the scroll position comes back on close. Several open at once are counted. |
 | `useDocuments` | export function | Loads everything the documents screens need: the user's documents, document types and regions. |
 
@@ -1983,7 +1984,7 @@ A generic, single database configuration.
 | `ThemeToggle` | export function | — |
 | `TONES` | const | A soft colour of the icon tile for each sidebar link. |
 | `SideLink` | function | One link of the sidebar: icon, name, counter. The "News" link (/guides#news) is never shown as active, so it does not light up together with "Guides". |
-| `useSidebarOpen` | function | Whether the sidebar is open; the "Menu" button left of the logo (☰ icon and the word, highlighted with ✕ while the sidebar is open) toggles it, the choice is kept in localStorage ("sidebar"). When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
+| `useSidebarOpen` | function | Whether the sidebar is open; the "Menu" button left of the logo (☰ icon and the word, highlighted with ✕ while the sidebar is open) toggles it; it is always closed when the site is opened. When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
 | `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |

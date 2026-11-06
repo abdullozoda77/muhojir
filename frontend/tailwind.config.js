@@ -5,6 +5,8 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      minHeight: { screen: "calc(100vh / var(--zoom, 1))" },
+      height: { screen: "calc(100vh / var(--zoom, 1))" },
       colors: {
         banner: "rgb(var(--c-banner) / <alpha-value>)",
         navy: "rgb(var(--c-navy) / <alpha-value>)",

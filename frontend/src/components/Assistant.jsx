@@ -137,7 +137,7 @@ export default function Assistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 34 }}
-            className="fixed bottom-[calc(env(safe-area-inset-bottom)+10rem)] left-4 right-4 z-[65] flex max-h-[min(70vh,620px)] flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant sm:left-auto sm:w-[400px] lg:bottom-24 lg:right-6"
+            className="fixed bottom-[calc(env(safe-area-inset-bottom)+10rem)] left-4 right-4 z-[65] flex max-h-[min(calc(70vh/var(--zoom,1)),620px)] flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant sm:left-auto sm:w-[400px] lg:bottom-24 lg:right-6"
             aria-label={t("Ошно")}
           >
             <header className="flex items-center gap-3 border-b border-outline-variant px-4 py-3">

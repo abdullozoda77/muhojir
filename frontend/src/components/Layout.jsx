@@ -175,23 +175,8 @@ function SideLink({ item, counts }) {
 }
 
 function useSidebarOpen() {
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem("sidebar") !== "closed";
-    } catch {
-      return true;
-    }
-  });
-  const toggle = useCallback(() => {
-    setOpen((v) => {
-      try {
-        localStorage.setItem("sidebar", v ? "closed" : "open");
-      } catch {
-        return !v;
-      }
-      return !v;
-    });
-  }, []);
+  const [open, setOpen] = useState(false);
+  const toggle = useCallback(() => setOpen((v) => !v), []);
   return [open, toggle];
 }
 

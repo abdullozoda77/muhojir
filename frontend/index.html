@@ -29,6 +29,16 @@
         var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
         if (dark) document.documentElement.classList.add("dark");
       } catch (e) {}
+      (function () {
+        function fit() {
+          var root = document.documentElement;
+          var zoom = Math.min(2, Math.max(1, window.innerWidth / 1366));
+          root.style.zoom = zoom > 1 ? String(zoom) : "";
+          root.style.setProperty("--zoom", String(zoom));
+        }
+        fit();
+        window.addEventListener("resize", fit);
+      })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { lang, t } from "../i18n.js";
+import { pageZoom } from "../hooks.js";
 
 const MONTHS_TG = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
 const MONTHS_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
@@ -79,7 +80,8 @@ export function Heatmap({ days, unit }) {
   const show = (e, day) => {
     const cell = e.currentTarget.getBoundingClientRect();
     const frame = box.current.getBoundingClientRect();
-    setTip({ day, x: cell.left - frame.left + cell.width / 2, y: cell.top - frame.top });
+    const zoom = pageZoom();
+    setTip({ day, x: (cell.left - frame.left + cell.width / 2) / zoom, y: (cell.top - frame.top) / zoom });
   };
 
   return (
@@ -206,7 +208,7 @@ export function LineChart({ points, unit }) {
 
   const pick = (e) => {
     const rect = box.current.getBoundingClientRect();
-    const px = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const px = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) / pageZoom();
     const i = Math.round(((px - pad.left) / Math.max(1, innerW)) * (points.length - 1));
     setActive(Math.min(points.length - 1, Math.max(0, i)));
   };

@@ -809,7 +809,7 @@ export default function Places() {
             <Map3D
               points={mapPoints} colors={COLORS} region={region} regionView={REGION_VIEW[region] || REGION_VIEW["Москва"]}
               selectedId={openId} onOpen={setOpenId} route={route} onClearRoute={() => setRoute(null)}
-              className="h-[440px] sm:h-[560px] xl:h-[calc(100vh-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
+              className="h-[440px] sm:h-[560px] xl:h-[calc(100vh/var(--zoom,1)-112px)] xl:min-h-[620px]" inset={wide && panel ? PANEL + 12 : 0}
             />
           </div>
           {wide && panel && (
