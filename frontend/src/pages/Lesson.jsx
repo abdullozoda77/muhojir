@@ -61,6 +61,10 @@ function keepProgress(level, number, value) {
   }
 }
 
+function sendPlace(level, number, value) {
+  api("/course/place/", { method: "PUT", body: { level: Number(level), number: Number(number), index: value?.index ?? 0, right: value?.right ?? 0 } }).catch(() => {});
+}
+
 function Theory({ lesson }) {
   return (
     <div className="flex flex-col gap-4">
@@ -279,10 +283,11 @@ export default function Lesson() {
 
   useEffect(() => {
     if (!lesson) return;
-    const saved = readProgress(level, number, lesson.exercises.length);
+    const saved = lesson.resume || readProgress(level, number, lesson.exercises.length);
     setResume(saved);
     setStage(saved ? "practice" : "learn");
-  }, [lesson, level, number]);
+    if (user) sendPlace(level, number, saved);
+  }, [lesson, level, number, user]);
 
   useEffect(() => {
     const pending = readPending();
@@ -300,6 +305,7 @@ export default function Lesson() {
   const save = (value) => {
     keepProgress(level, number, value);
     setResume(value);
+    if (user) sendPlace(level, number, value);
   };
 
   const finish = async (score) => {

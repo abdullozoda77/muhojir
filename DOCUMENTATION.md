@@ -430,6 +430,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `CoursePlace` | class · table `course_places` | Where the user stopped in the course: level, lesson number, exercise index and right answers so far. One row per user, kept on the server so it works on every device. |
 | `LessonProgress` | class · table `lesson_progress` | A finished lesson of a user (level, number, best score in %). One row per user and lesson. |
 | `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
 | `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
@@ -631,6 +632,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `GET /api/course/` | async function | All levels with lessons, the user's scores, which lessons are open, exam state of each level (ready, passed, percent, wait_until, open) and the user's certificate. Works for guests too. |
+| `PUT /api/course/place/` | async function | Saves where the user is now (level, lesson, exercise index, right answers); the lesson must be open. Login needed. |
 | `GET /api/course/stats/` | async function | The user's course statistics (see app/services/stats.py). Login needed. |
 | `GET /api/course/levels/{level}/lessons/{number}/` | async function | One lesson: theory, words and exercises. 403 with code «locked» if the previous lesson is not finished. |
 | `POST /api/course/levels/{level}/lessons/{number}/complete/` | async function | Saves the lesson score (at least 60%); the best score is kept. |
@@ -1396,6 +1398,16 @@ A generic, single database configuration.
 ---
 
 ## `tests/` — automated tests (pytest)
+
+
+### `alembic/versions/0016_course_place.py`
+
+**What it is for:** Table course_places (where each user stopped in the course). Revision ID: 0016 Revises: 0015
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
 
 ### `tests/conftest.py`
 
@@ -2256,7 +2268,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Course.jsx`
 
-**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the next lesson and a card with the user's certificate or a link to the sample.
+**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the lesson where the user stopped (`place` from the server, with the exercise number) or else to the next lesson, the level of that place opened and a card with the user's certificate or a link to the sample.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2272,7 +2284,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Lesson.jsx`
 
-**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is kept in the browser, so a reopened lesson continues from the next exercise. The score is sent to the server when it is at least 60%.
+**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%.
 
 | Name | Kind | What it does |
 |---|---|---|

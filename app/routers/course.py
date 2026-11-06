@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.core.deps import DB, CurrentUser, OptionalUser
 from app.core.errors import ApiError, FieldError
 from app.db.types import utcnow
-from app.models import Certificate, ExamAttempt, LessonProgress
+from app.models import Certificate, CoursePlace, ExamAttempt, LessonProgress
 from app.schemas.common import Form
 from app.services import course, stats
 from app.services.notify import notify
@@ -27,6 +27,13 @@ LOCKED = "Finish the previous lesson first."
 
 class LessonDone(Form):
     score: int = Field(ge=0, le=100)
+
+
+class PlaceIn(Form):
+    level: int = Field(ge=1)
+    number: int = Field(ge=1)
+    index: int = Field(default=0, ge=0)
+    right: int = Field(default=0, ge=0)
 
 
 class ExamStart(Form):
@@ -90,6 +97,20 @@ async def last_attempt(db, user, level):
                            .order_by(ExamAttempt.started_at.desc()).limit(1))
 
 
+async def place_of(db, user):
+    if not user:
+        return None
+    return await db.scalar(select(CoursePlace).where(CoursePlace.user_id == user.id))
+
+
+def place_json(place, done):
+    item = course.lesson(place.level, place.number) if place else None
+    if not item:
+        return None
+    return {"level": place.level, "number": place.number, "title": item["title"], "index": place.index,
+            "total": len(item["exercises"]), "finished": (place.level, place.number) in done}
+
+
 def is_unlocked(level, number, done, passed):
     if number == 1:
         return level == 1 or level - 1 in passed
@@ -137,6 +158,7 @@ async def overview(db: DB, user: OptionalUser):
     done = await progress_of(db, user)
     passed = await passed_levels(db, user)
     certificate = await certificate_of(db, user)
+    place = await place_of(db, user)
     result = []
     for data in course.levels():
         n = data["level"]
@@ -155,6 +177,7 @@ async def overview(db: DB, user: OptionalUser):
             exam["open"] = bool(is_open(attempt))
         result.append({**level_info(data), "unlocked": lessons[0]["unlocked"], "lessons": lessons, "exam": exam})
     return {"levels": result, "certificate": certificate_json(certificate) if certificate else None,
+            "place": place_json(place, done),
             "exam_size": course.EXAM_SIZE, "exam_minutes": course.EXAM_MINUTES,
             "pass_percent": course.PASS_PERCENT, "lesson_pass": course.LESSON_PASS}
 
@@ -172,9 +195,31 @@ async def lesson_detail(level: int, number: int, db: DB, user: OptionalUser):
         raise ApiError(NO_LESSON, 404)
     await must_unlocked(db, user, level, number)
     done = (await progress_of(db, user, level)).get((level, number))
+    place = await place_of(db, user)
+    resume = None
+    if place and (place.level, place.number) == (level, number) and 0 < place.index < len(item["exercises"]):
+        resume = {"index": place.index, "right": min(place.right, place.index)}
     return {**item, "level": level, "number": number, "level_title": data["title"],
             "lessons_total": len(data["lessons"]), "score": done.score if done else None,
-            "lesson_pass": course.LESSON_PASS}
+            "lesson_pass": course.LESSON_PASS, "resume": resume}
+
+
+@router.put("/place/")
+async def save_place(body: PlaceIn, db: DB, user: CurrentUser):
+    must_level(body.level)
+    item = course.lesson(body.level, body.number)
+    if not item:
+        raise ApiError(NO_LESSON, 404)
+    await must_unlocked(db, user, body.level, body.number)
+    index = body.index if body.index < len(item["exercises"]) else 0
+    place = await place_of(db, user)
+    if not place:
+        place = CoursePlace(user_id=user.id)
+        db.add(place)
+    place.level, place.number, place.index, place.right = body.level, body.number, index, min(body.right, index)
+    place.updated_at = utcnow()
+    await db.commit()
+    return place_json(place, await progress_of(db, user))
 
 
 @router.post("/levels/{level}/lessons/{number}/complete/")
@@ -192,6 +237,9 @@ async def lesson_complete(level: int, number: int, body: LessonDone, db: DB, use
     else:
         done = LessonProgress(user_id=user.id, level=level, number=number, score=body.score)
         db.add(done)
+    place = await place_of(db, user)
+    if place and (place.level, place.number) == (level, number):
+        place.index, place.right = 0, 0
     await db.commit()
     return {"level": level, "number": number, "score": done.score}
 

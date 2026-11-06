@@ -139,7 +139,7 @@ export default function Course() {
   const [openLevel, setOpenLevel] = useState(null);
 
   useEffect(() => {
-    if (data && openLevel === null) setOpenLevel(firstOpen(data.levels));
+    if (data && openLevel === null) setOpenLevel(data.place?.level ?? firstOpen(data.levels));
   }, [data, openLevel]);
 
   const passedLevels = data?.levels.filter((l) => l.exam.passed).length ?? 0;
@@ -174,6 +174,21 @@ export default function Course() {
         </div>
       )}
       {data && user && (() => {
+        const place = data.place && !(data.place.finished && data.place.index === 0) ? data.place : null;
+        if (place) {
+          return (
+            <Link to={`/course/${place.level}/${place.number}`} className="group flex items-center gap-4 rounded-2xl bg-ink p-5 text-on-ink transition-transform hover:-translate-y-0.5">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-label-md opacity-70">
+                  {t("Идома додан")} · {t("Сатҳи {0}", place.level)}
+                  {place.index > 0 && <> · {t("Машқ {0} аз {1}", place.index + 1, place.total)}</>}
+                </span>
+                <span className="text-[18px] font-semibold leading-tight">{t("Дарси {0}: {1}", place.number, place.title)}</span>
+              </span>
+              <ArrowRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden />
+            </Link>
+          );
+        }
         const next = nextLesson(data.levels);
         if (!next || lessonsDone === 0) return null;
         const to = next.exam ? `/course/${next.level.level}/exam` : `/course/${next.level.level}/${next.lesson.number}`;

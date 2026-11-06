@@ -25,6 +25,22 @@ class LessonProgress(Base):
         return f"{self.level}.{self.number}"
 
 
+class CoursePlace(Base):
+
+    __tablename__ = "course_places"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    level: Mapped[int] = mapped_column(Integer)
+    number: Mapped[int] = mapped_column(Integer)
+    index: Mapped[int] = mapped_column(Integer, default=0)
+    right: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+    def __str__(self):
+        return f"{self.user_id} · {self.level}.{self.number}"
+
+
 class ExamAttempt(Base):
 
     __tablename__ = "exam_attempts"

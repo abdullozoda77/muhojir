@@ -82,6 +82,26 @@ async def test_lessons_open_one_by_one(client, user):
     assert r.status_code == 403
 
 
+async def test_course_remembers_where_user_stopped(client, user):
+    headers, _ = user
+    r = await client.get("/api/course/", headers=headers)
+    assert r.json()["place"] is None
+    assert (await client.put("/api/course/place/", json={"level": 1, "number": 1})).status_code == 401
+    r = await client.put("/api/course/place/", headers=headers, json={"level": 1, "number": 2, "index": 1})
+    assert r.status_code == 403
+    r = await client.put("/api/course/place/", headers=headers, json={"level": 1, "number": 1, "index": 3, "right": 2})
+    assert r.status_code == 200 and r.json()["index"] == 3 and r.json()["finished"] is False
+    place = (await client.get("/api/course/", headers=headers)).json()["place"]
+    assert (place["level"], place["number"], place["index"]) == (1, 1, 3) and place["title"]
+    lesson = (await client.get("/api/course/levels/1/lessons/1/", headers=headers)).json()
+    assert lesson["resume"] == {"index": 3, "right": 2}
+    assert (await client.get("/api/course/levels/1/lessons/1/")).json()["resume"] is None
+    await client.post("/api/course/levels/1/lessons/1/complete/", headers=headers, json={"score": 90})
+    place = (await client.get("/api/course/", headers=headers)).json()["place"]
+    assert place["index"] == 0 and place["finished"] is True
+    assert (await client.get("/api/course/levels/1/lessons/1/", headers=headers)).json()["resume"] is None
+
+
 async def test_lesson_progress_keeps_best_score(client, user):
     headers, _ = user
     await client.post("/api/course/levels/1/lessons/1/complete/", headers=headers, json={"score": 100})
