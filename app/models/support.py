@@ -19,6 +19,8 @@ class HelpContact(Base):
     phone: Mapped[str] = mapped_column(String(30), default="")
     website: Mapped[str] = mapped_column(String(200), default="")
     description: Mapped[str] = mapped_column(Text, default="")
+    title_ru: Mapped[str] = mapped_column(String(200), default="")
+    description_ru: Mapped[str] = mapped_column(Text, default="")
     region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id", ondelete="SET NULL"))
     order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

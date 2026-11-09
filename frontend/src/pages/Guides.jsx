@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Newspaper } from "lucide-react";
 import { api, apiAll } from "../api.js";
 import { useApi } from "../hooks.js";
-import { t } from "../i18n.js";
+import { t, useLang } from "../i18n.js";
 import { date } from "../format.js";
 import { docIcon } from "../components/DocCard.jsx";
 import GuideSteps from "../components/GuideSteps.jsx";
@@ -11,8 +11,11 @@ import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../component
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 
 function News() {
+  const lang = useLang();
   const first = useApi("/documents/news/");
   const [extra, setExtra] = useState({ results: [], next: undefined });
+
+  useEffect(() => setExtra({ results: [], next: undefined }), [lang]);
   const [busy, setBusy] = useState(false);
   const next = extra.next === undefined ? first.data?.next : extra.next;
   const items = [...(first.data?.results || []), ...extra.results];
@@ -59,6 +62,7 @@ function News() {
 }
 
 export default function Guides() {
+  const lang = useLang();
   const [params, setParams] = useSearchParams();
   const [types, setTypes] = useState([]);
   const [steps, setSteps] = useState([]);
@@ -70,7 +74,7 @@ export default function Guides() {
       .then(setTypes)
       .catch(setError)
       .finally(() => setLoading(false));
-  }, []);
+  }, [lang]);
 
   const current = types.find((x) => String(x.id) === params.get("type")) || types[0];
 
@@ -81,7 +85,7 @@ export default function Guides() {
       setError(err);
       setSteps([]);
     });
-  }, [current]);
+  }, [current?.id, lang]);
 
   return (
     <div className="flex flex-col gap-8">

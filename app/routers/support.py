@@ -6,6 +6,7 @@ from sqlalchemy import or_, select
 
 from app.core.crud import add_content_routes
 from app.core.deps import editor_user
+from app.core.i18n import tr
 from app.models import HelpContact, Region
 from app.routers.documents import int_param, must_exist, param
 from app.schemas.common import Form
@@ -21,6 +22,8 @@ class ContactIn(Form):
     phone: str = Field("", max_length=30)
     website: str = Field("", max_length=200)
     description: str = ""
+    title_ru: str = Field("", max_length=200)
+    description_ru: str = ""
     region_id: int | None = Field(None, alias="region")
     order: int = Field(0, ge=0)
     is_active: bool = True
@@ -33,8 +36,8 @@ class ContactPatch(ContactIn):
 
 
 def contact_json(c):
-    return {"id": c.id, "kind": c.kind, "title": c.title, "phone": c.phone, "website": c.website,
-            "description": c.description, "region": c.region_id, "region_name": c.region.name if c.region else None,
+    return {"id": c.id, "kind": c.kind, "title": tr(c, "title"), "phone": c.phone, "website": c.website,
+            "description": tr(c, "description"), "region": c.region_id, "region_name": c.region.name if c.region else None,
             "order": c.order, "is_active": c.is_active}
 
 

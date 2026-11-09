@@ -7,9 +7,19 @@ from app.models import ReminderLog, User, UserDocument
 from app.services.notify import notify
 
 
-def reminder_text(document, days):
-    title = document.document_type.title
+def reminder_title(document, language="tg"):
+    return (language == "ru" and document.document_type.title_ru) or document.document_type.title
+
+
+def reminder_text(document, days, language="tg"):
+    title = reminder_title(document, language)
     end = document.expires_at.strftime("%d.%m.%Y")
+    if language == "ru":
+        if days == 0:
+            return f"Срок «{title}» истёк сегодня ({end}). Продлите как можно скорее — без действующего документа можно получить штраф."
+        if days == 1:
+            return f"Срок «{title}» истекает завтра ({end}). Продлите его вовремя."
+        return f"Срок «{title}» истекает через {days} дн. ({end}). Продлите его вовремя."
     if days == 0:
         return f"Мӯҳлати «{title}» имрӯз ({end}) тамом шуд. Ҳарчи зудтар нав кунед — бе ҳуҷҷати амалкунанда ҷарима гирифтан мумкин аст."
     if days == 1:
@@ -35,6 +45,6 @@ async def send_due_reminders(db, today=None):
             await db.rollback()
             continue
         user = await db.get(User, document.user_id)
-        await notify(db, user, document.document_type.title, reminder_text(document, days_left), kind="reminder")
+        await notify(db, user, reminder_title(document, user.language), reminder_text(document, days_left, user.language), kind="reminder")
         sent += 1
     return sent

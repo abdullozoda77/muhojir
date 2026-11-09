@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, apiAll } from "./api.js";
+import { useLang } from "./i18n.js";
 
 export function useApi(path) {
+  const lang = useLang();
   const [state, setState] = useState({ data: null, error: null, loading: Boolean(path) });
   const [tick, setTick] = useState(0);
 
@@ -18,13 +20,14 @@ export function useApi(path) {
     return () => {
       alive = false;
     };
-  }, [path, tick]);
+  }, [path, tick, lang]);
 
   const reload = useCallback(() => setTick((n) => n + 1), []);
   return { ...state, reload };
 }
 
 export function useDocuments() {
+  const lang = useLang();
   const [state, setState] = useState({ docs: [], types: [], regions: [], loading: true, error: null });
   const load = useCallback(async () => {
     try {
@@ -37,7 +40,7 @@ export function useDocuments() {
     } catch (error) {
       setState((s) => ({ ...s, loading: false, error }));
     }
-  }, []);
+  }, [lang]);
   useEffect(() => {
     load();
   }, [load]);

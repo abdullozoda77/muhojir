@@ -54,7 +54,7 @@ def document_types_query(request, user):
     query = select(DocumentType)
     if param(request, "slug"):
         query = query.where(DocumentType.slug == param(request, "slug"))
-    query = search(query, request, DocumentType.title, DocumentType.description)
+    query = search(query, request, DocumentType.title, DocumentType.description, DocumentType.title_ru)
     return query.order_by(DocumentType.order, DocumentType.title)
 
 
@@ -66,7 +66,7 @@ def guide_steps_query(request, user):
     query = select(GuideStep)
     if (type_id := int_param(request, "document_type")) is not None:
         query = query.where(GuideStep.document_type_id == type_id)
-    query = search(query, request, GuideStep.title, GuideStep.body, GuideStep.required_papers)
+    query = search(query, request, GuideStep.title, GuideStep.body, GuideStep.required_papers, GuideStep.title_ru, GuideStep.body_ru)
     return query.order_by(GuideStep.document_type_id, GuideStep.order)
 
 
@@ -118,7 +118,7 @@ def news_query(request, user):
         query = query.where(LawNews.id.in_(
             select(law_news_document_types.c.law_news_id).where(law_news_document_types.c.document_type_id == type_id)
         ))
-    query = search(query, request, LawNews.title, LawNews.summary, LawNews.body)
+    query = search(query, request, LawNews.title, LawNews.summary, LawNews.body, LawNews.title_ru, LawNews.body_ru)
     return query.order_by(LawNews.published_at.desc().nulls_last(), LawNews.created_at.desc())
 
 

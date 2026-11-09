@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpenCheck, Check, GraduationCap, Landmark, RotateCcw, Scale, Shuffle, Volume2, X } from "lucide-react";
 import { apiAll } from "../api.js";
-import { t } from "../i18n.js";
+import { t, useLang } from "../i18n.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { canSpeak, speak } from "../speech.js";
@@ -193,6 +193,7 @@ function Quiz({ section, questions, onExit, onNew }) {
 }
 
 export default function Exam() {
+  const lang = useLang();
   const [all, setAll] = useState(null);
   const [error, setError] = useState(null);
   const [section, setSection] = useState(null);
@@ -203,7 +204,7 @@ export default function Exam() {
       setError(err);
       setAll([]);
     });
-  }, []);
+  }, [lang]);
 
   const poolOf = (key) => (key === "mixed" ? all : all.filter((q) => q.section === key));
   const start = (key) => setSection({ key, questions: pickRound(key, poolOf(key)), round: Date.now() });

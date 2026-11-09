@@ -261,8 +261,15 @@ export default function Profile() {
     setBusy(true);
     setErrors({});
     setError(null);
+  const chooseLang = (next) => {
+    if (next === lang) return;
+    setLang(next);
+    setForm((f) => ({ ...f, language: next }));
+    api("/auth/profile/", { method: "PATCH", body: { language: next } }).catch(() => null);
+  };
+
     try {
-      const data = await api("/auth/profile/", { method: "PATCH", body: { ...form, phone: form.phone.trim() || null } });
+      const data = await api("/auth/profile/", { method: "PATCH", body: { ...form, language: lang, phone: form.phone.trim() || null } });
       setUser(data);
       setSaved(true);
       if (data.language !== lang) setLang(data.language);
@@ -350,8 +357,8 @@ export default function Profile() {
             <span className="label flex items-center gap-2"><Languages className="h-4 w-4 text-primary" aria-hidden />{t("Забон")}</span>
             <Segmented
               label={t("Забон")}
-              value={form.language}
-              onChange={(v) => set("language", v)}
+              value={lang}
+              onChange={chooseLang}
               options={[{ value: "tg", label: "Тоҷикӣ" }, { value: "ru", label: "Русский" }]}
             />
           </div>

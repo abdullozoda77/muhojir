@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, BellRing, Calculator as CalcIcon, Clock, ExternalLink, Info, ListChecks, MapPinned, Phone, Printer, Wallet } from "lucide-react";
 import { apiAll } from "../api.js";
 import { useAuth } from "../auth.jsx";
-import { t } from "../i18n.js";
+import { t, useLang } from "../i18n.js";
 import { num, rub } from "../format.js";
 import { Checklist, papersOf } from "../components/GuideSteps.jsx";
 import { Reveal } from "../components/motion.jsx";
@@ -12,6 +12,7 @@ import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../component
 
 export default function Calculator() {
   const { user } = useAuth();
+  const lang = useLang();
   const [regions, setRegions] = useState([]);
   const [patent, setPatent] = useState(null);
   const [steps, setSteps] = useState([]);
@@ -41,7 +42,7 @@ export default function Calculator() {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, lang]);
 
   const region = regions.find((r) => String(r.id) === regionId);
   const price = Number(region?.patent_monthly_price || 0);

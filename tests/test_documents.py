@@ -19,6 +19,24 @@ async def test_public_content_is_seeded(client):
     assert r.status_code == 404
 
 
+async def test_content_follows_site_language(client):
+    ru = {"Accept-Language": "ru"}
+    r = await client.get("/api/documents/document-types/")
+    patent = next(x for x in r.json()["results"] if x["slug"] == "patent")
+    assert patent["title"] == "Патенти меҳнатӣ"
+    r = await client.get("/api/documents/document-types/", headers=ru)
+    assert next(x for x in r.json()["results"] if x["slug"] == "patent")["title"] == "Трудовой патент"
+    r = await client.get("/api/documents/guide-steps/", headers=ru, params={"document_type": patent["id"]})
+    first = r.json()["results"][0]
+    assert first["title"] == "Соберите документы" and first["deadline_note"].startswith("До 30 дней")
+    r = await client.get("/api/documents/news/3/", headers=ru)
+    assert r.json()["title"].startswith("Цена патента")
+    r = await client.get("/api/documents/exam-questions/", headers=ru, params={"page_size": 100})
+    assert all(q["explanation"] and not any(ch in q["explanation"] for ch in "ӣӯҳҷқғ") for q in r.json()["results"])
+    r = await client.get("/api/help/contacts/", headers=ru, params={"page_size": 100})
+    assert all(not any(ch in c["title"] + c["description"] for ch in "ӣӯҳҷқғ") for c in r.json()["results"])
+
+
 async def test_my_documents_photos_and_payments(client, user):
     headers, _ = user
     r = await client.post("/api/documents/my-documents/", headers=headers,

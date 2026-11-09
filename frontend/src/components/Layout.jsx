@@ -299,12 +299,12 @@ export default function Layout() {
                 {side ? <X className="h-[18px] w-[18px]" aria-hidden /> : <Menu className="h-[18px] w-[18px]" aria-hidden />}
               </m.span>
             </AnimatePresence>
-            {t("Меню")}
+            <span className="hidden xl:inline">{t("Меню")}</span>
           </button>
           <Logo />
-          <nav className="mx-auto hidden items-center gap-0.5 lg:flex xl:absolute xl:left-1/2 xl:-translate-x-1/2" aria-label={t("Менюи асосӣ")}>
+          <nav className="mx-auto hidden min-w-0 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-label-md transition-colors ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>

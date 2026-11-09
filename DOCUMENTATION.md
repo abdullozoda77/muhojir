@@ -169,6 +169,17 @@ A generic, single database configuration.
 | `get(key)` | async function | — |
 | `put(key, value, seconds)` | async function | — |
 
+### `app/core/i18n.py`
+
+**What it is for:** The language of the request. The site sends Accept-Language: ru or tg with every API call; the middleware remembers it for the request, and the JSON functions of the content (document types, guide steps, news, exam explanations, help sites, migration centers) give the Russian column (title_ru, body_ru …) when Russian is asked and it is filled, otherwise the Tajik text.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `current_lang` | const | «tg» or «ru» for the current request (a ContextVar). |
+| `header_lang(value)` | function | «ru» when the Accept-Language header starts with ru, otherwise «tg». |
+| `tr(obj, field)` | function | tr(step, "title"): step.title_ru when the request is Russian and it is not empty, otherwise step.title. |
+| `LanguageMiddleware` | class | ASGI middleware added in main.py: sets current_lang from the header for every HTTP and WebSocket request. |
+
 ### `app/core/config.py`
 
 **What it is for:** All settings come from .env (or the environment). Without a .env everything works on a laptop: SQLite database, emails printed in the console, tasks run at once, live notifications inside one process. GOOGLE_CLIENT_ID (OAuth client ID of type "Web application") turns on sign in with Google; while it is empty the button is hidden.
@@ -349,6 +360,7 @@ A generic, single database configuration.
 | `ReminderLog` | class · table `reminder_logs` | Remembers which reminders were already sent, so the daily job never sends the same one twice. The end date is part of the key: after the user renews a document, its reminders start again. |
 | `LawNews` | class · table `law_news` | News about migration law, written in Tajik. |
 | `ExamQuestion` | class · table `exam_questions` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. A listening question has listen_text: the site reads it aloud in Russian before the question. |
+| `*_ru` | — | The content tables also have Russian columns (`*_ru`): document_types title/description, guide_steps title/body/required_papers/cost_note/deadline_note/where/example, law_news title/summary/body, exam_questions explanation, migration_centers working_hours. Empty = the Tajik text is shown. Editors fill them in the admin panel. |
 
 ### `app/models/feedback.py`
 
@@ -442,6 +454,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
+| `title_ru`, `description_ru` | — | help_contacts also has title_ru and description_ru (Russian text for a Russian site; empty = the Tajik one). |
 
 ### `app/models/travel.py`
 
@@ -1074,7 +1087,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `reminder_text(document, days)` | function | The reminder text: in N days, tomorrow, or «expired today» (days = 0). |
+| `reminder_title(document, language)` | function | The document's name in the user's language (title_ru for Russian when filled). |
+| `reminder_text(document, days, language)` | function | The reminder text in the user's language (user.language): in N days, tomorrow, or «expired today» (days = 0). |
 | `send_due_reminders(db, today)` | async function | Sends today's reminders: on the day the owner chose (remind_days_before) and the day before the end. Safe to run many times a day: ReminderLog remembers what was already sent. Returns how many were sent. Also on the expiry day itself («expired today»). |
 
 ### `app/services/stats.py`
@@ -1409,6 +1423,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0017_content_ru.py`
+
+**What it is for:** Russian columns (`*_ru`) for the site's content and their Russian text from app/seed/content_ru.json: document types, guide steps, law news, help sites, migration centers and the explanations of the 100 exam questions. A row gets the translation only if its Tajik text is still the same as in the seed, so content changed by editors is not overwritten. Revision ID: 0017 Revises: 0016
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Adds the columns (empty by default) and fills the Russian text. |
+| `downgrade()` | function | Drops the columns. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1488,6 +1511,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `test_public_content_is_seeded(client)` | async function | — |
+| `test_content_follows_site_language(client)` | async function | Accept-Language: ru gives the Russian title of the patent, guide steps and news, and no Tajik letters in the exam explanations and help sites. |
 | `test_my_documents_photos_and_payments(client, user)` | async function | — |
 | `other_user(client)` | async function | — |
 | `test_editors_change_content(client, user)` | async function | — |
@@ -1743,10 +1767,10 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `useApi` | export function | const { data, error, loading, reload } = useApi("/jobs/jobs/"). Pass null as the path to skip loading. |
+| `useApi` | export function | const { data, error, loading, reload } = useApi("/jobs/jobs/"). Pass null as the path to skip loading. Loads again when the site language changes, so text from the database comes in the new language. |
 | `pageZoom()` | export function | The page scale set in index.html (1 when not scaled); pointer positions from the browser are divided by it before they are used inside the page (Stats charts). |
 | `useScrollLock(active)` | export function | While active the page behind a menu or drawer cannot scroll (also on iPhone: the body is fixed at its place); the scroll position comes back on close. Several open at once are counted. |
-| `useDocuments` | export function | Loads everything the documents screens need: the user's documents, document types and regions. |
+| `useDocuments` | export function | Loads everything the documents screens need: the user's documents, document types and regions. Loads again when the language changes. |
 
 ### `frontend/src/i18n.js`
 
@@ -1943,7 +1967,7 @@ A generic, single database configuration.
 | `InstallProvider` | export function | — |
 | `useInstallApp` | export const | — |
 | `InstallMenuButton` | export function | A wide button for the phone menu. |
-| `InstallHeaderButton` | export function | A small button for the header on big screens. |
+| `InstallHeaderButton` | export function | A square download icon for the header on big screens (the name is in the tooltip). An icon, not a word, so the header never gets wider than the screen and the right buttons never cover the menu. |
 | `InstallBanner` | export function | On phones: a card that slides in under the header a few seconds after the site opens. |
 
 ### `frontend/src/components/Housing.jsx`
@@ -1982,7 +2006,7 @@ A generic, single database configuration.
 
 ### `frontend/src/components/Layout.jsx`
 
-**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections in the middle (centered on the screen from xl, in the free space on smaller laptops), a left sidebar on wide screens (lg+) with the "More" sections and the blocks from the home page (official rate, news, feedback), the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
+**What it is for:** The site's shell: a thin flag line on top, a quiet bar with the main sections in the middle (in the middle of the free space between the logo and the right buttons, so they never overlap at any width; on lg the «Menu» button is an icon only and the tabs are a bit narrower), a left sidebar on wide screens (lg+) with the "More" sections and the blocks from the home page (official rate, news, feedback), the page, the footer. Phones: a slim bar on top and a floating dock at the bottom; its last button opens every section. On top of the page: the "new version" bar (useAppUpdate) and the offline bar. Everything fixed to the bottom on phones (the Ошно button and chat, live toasts, the job page buttons, the footer margin) adds env(safe-area-inset-bottom), so in the installed app on an iPhone with a home bar nothing hides under the bottom menu.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2341,7 +2365,7 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `News` | function | — |
-| `Guides` | export function | — |
+| `Guides` | export function | Document types and their steps load again when the language changes (the text comes from the server in the chosen language); the «more news» pages are reset. |
 
 ### `frontend/src/pages/Help.jsx`
 
@@ -2523,7 +2547,7 @@ A generic, single database configuration.
 | `Section` | function | — |
 | `IconInput` | function | An input with an icon inside it on the left. |
 | `MyActivity` | function | «Your activity»: 4 tiles (days with Muhojir, actions, streak, payments), the 26-week calendar, «where you are active» and the last actions. |
-| `Profile` | export function | — |
+| `Profile` | export function | Language in settings works at once: the site switches immediately and the choice is saved on the server, no need to press «Save». |
 
 ### `frontend/src/pages/SavedJobs.jsx`
 

@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.admin import setup_admin
 from app.core.config import MEDIA_ROOT, settings
+from app.core.i18n import LanguageMiddleware
 from app.core.errors import ApiError, api_error_handler, http_error_handler, validation_error_handler
 from app.routers import assistant, auth, course, documents, feedback, flights, housing, jobs, market, places, rates, support, ws
 from app.services.live import hub
@@ -33,6 +34,8 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
+
+app.add_middleware(LanguageMiddleware)
 
 if settings.cors_origins:
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True,

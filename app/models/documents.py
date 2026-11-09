@@ -26,6 +26,8 @@ class DocumentType(Base):
     slug: Mapped[str] = mapped_column(String(50), unique=True)
     title: Mapped[str] = mapped_column(String(150))
     description: Mapped[str] = mapped_column(Text, default="")
+    title_ru: Mapped[str] = mapped_column(String(150), default="")
+    description_ru: Mapped[str] = mapped_column(Text, default="")
     default_validity_days: Mapped[int | None] = mapped_column(Integer)
     order: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -51,6 +53,13 @@ class GuideStep(Base):
     official_url: Mapped[str] = mapped_column(String(200), default="")
     where: Mapped[str] = mapped_column(String(255), default="")
     example: Mapped[str] = mapped_column(Text, default="")
+    title_ru: Mapped[str] = mapped_column(String(200), default="")
+    body_ru: Mapped[str] = mapped_column(Text, default="")
+    required_papers_ru: Mapped[str] = mapped_column(Text, default="")
+    cost_note_ru: Mapped[str] = mapped_column(String(200), default="")
+    deadline_note_ru: Mapped[str] = mapped_column(String(200), default="")
+    where_ru: Mapped[str] = mapped_column(String(255), default="")
+    example_ru: Mapped[str] = mapped_column(Text, default="")
 
     document_type: Mapped[DocumentType] = relationship(back_populates="steps")
 
@@ -141,6 +150,7 @@ class MigrationCenter(Base):
     name: Mapped[str] = mapped_column(String(200))
     address: Mapped[str] = mapped_column(String(255))
     working_hours: Mapped[str] = mapped_column(String(100), default="")
+    working_hours_ru: Mapped[str] = mapped_column(String(100), default="")
     phone: Mapped[str] = mapped_column(String(30), default="")
     website: Mapped[str] = mapped_column(String(200), default="")
     order: Mapped[int] = mapped_column(Integer, default=0)
@@ -181,6 +191,9 @@ class LawNews(Base):
     title: Mapped[str] = mapped_column(String(255))
     summary: Mapped[str] = mapped_column(String(500))
     body: Mapped[str] = mapped_column(Text)
+    title_ru: Mapped[str] = mapped_column(String(255), default="")
+    summary_ru: Mapped[str] = mapped_column(String(500), default="")
+    body_ru: Mapped[str] = mapped_column(Text, default="")
     source_url: Mapped[str] = mapped_column(String(200), default="")
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     published_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
@@ -206,6 +219,7 @@ class ExamQuestion(Base):
     options: Mapped[list] = mapped_column(JSON)
     answer: Mapped[int] = mapped_column(Integer)
     explanation: Mapped[str] = mapped_column(Text, default="")
+    explanation_ru: Mapped[str] = mapped_column(Text, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
 

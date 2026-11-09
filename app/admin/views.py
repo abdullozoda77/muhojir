@@ -133,7 +133,8 @@ class DocumentTypeAdmin(Base, model=DocumentType):
     name, name_plural, icon, category = "Навъи ҳуҷҷат", "Навъҳои ҳуҷҷат", "fa-solid fa-id-card", "Ҳуҷҷатҳо ва роҳнамо"
     column_list = [DocumentType.title, DocumentType.slug, DocumentType.default_validity_days, DocumentType.order]
     column_default_sort = [(DocumentType.order, False)]
-    form_columns = [DocumentType.title, DocumentType.slug, DocumentType.description, DocumentType.default_validity_days, DocumentType.order]
+    form_columns = [DocumentType.title, DocumentType.title_ru, DocumentType.slug, DocumentType.description, DocumentType.description_ru,
+                    DocumentType.default_validity_days, DocumentType.order]
 
 
 class GuideStepAdmin(Base, model=GuideStep):
@@ -143,7 +144,8 @@ class GuideStepAdmin(Base, model=GuideStep):
     column_default_sort = [(GuideStep.document_type_id, False), (GuideStep.order, False)]
     form_columns = [GuideStep.document_type, GuideStep.order, GuideStep.title, GuideStep.body, GuideStep.where,
                     GuideStep.required_papers, GuideStep.cost_note, GuideStep.deadline_note, GuideStep.official_url,
-                    GuideStep.example]
+                    GuideStep.example, GuideStep.title_ru, GuideStep.body_ru, GuideStep.where_ru, GuideStep.required_papers_ru,
+                    GuideStep.cost_note_ru, GuideStep.deadline_note_ru, GuideStep.example_ru]
 
 
 class RegionAdmin(Base, model=Region):
@@ -160,7 +162,7 @@ class MigrationCenterAdmin(Base, model=MigrationCenter):
     column_list = [MigrationCenter.name, MigrationCenter.region, MigrationCenter.address, MigrationCenter.working_hours, MigrationCenter.order]
     column_searchable_list = [MigrationCenter.name, MigrationCenter.address]
     form_columns = [MigrationCenter.region, MigrationCenter.name, MigrationCenter.address, MigrationCenter.working_hours,
-                    MigrationCenter.phone, MigrationCenter.website, MigrationCenter.order]
+                    MigrationCenter.working_hours_ru, MigrationCenter.phone, MigrationCenter.website, MigrationCenter.order]
 
 
 class LawNewsAdmin(Base, model=LawNews):
@@ -168,7 +170,8 @@ class LawNewsAdmin(Base, model=LawNews):
     column_list = [LawNews.title, LawNews.is_published, LawNews.published_at]
     column_searchable_list = [LawNews.title, LawNews.summary]
     column_default_sort = [(LawNews.published_at, True)]
-    form_columns = [LawNews.title, LawNews.summary, LawNews.body, LawNews.source_url, LawNews.document_types,
+    form_columns = [LawNews.title, LawNews.summary, LawNews.body, LawNews.title_ru, LawNews.summary_ru, LawNews.body_ru,
+                    LawNews.source_url, LawNews.document_types,
                     LawNews.is_published, LawNews.published_at]
 
     async def on_model_change(self, data, model, is_created, request):
@@ -186,7 +189,7 @@ class ExamQuestionAdmin(Base, model=ExamQuestion):
     column_searchable_list = [ExamQuestion.question]
     column_default_sort = [(ExamQuestion.section, False), (ExamQuestion.order, False)]
     form_columns = [ExamQuestion.section, ExamQuestion.question, ExamQuestion.listen_text, ExamQuestion.options,
-                    ExamQuestion.answer, ExamQuestion.explanation, ExamQuestion.is_active, ExamQuestion.order]
+                    ExamQuestion.answer, ExamQuestion.explanation, ExamQuestion.explanation_ru, ExamQuestion.is_active, ExamQuestion.order]
     form_choices = {"section": [("language", "Забони русӣ"), ("history", "Таърихи Русия"), ("law", "Асосҳои қонун")]}
 
     async def on_model_change(self, data, model, is_created, request):
@@ -280,7 +283,7 @@ class HelpContactAdmin(Base, model=HelpContact):
     column_searchable_list = [HelpContact.title, HelpContact.description]
     column_default_sort = [(HelpContact.order, False)]
     form_columns = [HelpContact.kind, HelpContact.title, HelpContact.website, HelpContact.phone, HelpContact.description,
-                    HelpContact.region, HelpContact.order, HelpContact.is_active]
+                    HelpContact.title_ru, HelpContact.description_ru, HelpContact.region, HelpContact.order, HelpContact.is_active]
     form_choices = {"kind": [(k, k) for k in HelpContact.KINDS]}
 
 

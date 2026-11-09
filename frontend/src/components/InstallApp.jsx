@@ -76,9 +76,8 @@ export function InstallHeaderButton() {
   const { available, start } = useInstallApp();
   if (!available) return null;
   return (
-    <button type="button" onClick={start} className="hidden h-9 items-center gap-1.5 rounded-lg px-2.5 text-label-md text-primary ring-1 ring-inset ring-primary/25 transition-colors hover:bg-primary-fixed xl:inline-flex">
+    <button type="button" onClick={start} aria-label={t("Насб кардан")} title={t("Насб кардан")} className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary ring-1 ring-inset ring-primary/25 transition-colors hover:bg-primary-fixed xl:inline-flex">
       <Download className="h-4 w-4" aria-hidden />
-      {t("Насб кардан")}
     </button>
   );
 }
