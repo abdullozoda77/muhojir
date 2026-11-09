@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, LogIn, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, LogIn, Mail, Phone, ShieldCheck, UserPlus } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { t } from "../i18n.js";
@@ -30,6 +30,27 @@ function PasswordInput({ value, onChange, autoComplete, label, hint }) {
       </span>
       {hint && <span className="mt-1 block text-body-sm text-on-surface-variant">{hint}</span>}
     </label>
+  );
+}
+
+function ViaSwitch({ via, onChange }) {
+  const options = [["email", Mail, t("Почта")], ["phone", Phone, t("Телефон")]];
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface-container-low p-1 ring-1 ring-inset ring-outline-variant" role="radiogroup" aria-label={t("Бо чӣ ворид мешавед?")}>
+      {options.map(([key, Icon, label]) => (
+        <button
+          key={key}
+          type="button"
+          role="radio"
+          aria-checked={via === key}
+          onClick={() => onChange(key)}
+          className={`flex min-h-[38px] items-center justify-center gap-2 rounded-xl text-label-lg transition-colors ${via === key ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}
+        >
+          <Icon className="h-4 w-4" aria-hidden />
+          {label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -126,7 +147,9 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState("login");
+  const [via, setVia] = useState("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [code, setCode] = useState("");
@@ -176,6 +199,7 @@ export default function Login() {
   };
 
   const signIn = run(async () => {
+    if (via === "phone") return enter(await api("/auth/phone/login/", { method: "POST", body: { phone, password } }));
     try {
       enter(await api("/auth/login/", { method: "POST", body: { email, password } }));
     } catch (err) {
@@ -185,6 +209,7 @@ export default function Login() {
   });
 
   const register = run(async () => {
+    if (via === "phone") return enter(await api("/auth/phone/register/", { method: "POST", body: { phone, password, full_name: fullName.trim() } }));
     await api("/auth/register/", { method: "POST", body: { email, password, full_name: fullName.trim() } });
     codeSent("verify");
   });
@@ -226,7 +251,17 @@ export default function Login() {
       <input className="input" type="email" required autoFocus autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ali@gmail.com" />
     </label>
   );
-  const linkButton = "min-h-[44px] text-label-md text-primary hover:underline disabled:text-outline disabled:no-underline";
+  const phoneInput = (
+    <label className="block">
+      <span className="label">{t("Рақами телефон")}</span>
+      <input className="input" type="tel" inputMode="tel" required autoFocus autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 123-45-67" />
+    </label>
+  );
+  const switchVia = (next) => {
+    setVia(next);
+    setError(null);
+  };
+  const linkButton = "min-h-[44px] sm:min-h-[32px] text-label-md text-primary hover:underline disabled:text-outline disabled:no-underline";
 
   return (
     <div className="relative isolate grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
@@ -257,13 +292,13 @@ export default function Login() {
         </div>
         <p className="flex items-center gap-2 self-start rounded-full bg-white/50 px-3 py-1.5 text-body-sm text-navy/80 ring-1 ring-white/70 backdrop-blur dark:bg-white/5 dark:text-[#c9d6f2] dark:ring-white/10">
           <Emblem className="h-3 w-[18px]" />
-          {t("Бепул. Почтаи шумо бо рамз тасдиқ карда мешавад.")}
+          {t("Бепул. Бо почта ё рақами телефон ворид шавед.")}
         </p>
       </aside>
 
-      <div className="relative z-10 flex flex-col justify-center px-4 pb-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-10">
+      <div className="relative z-10 flex flex-col justify-center px-4 pb-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-10">
         <div className="mx-auto w-full max-w-[540px]">
-          <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-label-md text-navy/80 hover:text-navy dark:text-[#c9d6f2] dark:hover:text-white">
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("Ба саҳифаи асосӣ")}
@@ -277,21 +312,22 @@ export default function Login() {
             <img src="/logo.png" alt="" className="h-10 w-10 shrink-0" />
             <span className="text-[18px] font-semibold tracking-tight text-navy dark:text-white">Muhojir</span>
           </Link>
-          <div className="relative rounded-3xl bg-white/75 p-6 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-8 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
+          <div className="relative rounded-3xl bg-white/75 p-5 shadow-[0_30px_80px_-30px_rgba(30,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-6 dark:bg-[#0b1533]/70 dark:shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)] dark:ring-white/10">
             {season() === "autumn" && <CardLeaves />}
-          <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
+          <div className="absolute right-5 top-5 sm:right-6 sm:top-6">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#5b8def] text-white shadow-lg shadow-primary/30">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
           </div>
 
           {mode === "login" && (
-            <form onSubmit={signIn} className="space-y-4">
+            <form onSubmit={signIn} className="space-y-3">
               <div className="pr-14">
-                <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Ворид шудан")}</h2>
-                <p className="mt-1 text-body-md text-on-surface-variant">{t("Почтаи электронӣ ва пароли худро нависед.")}</p>
+                <h2 className="text-[24px] font-semibold leading-tight tracking-tight">{t("Ворид шудан")}</h2>
+                <p className="mt-1 text-body-md text-on-surface-variant">{via === "phone" ? t("Рақами телефон ва пароли худро нависед.") : t("Почтаи электронӣ ва пароли худро нависед.")}</p>
               </div>
-              {emailInput}
+              <ViaSwitch via={via} onChange={switchVia} />
+              {via === "phone" ? phoneInput : emailInput}
               <PasswordInput label={t("Парол")} value={password} onChange={setPassword} autoComplete="current-password" />
               <ErrorBox error={error} />
               <Button type="submit" loading={busy} className="w-full">{t("Ворид шудан")}</Button>
@@ -304,35 +340,38 @@ export default function Login() {
           )}
 
           {mode === "register" && (
-            <form onSubmit={register} className="space-y-4">
+            <form onSubmit={register} className="space-y-3">
               <div className="pr-14">
-                <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Сабти ном")}</h2>
-                <p className="mt-1 text-body-md text-on-surface-variant">{t("Парол созед. Баъд ба почтаи шумо рамзи 6-рақама меояд, то онро тасдиқ кунед.")}</p>
+                <h2 className="text-[24px] font-semibold leading-tight tracking-tight">{t("Сабти ном")}</h2>
+                <p className="mt-1 text-body-md text-on-surface-variant">{via === "phone" ? t("Рақами телефон ва парол созед — ҳамин бас.") : t("Ба почтаи шумо рамзи 6-рақама барои тасдиқ меояд.")}</p>
               </div>
-              <label className="block">
-                <span className="label">{t("Ному насаб")}</span>
-                <input className="input" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("Масалан: Алӣ Каримов")} />
-              </label>
-              {emailInput}
-              <PasswordInput label={t("Парол созед")} value={password} onChange={setPassword} autoComplete="new-password" hint={t("Ҳадди ақал 8 аломат: ҳарфҳо ва рақамҳо. Танҳо рақам ё пароли осон қабул намешавад.")} />
+              <ViaSwitch via={via} onChange={switchVia} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="label">{t("Ному насаб")}</span>
+                  <input className="input" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("Масалан: Алӣ Каримов")} />
+                </label>
+                {via === "phone" ? phoneInput : emailInput}
+              </div>
+              <PasswordInput label={t("Парол созед")} value={password} onChange={setPassword} autoComplete="new-password" hint={t("Ҳадди ақал 8 аломат: ҳарфҳо ва рақамҳо.")} />
               <ErrorBox error={error} />
-              <Button type="submit" loading={busy} className="w-full">{t("Сабти ном ва гирифтани рамз")}</Button>
+              <Button type="submit" loading={busy} className="w-full">{via === "phone" ? t("Сабти ном") : t("Сабти ном ва гирифтани рамз")}</Button>
               <button type="button" onClick={() => go("login")} className={linkButton}>{t("Ҳисоб доред? Ворид шавед")}</button>
               <SocialLogin onGoogle={google} />
             </form>
           )}
 
           {(mode === "verify" || mode === "reset") && (
-            <form onSubmit={mode === "verify" ? verify : reset} className="space-y-4">
+            <form onSubmit={mode === "verify" ? verify : reset} className="space-y-3">
               <div className="pr-14">
-                <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{mode === "verify" ? t("Почтаро тасдиқ кунед") : t("Пароли нав")}</h2>
+                <h2 className="text-[24px] font-semibold leading-tight tracking-tight">{mode === "verify" ? t("Почтаро тасдиқ кунед") : t("Пароли нав")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">
                   {t("Рамзро ба {0} фиристодем. Агар набошад, папкаи «Спам»-ро бинед.", email)}
                 </p>
               </div>
               <CodeBoxes value={code} onChange={setCode} disabled={busy} />
               {mode === "reset" && (
-                <PasswordInput label={t("Пароли нав")} value={password} onChange={setPassword} autoComplete="new-password" hint={t("Ҳадди ақал 8 аломат: ҳарфҳо ва рақамҳо. Танҳо рақам ё пароли осон қабул намешавад.")} />
+                <PasswordInput label={t("Пароли нав")} value={password} onChange={setPassword} autoComplete="new-password" hint={t("Ҳадди ақал 8 аломат: ҳарфҳо ва рақамҳо.")} />
               )}
               <ErrorBox error={error} />
               {note && <p role="status" className="rounded-2xl bg-tertiary-fixed p-3 text-label-md text-on-tertiary-fixed">{note}</p>}
@@ -340,7 +379,7 @@ export default function Login() {
                 {mode === "verify" ? t("Тасдиқ кардан") : t("Паролро иваз кардан")}
               </Button>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <button type="button" onClick={() => go(mode === "verify" ? "register" : "forgot")} className="min-h-[44px] text-label-md text-on-surface-variant hover:text-primary">
+                <button type="button" onClick={() => go(mode === "verify" ? "register" : "forgot")} className="min-h-[44px] sm:min-h-[32px] text-label-md text-on-surface-variant hover:text-primary">
                   {t("Email-ро иваз кардан")}
                 </button>
                 <button type="button" onClick={mode === "verify" ? resend : forgot} disabled={wait > 0 || busy} className={linkButton}>
@@ -351,9 +390,9 @@ export default function Login() {
           )}
 
           {mode === "forgot" && (
-            <form onSubmit={forgot} className="space-y-4">
+            <form onSubmit={forgot} className="space-y-3">
               <div className="pr-14">
-                <h2 className="text-[26px] font-semibold leading-tight tracking-tight">{t("Барқарор кардани парол")}</h2>
+                <h2 className="text-[24px] font-semibold leading-tight tracking-tight">{t("Барқарор кардани парол")}</h2>
                 <p className="mt-1 text-body-md text-on-surface-variant">{t("Почтаи худро нависед. Мо рамз мефиристем ва шумо пароли нав мегузоред.")}</p>
               </div>
               {emailInput}
@@ -361,6 +400,7 @@ export default function Login() {
               <Button type="submit" loading={busy} disabled={wait > 0} className="w-full">
                 {wait > 0 ? t("Баъд аз {0} сония", wait) : t("Рамз гирифтан")}
               </Button>
+              <p className="text-body-sm text-on-surface-variant">{t("Бо рақами телефон сабти ном кардед? Паролро танҳо маъмури сайт иваз карда метавонад — ба мо нависед.")}</p>
               <button type="button" onClick={() => go("login")} className={linkButton}>{t("Бозгашт ба воридшавӣ")}</button>
             </form>
           )}

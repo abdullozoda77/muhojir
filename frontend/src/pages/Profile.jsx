@@ -12,6 +12,7 @@ import { useApi } from "../hooks.js";
 import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
 import { BrandBadge, Button, ErrorBox, Field } from "../components/ui.jsx";
+import TelegramConnect from "../components/TelegramConnect.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
 import { ago, date, rub } from "../format.js";
@@ -22,6 +23,11 @@ function maskEmail(email) {
   const [name, domain] = email.split("@");
   if (name.length <= 4) return `${name[0]}•••@${domain}`;
   return `${name.slice(0, 2)}${"•".repeat(Math.min(name.length - 4, 8))}${name.slice(-2)}@${domain}`;
+}
+
+function maskPhone(phone) {
+  if (!phone) return "";
+  return `${phone.slice(0, 4)}${"•".repeat(Math.max(phone.length - 6, 3))}${phone.slice(-2)}`;
 }
 
 function Avatar({ name, photo, size = "h-20 w-20 text-[30px] lg:h-28 lg:w-28 lg:text-[42px]" }) {
@@ -256,11 +262,6 @@ export default function Profile() {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setErrors({});
-    setError(null);
   const chooseLang = (next) => {
     if (next === lang) return;
     setLang(next);
@@ -268,6 +269,11 @@ export default function Profile() {
     api("/auth/profile/", { method: "PATCH", body: { language: next } }).catch(() => null);
   };
 
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErrors({});
+    setError(null);
     try {
       const data = await api("/auth/profile/", { method: "PATCH", body: { ...form, language: lang, phone: form.phone.trim() || null } });
       setUser(data);
@@ -299,8 +305,8 @@ export default function Profile() {
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight md:text-[30px] lg:text-[38px]">{name || t("Номи худро нависед")}</h1>
             <div className="mt-1.5 flex min-w-0 items-center gap-2 text-body-md text-white/85">
-              <Mail className="h-4 w-4 shrink-0" aria-hidden />
-              <span className="truncate">{showEmail ? user.email : maskEmail(user.email)}</span>
+              {user.email ? <Mail className="h-4 w-4 shrink-0" aria-hidden /> : <Phone className="h-4 w-4 shrink-0" aria-hidden />}
+              <span className="truncate">{user.email ? (showEmail ? user.email : maskEmail(user.email)) : (showEmail ? user.phone : maskPhone(user.phone))}</span>
               <button type="button" onClick={() => setShowEmail((v) => !v)} aria-label={showEmail ? t("Почтаро пинҳон кардан") : t("Почтаро нишон додан")} className="-m-2 rounded-full p-2 text-white/80 hover:bg-white/10 hover:text-white">
                 {showEmail ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
               </button>
@@ -343,7 +349,7 @@ export default function Profile() {
             <IconInput icon={UserRound} value={form.full_name} onChange={(e) => set("full_name", e.target.value)} autoComplete="name" placeholder={t("Масалан: Алӣ Каримов")} />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label={t("Телефон (ихтиёрӣ)")} error={errors.phone} hint={t("Ба касе нишон дода намешавад")}>
+            <Field label={user.email ? t("Телефон (ихтиёрӣ)") : t("Телефон (барои воридшавӣ)")} error={errors.phone} hint={t("Ба касе нишон дода намешавад")}>
               <IconInput icon={Phone} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+7 999 123-45-67" autoComplete="tel" />
             </Field>
             <Field label={t("Шаҳр дар Русия")} error={errors.city}>
@@ -371,7 +377,8 @@ export default function Profile() {
               options={[{ value: "light", label: t("Равшан"), icon: Sun }, { value: "dark", label: t("Торик"), icon: Moon }]}
             />
           </div>
-          <Toggle checked={form.email_reminders} onChange={(v) => set("email_reminders", v)} title={t("Ёдраскунӣ ба почтаи электронӣ")} text={t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")} />
+          {user.email && <Toggle checked={form.email_reminders} onChange={(v) => set("email_reminders", v)} title={t("Ёдраскунӣ ба почтаи электронӣ")} text={t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")} />}
+          <TelegramConnect />
         </Section>
 
         <div className="flex flex-col gap-4 lg:col-span-2">

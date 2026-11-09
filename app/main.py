@@ -9,7 +9,9 @@ from app.admin import setup_admin
 from app.core.config import MEDIA_ROOT, settings
 from app.core.i18n import LanguageMiddleware
 from app.core.errors import ApiError, api_error_handler, http_error_handler, validation_error_handler
-from app.routers import assistant, auth, course, documents, feedback, flights, housing, jobs, market, places, rates, support, ws
+from app.routers import (
+    assistant, auth, course, documents, feedback, flights, housing, jobs, market, places, rates, support, telegram, ws,
+)
 from app.services.live import hub
 from app.services import course as course_content
 from app.core.security import warm_up
@@ -45,7 +47,8 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_error_handler)
 
-for module in (auth, documents, jobs, housing, flights, places, market, rates, course, support, feedback, assistant, ws):
+for module in (auth, documents, jobs, housing, flights, places, market, rates, course, support, feedback, assistant, telegram,
+               ws):
     app.include_router(module.router)
 
 MEDIA_ROOT.mkdir(exist_ok=True)

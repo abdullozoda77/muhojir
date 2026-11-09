@@ -16,7 +16,8 @@ from app.core.throttle import throttle
 from app.db.types import utcnow
 from app.models import EmailCode, Notification, RevokedToken, User
 from app.schemas.accounts import (
-    CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, ProfileIn, RefreshIn, RegisterIn, ResetPasswordIn, user_json,
+    CodeIn, EmailIn, GoogleIn, LoginIn, NotificationIn, PhoneIn, PhoneRegisterIn, ProfileIn, RefreshIn, RegisterIn,
+    ResetPasswordIn, user_json,
 )
 from app.services.emails import send_code
 from app.services.google import verify_google_token
@@ -142,6 +143,28 @@ async def login(data: LoginIn, db: DB):
     return logged_in(user)
 
 
+@router.post("/phone/register/", status_code=201, dependencies=[Depends(throttle("login_code"))])
+async def phone_register(data: PhoneRegisterIn, db: DB):
+    if await db.scalar(select(User.id).where(User.phone == data.phone)):
+        raise FieldError("phone", "This phone number is already registered. Log in.")
+    await check_password_rules(data.password, data.phone)
+    user = User(phone=data.phone, password_hash=await hash_password(data.password), full_name=data.full_name)
+    db.add(user)
+    await db.commit()
+    await welcome(db, user)
+    return logged_in(user, 201)
+
+
+@router.post("/phone/login/", dependencies=[Depends(throttle("login"))])
+async def phone_login(data: PhoneIn, db: DB):
+    user = await db.scalar(select(User).where(User.phone == data.phone))
+    if user is None or not user.password_hash or not await verify_password(data.password, user.password_hash):
+        raise ApiError("Wrong phone number or password.")
+    if not user.is_active:
+        raise ApiError(BLOCKED, 403)
+    return logged_in(user)
+
+
 @router.get("/google/")
 async def google_settings():
     return {"client_id": settings.google_client_id}
@@ -241,6 +264,8 @@ async def my_activity(user: CurrentUser, db: DB):
 @router.patch("/profile/")
 async def update_profile(data: ProfileIn, user: CurrentUser, db: DB):
     changes = data.model_dump(exclude_unset=True)
+    if "phone" in changes and not changes["phone"] and not user.email:
+        raise FieldError("phone", "You log in with this phone number, so it cannot be removed.")
     if "phone" in changes and changes["phone"]:
         taken = await db.scalar(select(User.id).where(User.phone == changes["phone"], User.id != user.id))
         if taken:

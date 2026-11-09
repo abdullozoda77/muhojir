@@ -92,7 +92,7 @@ class UserAdmin(DeletesPrivateFiles, Base, model=User):
         if data.get("email"):
             data["email"] = data["email"].strip().lower()
         if password:
-            problems = await password_problems(password, data.get("email") or model.email or "")
+            problems = await password_problems(password, data.get("email") or model.email or model.phone or "")
             if problems:
                 raise ValueError(" ".join(problems))
             model.password_hash = await hash_password(password)
@@ -111,12 +111,14 @@ class NotificationAdmin(Base, model=Notification):
             from app.db.session import SessionLocal
             from app.services.emails import queue_email
             from app.services.live import push_new
+            from app.services.telegram import send_to_user
 
             async with SessionLocal() as db:
                 notification = await db.get(Notification, model.id)
                 user = await db.get(User, notification.user_id)
                 await push_new(db, notification)
-            if user.email_reminders:
+                await send_to_user(db, user, model.title, model.message)
+            if user.email_reminders and user.email:
                 try:
                     await queue_email(f"Muhojir — {model.title}", model.message, user.email)
                 except OSError:

@@ -9,6 +9,7 @@ from app.core.security import hash_password, password_problems
 from app.db.copy_sqlite import copy_sqlite_to_postgres
 from app.db.session import SessionLocal
 from app.models import Job, Place, User
+from app.services import telegram
 from app.tasks import (
     run_check_flight_watches, run_import_housing, run_import_jobs, run_import_places, run_send_reminders, run_update_rates,
 )
@@ -36,6 +37,15 @@ async def has_places():
         return await db.scalar(select(Place.id).where(Place.source == "osm").limit(1)) is not None
 
 
+async def telegram_webhook(base_url):
+    if not telegram.configured():
+        print("TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_NAME are not in .env: skipped.")
+        return False
+    result = await telegram.set_webhook(base_url)
+    print("Telegram webhook is set." if result.get("ok") else f"Telegram webhook failed: {result.get('description')}")
+    return bool(result.get("ok"))
+
+
 def main():
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -55,6 +65,8 @@ def main():
     housing.add_argument("--channel", action="append")
     housing.add_argument("--pages", type=int, default=4)
     housing.add_argument("--no-photos", action="store_true")
+    hook = commands.add_parser("telegram-webhook")
+    hook.add_argument("--url", default=None)
     copy = commands.add_parser("copy-from-sqlite")
     copy.add_argument("path")
     args = parser.parse_args()
@@ -86,6 +98,10 @@ def main():
         asyncio.run(run_import_housing(channels=args.channel, pages=args.pages, with_photos=not args.no_photos))
     elif args.command == "copy-from-sqlite":
         asyncio.run(copy_sqlite_to_postgres(args.path))
+    elif args.command == "telegram-webhook":
+        from app.core.config import settings
+
+        sys.exit(0 if asyncio.run(telegram_webhook(args.url or settings.site_url)) else 1)
     elif args.command == "has-places":
         sys.exit(0 if asyncio.run(has_places()) else 1)
     elif args.command == "has-jobs":

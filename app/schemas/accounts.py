@@ -16,6 +16,20 @@ class RegisterIn(Form):
     full_name: str = Field("", max_length=150)
 
 
+class PhoneIn(Form):
+    phone: str
+    password: str = Field(max_length=128)
+
+    @field_validator("phone")
+    @classmethod
+    def phone_format(cls, value):
+        return normalize_phone(value)
+
+
+class PhoneRegisterIn(PhoneIn):
+    full_name: str = Field("", max_length=150)
+
+
 class LoginIn(Form):
     email: Email
     password: str

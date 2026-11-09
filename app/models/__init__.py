@@ -13,6 +13,7 @@ from app.models.market import (
 from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.support import HelpContact
+from app.models.telegram import TelegramLink
 from app.models.travel import AIRLINES, Airport, FlightWatch
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "ExamQuestion", "law_news_document_types",
     "INDUSTRIES", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
     "HelpContact",
+    "TelegramLink",
     "AIRLINES", "Airport", "FlightWatch",
     "PLACE_CATEGORIES", "Place", "PlaceReview",
     "SHOP_CATEGORIES", "SHOP_STATUSES", "PRODUCT_UNITS", "PROOF_KINDS", "REQUIRED_PROOFS",

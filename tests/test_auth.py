@@ -36,6 +36,35 @@ async def test_signup_login_and_tokens(client, outbox):
     assert r.status_code == 400
 
 
+async def test_phone_signup_and_login(client, user):
+    r = await client.post("/api/auth/phone/register/", json={"phone": "8 (999) 123-45-67", "password": "12345678"})
+    assert r.status_code == 400 and "password" in r.json()
+    r = await client.post("/api/auth/phone/register/", json={"phone": "12", "password": PASSWORD})
+    assert r.status_code == 400 and "phone" in r.json()
+    r = await client.post("/api/auth/phone/register/", json={"phone": "8 (999) 123-45-67", "password": PASSWORD, "full_name": "Фарход"})
+    assert r.status_code == 201
+    me = r.json()["user"]
+    assert me["phone"] == "+79991234567" and me["email"] is None and me["full_name"] == "Фарход" and r.json()["access"]
+    r = await client.post("/api/auth/phone/register/", json={"phone": "+7 999 123 45 67", "password": PASSWORD})
+    assert r.status_code == 400 and "phone" in r.json()
+
+    r = await client.post("/api/auth/phone/login/", json={"phone": "+79991234567", "password": "wrong-password"})
+    assert r.status_code == 400 and r.json() == {"detail": "Wrong phone number or password."}
+    r = await client.post("/api/auth/phone/login/", json={"phone": "89991234567", "password": PASSWORD})
+    assert r.status_code == 200 and r.json()["user"]["id"] == me["id"]
+    headers = {"Authorization": f"Bearer {r.json()['access']}"}
+    r = await client.patch("/api/auth/profile/", headers=headers, json={"phone": ""})
+    assert r.status_code == 400 and "phone" in r.json()
+    r = await client.get("/api/auth/profile/", headers=headers)
+    assert r.status_code == 200 and r.json()["phone"] == "+79991234567"
+
+    email_headers, _ = user
+    r = await client.patch("/api/auth/profile/", headers=email_headers, json={"phone": "+992 900 11 22 33"})
+    assert r.status_code == 200 and r.json()["phone"] == "+992900112233"
+    r = await client.patch("/api/auth/profile/", headers=email_headers, json={"phone": ""})
+    assert r.status_code == 200 and r.json()["phone"] is None
+
+
 async def test_password_rules_and_code_format(client):
     r = await client.post("/api/auth/register/", json={"email": "rules@example.com", "password": "12345678"})
     assert r.status_code == 400

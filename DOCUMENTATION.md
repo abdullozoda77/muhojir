@@ -110,13 +110,14 @@ A generic, single database configuration.
 
 ### `app/cli.py`
 
-**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos] housing listings from Telegram channels now python -m app.cli copy-from-sqlite db.sqlite3 copies every row from a SQLite file into the PostgreSQL of DATABASE_URL (used by deploy/setup.sh)
+**What it is for:** Commands: python -m app.cli createsuperuser an admin account for /admin/ (asks for email and password) python -m app.cli import-jobs [--limit 20] real vacancies from «Работа России» now python -m app.cli send-reminders today's document reminders now python -m app.cli import-places [--region Москва] [--category mosque] real places from OpenStreetMap python -m app.cli check-flights ticket price alerts now python -m app.cli has-jobs exit code 0 if there are vacancies (used by deploy/setup.sh) python -m app.cli update-rates the official rouble to somoni rate now python -m app.cli import-housing [--channel name] [--pages 4] [--no-photos] housing listings from Telegram channels now python -m app.cli copy-from-sqlite db.sqlite3 copies every row from a SQLite file into the PostgreSQL of DATABASE_URL (used by deploy/setup.sh) python -m app.cli telegram-webhook [--url https://king.tj] tells Telegram where to send the bot's messages (setup.sh runs it on every deploy when a domain is set).
 
 | Name | Kind | What it does |
 |---|---|---|
 | `create_superuser(email, password)` | async function | — |
 | `has_jobs()` | async function | — |
 | `has_places()` | async function | — |
+| `telegram_webhook(base_url)` | async function | Sets the webhook, or says the bot is not in .env. |
 | `main()` | function | — |
 
 ### `app/main.py`
@@ -182,7 +183,7 @@ A generic, single database configuration.
 
 ### `app/core/config.py`
 
-**What it is for:** All settings come from .env (or the environment). Without a .env everything works on a laptop: SQLite database, emails printed in the console, tasks run at once, live notifications inside one process. GOOGLE_CLIENT_ID (OAuth client ID of type "Web application") turns on sign in with Google; while it is empty the button is hidden.
+**What it is for:** All settings come from .env (or the environment). Without a .env everything works on a laptop: SQLite database, emails printed in the console, tasks run at once, live notifications inside one process. GOOGLE_CLIENT_ID (OAuth client ID of type "Web application") turns on sign in with Google; while it is empty the button is hidden. TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_NAME (the bot's username without @) turn on Telegram reminders; SITE_URL (default https://king.tj) is the link in Telegram messages and the webhook address.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -456,6 +457,15 @@ A generic, single database configuration.
 | `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
 | `title_ru`, `description_ru` | — | help_contacts also has title_ru and description_ru (Russian text for a Russian site; empty = the Tajik one). |
 
+
+### `app/models/telegram.py`
+
+**What it is for:** The Telegram chat of a user who connected the bot; reminders and notifications are also sent there.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `TelegramLink` | class · table `telegram_links` | user (one link per user), chat_id (one per chat), username, enabled (the user can pause messages), linked_at. |
+
 ### `app/models/travel.py`
 
 **What it is for:** Database tables of air tickets: airports (TJ and RU) and price alerts (flight watches).
@@ -478,6 +488,7 @@ A generic, single database configuration.
 |---|---|---|
 | `EmailIn` | class | — |
 | `RegisterIn` | class | — |
+| `PhoneIn` / `PhoneRegisterIn` | class | Phone login / sign-up: phone (normalized with normalize_phone), password, and full_name for sign-up. |
 | `LoginIn` | class | — |
 | `CodeIn` | class | — |
 | &nbsp;&nbsp;↳ `six_digits(value)` | method | — |
@@ -602,7 +613,7 @@ A generic, single database configuration.
 
 ### `app/routers/auth.py`
 
-**What it is for:** Sign-up and login with an email and a password: 1. POST /api/auth/register/ {email, password, full_name} -> account made, a 6-digit code goes to the email 2. POST /api/auth/verify-email/ {email, code} -> email confirmed, JWT tokens given 3. POST /api/auth/login/ {email, password} -> JWT tokens (only once the email is confirmed) Forgot the password: POST password/forgot/ {email} sends a code, POST password/reset/ {email, code, password}. resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/, profile/, notifications/. Sign in with Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT tokens.
+**What it is for:** Sign-up and login with an email and a password: 1. POST /api/auth/register/ {email, password, full_name} -> account made, a 6-digit code goes to the email 2. POST /api/auth/verify-email/ {email, code} -> email confirmed, JWT tokens given 3. POST /api/auth/login/ {email, password} -> JWT tokens (only once the email is confirmed) Forgot the password: POST password/forgot/ {email} sends a code, POST password/reset/ {email, code, password}. resend-code/ {email} sends the sign-up code again. Then: token/refresh/, logout/, profile/, notifications/. Sign in with Google: GET google/ -> {client_id}, POST google/ {credential} -> JWT tokens. Phone accounts: POST phone/register/ and phone/login/ (phone + password, no code; the email of such an account is empty, and its password can be reset only by an admin). The phone of an account without email cannot be removed in profile/.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -616,6 +627,8 @@ A generic, single database configuration.
 | `verify_email(data, db)` | async function · `POST /api/auth/verify-email/` | Step 2 of sign-up: the code from the email. Confirms the email and logs in. A new account gets the welcome notification. |
 | `resend_code(data, db)` | async function · `POST /api/auth/resend-code/` | Sends the sign-up code again (only to accounts that are not confirmed yet). |
 | `login(data, db)` | async function · `POST /api/auth/login/` | Email + password. An account whose email is not confirmed yet gets a new code instead of tokens. |
+| `phone_register(data, db)` | async function · `POST /api/auth/phone/register/` | Sign-up with a phone number and a password, no code: {phone, password, full_name}. The number is normalized (+7…, 8… -> +7…, +992…); a number that already has an account is refused. Logs in at once. |
+| `phone_login(data, db)` | async function · `POST /api/auth/phone/login/` | Phone + password. Also works for an email account that added this phone in the profile. |
 | `social_login(db, email, full_name)` | async function | Logs in the account with this email or makes a new one without a password (201). An account whose email was never confirmed loses its old password, because whoever set it did not own the address. Blocked = 403. A new account gets the welcome notification. |
 | `google_settings()` | async function · `GET /api/auth/google/` | The client ID for Google's button; an empty string means sign in with Google is off. |
 | `google_login(data, db)` | async function · `POST /api/auth/google/` | Sign in with Google: checks the ID token, then social_login. No GOOGLE_CLIENT_ID = 503, bad token = 400. |
@@ -891,6 +904,19 @@ A generic, single database configuration.
 | `contacts_query(request, user)` | function | — |
 | `check_contact(db, contact, data)` | async function | — |
 
+
+### `app/routers/telegram.py`
+
+**What it is for:** /api/telegram/: connect a Telegram chat for reminders. GET / -> {configured, bot, connected, username, enabled}; POST link/ -> {url} (t.me/BOT?start=CODE, 503 if the bot is not set up); PATCH / {enabled}; DELETE / disconnects; POST webhook/{secret}/ is called by Telegram itself (secret in the path and in the X-Telegram-Bot-Api-Secret-Token header, otherwise 404).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `telegram_status` | async function · `GET /api/telegram/` | The user's Telegram state. |
+| `telegram_link` | async function · `POST /api/telegram/link/` | A personal link to the bot with a signed code valid 24 hours. |
+| `telegram_update` | async function · `PATCH /api/telegram/` | Turns Telegram messages on or off. |
+| `telegram_disconnect` | async function · `DELETE /api/telegram/` | Removes the link and tells the chat. |
+| `telegram_webhook` | async function · `POST /api/telegram/webhook/{secret}/` | Receives the bot's messages from Telegram. |
+
 ### `app/routers/ws.py`
 
 **What it is for:** Live notifications. Browsers can not send an Authorization header with a WebSocket, so the page passes its access token in the address: /ws/notifications/?token=<access token>. Without a valid token the connection is closed with code 4401, which the page understands as "get a fresh token and connect again".
@@ -1036,7 +1062,7 @@ A generic, single database configuration.
 
 ### `app/services/notify.py`
 
-**What it is for:** One place that tells a user something: a notification in the app (live in open tabs), plus an email when they allow it.
+**What it is for:** One place that tells a user something: a notification in the app (live in open tabs), plus an email when they allow it. Also sends it to the user's Telegram when it is connected and enabled (app/services/telegram.py).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1107,6 +1133,25 @@ A generic, single database configuration.
 | `SECTIONS` | const | Sections of the site with the model and the owner column used for «Your activity». |
 | `moment_of(model)` | function | Which date column counts as the action time. |
 | `activity(db, user)` | async function | Days with Muhojir, totals per section, sum of payments, streaks, 26-week calendar and the last 8 actions with links. |
+
+
+### `app/services/telegram.py`
+
+**What it is for:** The Telegram bot (TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_NAME in .env). A bot cannot write to a phone number: the user opens the personal link from the profile and presses Start once; then the chat is linked to the account. The bot also offers a «send my number» button: the shared contact must be the sender's own, and it is saved as the account phone if the account has none and nobody else uses it. A chat that blocked the bot is unlinked on the next message.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `configured()` | function | True when the token and the bot name are in .env. |
+| `webhook_secret()` | function | A secret derived from the token, used in the webhook path and header. |
+| `link_code(user_id)` / `read_code(code)` | function | A short code «id-time-signature» (HMAC with SECRET_KEY, ≤ 64 characters, 24 hours) and its check. |
+| `link_url(user_id)` | function | https://t.me/BOT?start=CODE. |
+| `call(method, **payload)` / `send(chat_id, text)` | async function | A Bot API request; errors are logged, never raised. |
+| `link_of(db, user)` | async function | The user's TelegramLink or None. |
+| `send_to_user(db, user, title, message)` | async function | Sends a notification (bold title, text, site link) if the user has an enabled link; called by notify() and by the admin panel. |
+| `connect(db, user_id, chat)` | async function | Links the chat after /start CODE and asks for the phone number. |
+| `save_contact(db, chat_id, sender_id, contact)` | async function | Checks and saves the shared phone number. |
+| `handle_update(db, update)` | async function | /start CODE, /start, /stop, a shared contact; other text gets the help message. Only private chats. |
+| `set_webhook(base_url)` | async function | Tells Telegram to send updates to {base_url}/api/telegram/webhook/{secret}/. |
 
 ### `app/services/trudvsem.py`
 
@@ -1423,6 +1468,7 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+
 ### `alembic/versions/0017_content_ru.py`
 
 **What it is for:** Russian columns (`*_ru`) for the site's content and their Russian text from app/seed/content_ru.json: document types, guide steps, law news, help sites, migration centers and the explanations of the 100 exam questions. A row gets the translation only if its Tajik text is still the same as in the seed, so content changed by editors is not overwritten. Revision ID: 0017 Revises: 0016
@@ -1431,6 +1477,25 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade()` | function | Adds the columns (empty by default) and fills the Russian text. |
 | `downgrade()` | function | Drops the columns. |
+
+### `alembic/versions/0018_phone_login.py`
+
+**What it is for:** users.email may be empty (accounts made with a phone number). Revision ID: 0018 Revises: 0017
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Makes the column nullable. |
+| `downgrade()` | function | Deletes accounts without email and makes the column required again. |
+
+
+### `alembic/versions/0019_telegram.py`
+
+**What it is for:** Table telegram_links. Revision ID: 0019 Revises: 0018
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
 
 ### `tests/conftest.py`
 
@@ -1572,6 +1637,11 @@ A generic, single database configuration.
 | `test_weekly_counts_and_running_total()` | function | — |
 | `test_course_stats(client, user)` | async function | Empty stats, then two lessons: average, 100% count, streak, calendar. |
 | `test_activity(client, user)` | async function | A lesson shows in totals, sections, streak and recent actions. |
+
+
+### `tests/test_telegram.py`
+
+**What it is for:** Tests of the Telegram bot with a fake Bot API: signed link codes, «not set up», connecting with /start, the secret webhook, notifications sent to Telegram (HTML escaped), turning off, the shared phone number, /stop, disconnecting from the site and a chat that blocked the bot.
 
 ### `tests/test_rates.py`
 
@@ -2144,6 +2214,15 @@ A generic, single database configuration.
 | `ShareBars` | export function | Horizontal bars: where the user is active. |
 | `StatCard` | export function | A card with a title, an icon and a small note on the right. |
 
+
+### `frontend/src/components/TelegramConnect.jsx`
+
+**What it is for:** The «Reminders in Telegram» card in the profile settings (hidden when the bot is not set up): «Connect Telegram» opens the personal bot link in a new tab and checks every 3 seconds (and when the tab is shown again) until the chat is linked; then a switch to pause messages and «Disconnect».
+
+| Name | Kind | What it does |
+|---|---|---|
+| `TelegramConnect` | export function | The card. |
+
 ### `frontend/src/components/SeasonFall.jsx`
 
 **What it is for:** The falling decoration of the current season.
@@ -2442,12 +2521,13 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Login.jsx`
 
-**What it is for:** /login — sign up, log in, confirm the email with a code, reset the password. Under the forms: SocialLogin (Google). The card is wide and compact, so the buttons are visible without scrolling.
+**What it is for:** /login — sign up, log in, confirm the email with a code, reset the password. Log in and sign up have an «Email | Phone» switch: with the phone there is no code, the account is made and logged in at once. On sign-up the name and the email/phone stand side by side, so every form fits on one 1366×650 screen. Under the forms: SocialLogin (Google). The card is wide and compact, so the buttons are visible without scrolling.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `PasswordInput` | function | A password box with a button to show what was typed (on a phone it is easy to mistype). |
 | `ICONS` | const | The screens of this page. "verify" and "reset" come after a code was emailed. |
+| `ViaSwitch` | function | The «Email | Phone» switch above the login and sign-up forms. |
 | `CodeBoxes` | function | — |
 | `SKIES` | const | The sky gradient of the login page for autumn, winter and the rest of the year (day and night). |
 | `SeasonScene` | function | The sky of the current season behind the login page with SeasonFall at full density. |
@@ -2538,6 +2618,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `maskPhone` | function | "+79991234567" -> "+799••••••67", shown in the profile header of a phone account (no email). |
 | `maskEmail` | function | "marufromin2007@gmail.com" -> "ma••••••07@gmail.com": the address stays recognisable but is not readable over a shoulder. |
 | `Avatar` | function | The avatar: the photo, or the first letter in a blue circle, inside a ring in the colors of the flag. |
 | `squarePhoto` | function | A photo from the phone is often 5–10 MB: cut the middle square and make it 512×512 WEBP (about 50 KB) here. |

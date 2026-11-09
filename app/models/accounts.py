@@ -15,7 +15,7 @@ class User(Base):
     LANGUAGES = ("tg", "ru")
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(254), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(254), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), default="")
     phone: Mapped[str | None] = mapped_column(String(16), unique=True)
     full_name: Mapped[str] = mapped_column(String(150), default="")
@@ -40,7 +40,7 @@ class User(Base):
         return self.is_active and (self.role == "editor" or self.is_admin)
 
     def __str__(self):
-        return self.full_name or self.email
+        return self.full_name or self.email or self.phone or f"#{self.id}"
 
 
 class EmailCode(Base):

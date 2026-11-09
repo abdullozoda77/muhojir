@@ -263,6 +263,9 @@ if ! as_user ".venv/bin/python -m app.cli has-places"; then
   as_user ".venv/bin/celery -A app.worker call app.worker.import_places" >/dev/null
   echo "Importing the places (map) in the background, about 20 minutes."
 fi
+if [ -n "$DOMAIN" ]; then
+  as_user ".venv/bin/python -m app.cli telegram-webhook --url https://$DOMAIN" || true
+fi
 
 step "Check"
 sleep 4

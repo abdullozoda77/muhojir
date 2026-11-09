@@ -5,6 +5,7 @@ from sqlalchemy import or_, select
 from app.models import Notification, User
 from app.services.emails import queue_email
 from app.services.live import push_new
+from app.services.telegram import send_to_user
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,10 @@ async def notify(db, user, title, message, kind="system"):
             await queue_email(f"Muhojir — {title}", message, user.email)
         except OSError:
             logger.exception("Email to %s failed", user.email)
+    try:
+        await send_to_user(db, user, title, message)
+    except Exception:
+        logger.exception("Telegram to user %s failed", user.id)
     return notification
 
 
