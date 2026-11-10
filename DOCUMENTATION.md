@@ -2094,7 +2094,7 @@ A generic, single database configuration.
 | `useSidebarOpen` | function | Whether the sidebar is open; the "Menu" button left of the logo (☰ icon and the word, highlighted with ✕ while the sidebar is open) toggles it; it is always closed when the site is opened. When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
 | `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
-| `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
+| `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35, on the home page 0.6) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 
 ### `frontend/src/components/Leaffall.jsx`
 
@@ -2106,7 +2106,7 @@ A generic, single database configuration.
 | `MAPLE` | const | Outline of the right half of a maple leaf (unit coordinates); the left half is its mirror. |
 | `maplePath` / `ovalPath` | function | Draw a maple leaf or a simple oval leaf. |
 | `makeLeaf(shape, colors, dark)` | function | One ready-made leaf picture (sprite) with a color gradient and veins; a little dimmer in the dark theme. |
-| `Leaffall` | export function | 14–42 leaves (by screen size) fall slowly, sway side to side, turn and flip like real leaves, and are carried by a soft changing wind; near leaves are bigger and brighter. With "reduce motion" the leaves stand still. density scales the number (the site background uses 0.35, the login page 1). A resize (e.g. the phone's address bar hiding while scrolling) keeps the leaves that are already falling. |
+| `Leaffall` | export function | 14–42 leaves (by screen size) fall slowly, sway side to side, turn and flip like real leaves, and are carried by a soft changing wind; near leaves are bigger and brighter. With "reduce motion" the leaves stand still. density scales the number (the site background uses 0.35, the home page 0.6, the login page 1). A resize (e.g. the phone's address bar hiding while scrolling) keeps the leaves that are already falling. |
 
 ### `frontend/src/components/LiveToast.jsx`
 

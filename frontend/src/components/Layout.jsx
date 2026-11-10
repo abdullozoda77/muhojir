@@ -287,7 +287,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen">
       <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-        <SeasonFall className="absolute inset-0" density={0.35} />
+        <SeasonFall className="absolute inset-0" density={pathname === "/" ? 0.6 : 0.35} />
       </div>
       <div className="fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-background" aria-hidden />
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
