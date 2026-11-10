@@ -87,16 +87,16 @@ export default function DocCard({ doc, slug, onEdit, onPay }) {
               {t("Пардохти патентро сабт кардан")}
             </button>
           )}
-          <button type="button" onClick={() => onEdit(doc)} className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+          <button type="button" onClick={() => onEdit(doc)} className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
             <Pencil className="h-4 w-4" aria-hidden />
-            {t("Таҳрир / нав кардан")}
+            {t("Тағйир додан")}
           </button>
-          <Link to={`/guides?type=${doc.document_type}`} className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl px-4 text-label-md text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low hover:text-on-surface">
+          <Link to={`/guides?type=${doc.document_type}`} className="inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-label-md text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low hover:text-on-surface">
             <BookOpen className="h-4 w-4" aria-hidden />
             {t("Роҳнамо")}
           </Link>
           {doc.has_photo && (
-            <button type="button" onClick={() => openPrivateFile(`/documents/my-documents/${doc.id}/photo/`).catch(() => {})} className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl px-4 text-label-md text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low hover:text-on-surface">
+            <button type="button" onClick={() => openPrivateFile(`/documents/my-documents/${doc.id}/photo/`).catch(() => {})} className="inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-label-md text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low hover:text-on-surface">
               <Camera className="h-4 w-4" aria-hidden />
               {t("Сурат")}
             </button>
