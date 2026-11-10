@@ -10,10 +10,11 @@ from app.db.types import UTCDateTime, utcnow
 class LessonProgress(Base):
 
     __tablename__ = "lesson_progress"
-    __table_args__ = (UniqueConstraint("user_id", "level", "number", name="one_progress_per_lesson"),)
+    __table_args__ = (UniqueConstraint("user_id", "course", "level", "number", name="one_progress_per_lesson"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    course: Mapped[str] = mapped_column(String(10), default="ru", server_default="ru")
     level: Mapped[int] = mapped_column(Integer)
     number: Mapped[int] = mapped_column(Integer)
     score: Mapped[int] = mapped_column(Integer, default=0)
@@ -28,9 +29,11 @@ class LessonProgress(Base):
 class CoursePlace(Base):
 
     __tablename__ = "course_places"
+    __table_args__ = (UniqueConstraint("user_id", "course", name="one_place_per_course"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    course: Mapped[str] = mapped_column(String(10), default="ru", server_default="ru")
     level: Mapped[int] = mapped_column(Integer)
     number: Mapped[int] = mapped_column(Integer)
     index: Mapped[int] = mapped_column(Integer, default=0)
@@ -38,7 +41,7 @@ class CoursePlace(Base):
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 
     def __str__(self):
-        return f"{self.user_id} · {self.level}.{self.number}"
+        return f"{self.user_id} · {self.course} {self.level}.{self.number}"
 
 
 class ExamAttempt(Base):
@@ -47,6 +50,7 @@ class ExamAttempt(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    course: Mapped[str] = mapped_column(String(10), default="ru", server_default="ru")
     level: Mapped[int] = mapped_column(Integer)
     full_name: Mapped[str] = mapped_column(String(150))
     questions: Mapped[list] = mapped_column(JSON)
@@ -60,18 +64,19 @@ class ExamAttempt(Base):
     user = relationship("User", lazy="joined")
 
     def __str__(self):
-        return f"{self.user_id} · {self.level}"
+        return f"{self.user_id} · {self.course} {self.level}"
 
 
 class Certificate(Base):
 
     __tablename__ = "certificates"
-    __table_args__ = (UniqueConstraint("user_id", "level", name="one_certificate_per_level"),)
+    __table_args__ = (UniqueConstraint("user_id", "course", "level", name="one_certificate_per_level"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     number: Mapped[str] = mapped_column(String(30), unique=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    course: Mapped[str] = mapped_column(String(10), default="ru", server_default="ru")
     attempt_id: Mapped[int | None] = mapped_column(ForeignKey("exam_attempts.id", ondelete="SET NULL"))
     level: Mapped[int] = mapped_column(Integer)
     full_name: Mapped[str] = mapped_column(String(150))

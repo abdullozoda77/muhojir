@@ -20,7 +20,7 @@ from anyio import to_thread
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     listener = asyncio.create_task(hub.listen()) if settings.redis_url else None
-    await to_thread.run_sync(course_content.levels)
+    await to_thread.run_sync(course_content.warm_up)
     await to_thread.run_sync(warm_up)
     yield
     if listener:
@@ -50,6 +50,7 @@ app.add_exception_handler(StarletteHTTPException, http_error_handler)
 for module in (auth, documents, jobs, housing, flights, places, market, rates, course, support, feedback, assistant, telegram,
                ws):
     app.include_router(module.router)
+app.include_router(course.drive_router)
 
 MEDIA_ROOT.mkdir(exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_ROOT), name="media")

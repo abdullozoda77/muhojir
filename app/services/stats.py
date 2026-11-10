@@ -12,6 +12,7 @@ from app.services import course
 MOSCOW = timezone(timedelta(hours=3))
 COURSE_DAYS = 84
 ACTIVITY_DAYS = 182
+COURSE_PAGES = {"ru": "/course", "drive": "/driving"}
 
 
 def local_day(moment):
@@ -68,10 +69,13 @@ def week_count(counter):
 
 
 async def course_stats(db, user):
-    lessons = (await db.scalars(select(LessonProgress).where(LessonProgress.user_id == user.id))).all()
+    lessons = (await db.scalars(select(LessonProgress).where(LessonProgress.user_id == user.id,
+                                                                LessonProgress.course == course.RU.key))).all()
     attempts = (await db.scalars(select(ExamAttempt).where(ExamAttempt.user_id == user.id,
+                                                           ExamAttempt.course == course.RU.key,
                                                            ExamAttempt.finished_at.is_not(None)))).all()
-    certificate = await db.scalar(select(Certificate).where(Certificate.user_id == user.id).limit(1))
+    certificate = await db.scalar(select(Certificate).where(Certificate.user_id == user.id,
+                                                            Certificate.course == course.RU.key).limit(1))
 
     counter = Counter(local_day(p.completed_at) for p in lessons)
     counter.update(local_day(a.finished_at) for a in attempts)
@@ -163,8 +167,8 @@ async def activity(db, user):
                for at, amount in rows.all()]
     rows = await db.scalars(select(LessonProgress).where(LessonProgress.user_id == user.id)
                             .order_by(LessonProgress.completed_at.desc()).limit(5))
-    recent += [{"kind": "lessons", "title": (course.lesson(p.level, p.number) or {}).get("title", ""),
-                "at": p.completed_at, "to": f"/course/{p.level}/{p.number}"} for p in rows.all()]
+    recent += [{"kind": "lessons", "title": (course.COURSES[p.course].lesson(p.level, p.number) or {}).get("title", ""),
+                "at": p.completed_at, "to": f"{COURSE_PAGES[p.course]}/{p.level}/{p.number}"} for p in rows.all()]
     rows = await db.execute(select(Housing.created_at, Housing.title, Housing.id).where(Housing.owner_id == user.id)
                             .order_by(Housing.created_at.desc()).limit(5))
     recent += [{"kind": "housing", "title": title, "at": at, "to": f"/housing/{pk}"} for at, title, pk in rows.all()]

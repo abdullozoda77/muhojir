@@ -314,7 +314,8 @@ async def _navigate(db, args, user=None):
     elif page == "my_certificate":
         if user is None:
             return {"error": "the visitor is not logged in"}
-        code = await db.scalar(select(Certificate.code).where(Certificate.user_id == user.id).limit(1))
+        code = await db.scalar(select(Certificate.code).where(Certificate.user_id == user.id,
+                                                              Certificate.course == course.RU.key).limit(1))
         if not code:
             return {"error": "the visitor has no certificate yet; it is given after the level 7 exam"}
         path = f"/certificates/{code}"
