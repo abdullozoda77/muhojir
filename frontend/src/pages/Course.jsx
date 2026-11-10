@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, BarChart3, Check, ChevronDown, Clock, Languages, Lock, LogIn, PenLine } from "lucide-react";
+import { ArrowRight, Award, BarChart3, Check, ChevronDown, Clock, Lock, LogIn, PenLine } from "lucide-react";
 import { lang, t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
+import { COURSES } from "../courses.js";
 
 const levelTitle = (level) => (lang === "ru" && level.title_ru) || level.title;
 
@@ -26,7 +27,7 @@ function firstOpen(levels) {
   return (level || levels[0])?.level;
 }
 
-function ExamPanel({ level, user, size, minutes, pass }) {
+function ExamPanel({ course, level, user, size, minutes, pass }) {
   const { exam } = level;
   if (exam.passed) {
     return (
@@ -59,7 +60,7 @@ function ExamPanel({ level, user, size, minutes, pass }) {
           {t("Боз аз соати {0}", time(exam.wait_until))}
         </span>
       ) : (
-        <Link to={`/course/${level.level}/exam`} className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-ink px-5 text-label-lg text-on-ink transition-colors hover:bg-ink/90">
+        <Link to={`${course.base}/${level.level}/exam`} className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-ink px-5 text-label-lg text-on-ink transition-colors hover:bg-ink/90">
           {exam.open ? t("Идома додан") : t("Супоридани имтиҳон")}
         </Link>
       ))}
@@ -67,7 +68,7 @@ function ExamPanel({ level, user, size, minutes, pass }) {
   );
 }
 
-function Level({ level, open, onToggle, user, info }) {
+function Level({ course, level, open, onToggle, user, info }) {
   const done = level.exam.lessons_done;
   const total = level.exam.lessons_total;
   const next = level.lessons.find((l) => l.score === null && l.unlocked);
@@ -78,7 +79,7 @@ function Level({ level, open, onToggle, user, info }) {
           {level.exam.passed ? <Check className="h-6 w-6" aria-label={t("Хатм шуд")} /> : level.unlocked ? level.level : <Lock className="h-5 w-5" aria-label={t("Баста")} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-label-md text-on-surface-variant">{t("Сатҳи {0}", level.level)} · ≈ {level.cefr}</span>
+          <span className="text-label-md text-on-surface-variant">{t("Сатҳи {0}", level.level)} · {course.tag(level)}</span>
           <span className="text-[18px] font-semibold leading-tight md:text-[20px]">{levelTitle(level)}</span>
           <span className="mt-1 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-container-high" role="progressbar" aria-valuenow={done} aria-valuemin={0} aria-valuemax={total}>
             <span className="block h-full rounded-full bg-tertiary transition-all duration-700" style={{ width: `${(done / total) * 100}%` }} />
@@ -107,7 +108,7 @@ function Level({ level, open, onToggle, user, info }) {
                   </div>
                 ) : (
                 <Link
-                  to={`/course/${level.level}/${lesson.number}`}
+                  to={`${course.base}/${level.level}/${lesson.number}`}
                   className={`group flex h-full items-start gap-3 rounded-xl p-3 ring-1 ring-inset transition-colors hover:bg-surface-container-low ${lesson === next && done < total ? "ring-2 ring-primary" : "ring-outline-variant"}`}
                 >
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-label-md tabular-nums ${lesson.score !== null ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-surface-container-high text-on-surface"}`}>
@@ -126,17 +127,18 @@ function Level({ level, open, onToggle, user, info }) {
               </StaggerItem>
             ))}
           </Stagger>
-          <ExamPanel level={level} user={user} size={info.exam_size} minutes={info.exam_minutes} pass={info.pass_percent} />
+          <ExamPanel course={course} level={level} user={user} size={info.exam_size} minutes={info.exam_minutes} pass={info.pass_percent} />
         </div>
       )}
     </section>
   );
 }
 
-export default function Course() {
-  const { user } = useAuth();
-  const { data, error } = useApi(`/course/?u=${user?.id ?? ""}`);
+export default function Course({ kind = "ru" }) {
+  const course = COURSES[kind];
   const [openLevel, setOpenLevel] = useState(null);
+  const { user } = useAuth();
+  const { data, error } = useApi(`${course.api}/?u=${user?.id ?? ""}`);
 
   useEffect(() => {
     if (data && openLevel === null) setOpenLevel(data.place?.level ?? firstOpen(data.levels));
@@ -149,12 +151,12 @@ export default function Course() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={t("Ройгон ва бо забони тоҷикӣ")}
-        title={t("Курси забони русӣ")}
-        text={t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс. Баъд аз ҳар 10 дарс имтиҳон, дар охири курс — сертификат.")}
-        icon={Languages}
+        eyebrow={course.eyebrow()}
+        title={course.title()}
+        text={course.intro()}
+        icon={course.icon}
       >
-        {user && (
+        {user && course.stats && (
           <Link to="/course/stats" className="group inline-flex min-h-[44px] items-center justify-center gap-2 self-start rounded-xl bg-surface-container-lowest px-4 text-label-lg text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low md:self-auto">
             <BarChart3 className="h-5 w-5 text-primary" aria-hidden />
             {t("Омори ман")}
@@ -177,7 +179,7 @@ export default function Course() {
         const place = data.place && !(data.place.finished && data.place.index === 0) ? data.place : null;
         if (place) {
           return (
-            <Link to={`/course/${place.level}/${place.number}`} className="group flex items-center gap-4 rounded-2xl bg-ink p-5 text-on-ink transition-transform hover:-translate-y-0.5">
+            <Link to={`${course.base}/${place.level}/${place.number}`} className="group flex items-center gap-4 rounded-2xl bg-ink p-5 text-on-ink transition-transform hover:-translate-y-0.5">
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-label-md opacity-70">
                   {t("Идома додан")} · {t("Сатҳи {0}", place.level)}
@@ -191,7 +193,7 @@ export default function Course() {
         }
         const next = nextLesson(data.levels);
         if (!next || lessonsDone === 0) return null;
-        const to = next.exam ? `/course/${next.level.level}/exam` : `/course/${next.level.level}/${next.lesson.number}`;
+        const to = next.exam ? `${course.base}/${next.level.level}/exam` : `${course.base}/${next.level.level}/${next.lesson.number}`;
         return (
           <Link to={to} className="group flex items-center gap-4 rounded-2xl bg-ink p-5 text-on-ink transition-transform hover:-translate-y-0.5">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -214,21 +216,21 @@ export default function Course() {
           <span className="text-label-md underline underline-offset-4">{t("Дидан")}</span>
         </Link>
       ) : (
-        <Link to="/certificates/sample" className="group flex items-center gap-4 overflow-hidden rounded-2xl bg-[#0f2452] p-4 text-white ring-1 ring-[#d9b765]/40 transition-transform hover:-translate-y-0.5">
+        <Link to={course.sample} className="group flex items-center gap-4 overflow-hidden rounded-2xl bg-[#0f2452] p-4 text-white ring-1 ring-[#d9b765]/40 transition-transform hover:-translate-y-0.5">
           <span className="relative flex h-16 w-[90px] shrink-0 flex-col items-center justify-center rounded-md border border-[#d9b765] bg-gradient-to-b from-[#1a3a7a] to-[#0b1a3d]">
             <span className="text-[7px] font-extrabold tracking-[0.2em] text-white">СЕРТИФИКАТ</span>
             <span className="mt-1 h-px w-12 bg-[#d9b765]" />
             <Award className="mt-1 h-4 w-4 text-[#d9b765]" aria-hidden />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[17px] font-semibold">{t("Сертификат пас аз хатми ҳамаи 7 сатҳ")}</span>
+            <span className="text-[17px] font-semibold">{course.sampleTitle()}</span>
             <span className="text-body-sm text-white/70">{t("Бо номи шумо, рақам, мӯҳр ва QR-код барои санҷиш. Намунаро бинед.")}</span>
           </span>
           <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden />
         </Link>
       ))}
       {!user && (
-        <Link to="/login" state={{ from: "/course" }} className="flex items-center gap-3 rounded-xl bg-primary-fixed p-4 text-on-primary-fixed ring-1 ring-primary/15">
+        <Link to="/login" state={{ from: course.base }} className="flex items-center gap-3 rounded-xl bg-primary-fixed p-4 text-on-primary-fixed ring-1 ring-primary/15">
           <LogIn className="h-5 w-5 shrink-0" aria-hidden />
           <span className="text-body-md">{t("Дарси аввалро бе сабти ном хондан мумкин. Барои нигоҳ доштани пешрафт ва гирифтани сертификат ворид шавед.")}</span>
         </Link>
@@ -242,6 +244,7 @@ export default function Course() {
           {data.levels.map((level) => (
             <Level
               key={level.level}
+              course={course}
               level={level}
               user={user}
               info={data}
@@ -252,7 +255,7 @@ export default function Course() {
         </div>
       )}
       <p className="px-1 text-body-sm text-on-surface-variant">
-        {t("Сертификати Muhojir ҳуҷҷати давлатӣ нест ва имтиҳони давлатии забони русиро барои патент иваз намекунад. Он нишон медиҳад, ки шумо курсро хатм кардаед.")}
+        {course.note()}
       </p>
     </div>
   );

@@ -6,6 +6,8 @@ import { t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { BackLink, Button, ErrorBox, Field, Skeleton } from "../components/ui.jsx";
+import RoadSign from "../components/RoadSign.jsx";
+import { COURSES } from "../courses.js";
 
 const saveKey = (id) => `course-exam-${id}`;
 
@@ -29,7 +31,7 @@ function keepAnswers(id, answers) {
 const clock = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 const time = (value) => new Date(value).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-function Start({ level, info, onStarted }) {
+function Start({ course, level, info, onStarted }) {
   const { user } = useAuth();
   const [name, setName] = useState(user?.full_name || "");
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ function Start({ level, info, onStarted }) {
     setBusy(true);
     setError(null);
     try {
-      onStarted(await api(`/course/levels/${level.level}/exam/`, { method: "POST", body: { full_name: name } }));
+      onStarted(await api(`${course.api}/levels/${level.level}/exam/`, { method: "POST", body: { full_name: name } }));
     } catch (err) {
       setError(err);
       setBusy(false);
@@ -58,7 +60,7 @@ function Start({ level, info, onStarted }) {
       </div>
       <ul className="flex flex-col gap-2 text-body-md">
         {[
-          [Check, t("{0} савол аз ҳамаи 10 дарси сатҳ", info.exam_size)],
+          [Check, course.examFrom({ size: info.exam_size, total: level.exam.lessons_total })],
           [Timer, t("{0} дақиқа вақт. Вақт тамом шавад, ҷавобҳо худ ба худ фиристода мешаванд.", info.exam_minutes)],
           [Award, level.exam.final ? t("Барои сертификат {0}% ҷавоби дуруст лозим", info.pass_percent) : t("Барои кушодани сатҳи навбатӣ {0}% ҷавоби дуруст лозим", info.pass_percent)],
           [Clock, t("Агар нагузаред, баъд аз 1 соат боз супоридан мумкин")],
@@ -75,7 +77,7 @@ function Start({ level, info, onStarted }) {
   );
 }
 
-function Questions({ exam, onFinished }) {
+function Questions({ course, exam, onFinished }) {
   const size = exam.questions.length;
   const [answers, setAnswers] = useState(() => readAnswers(exam.id, size));
   const [index, setIndex] = useState(0);
@@ -92,7 +94,7 @@ function Questions({ exam, onFinished }) {
     setBusy(true);
     setError(null);
     try {
-      const result = await api(`/course/exams/${exam.id}/submit/`, { method: "POST", body: { answers } });
+      const result = await api(`${course.api}/exams/${exam.id}/submit/`, { method: "POST", body: { answers } });
       keepAnswers(exam.id, null);
       onFinished(result);
     } catch (err) {
@@ -100,7 +102,7 @@ function Questions({ exam, onFinished }) {
       setError(err);
       setBusy(false);
     }
-  }, [answers, exam.id, onFinished]);
+  }, [answers, course, exam.id, onFinished]);
 
   useEffect(() => {
     const timer = setInterval(() => setLeft(Math.max(0, Math.round((new Date(exam.ends_at) - Date.now()) / 1000))), 1000);
@@ -144,6 +146,7 @@ function Questions({ exam, onFinished }) {
         ))}
       </div>
 
+      {q.sign && <RoadSign code={q.sign} size="h-28" />}
       <h2 className="text-[21px] font-semibold leading-snug">{q.q}</h2>
       {q.ru && <p lang="ru" className="rounded-xl bg-surface-container-low px-4 py-3 text-[19px] font-semibold ring-1 ring-outline-variant">{q.ru}</p>}
       <div className="flex flex-col gap-2">
@@ -179,7 +182,7 @@ function Questions({ exam, onFinished }) {
   );
 }
 
-function Result({ result }) {
+function Result({ course, result }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="card flex flex-col items-center gap-4 p-8 text-center md:p-12">
@@ -193,7 +196,7 @@ function Result({ result }) {
           {t("{0} аз {1} ҷавоби дуруст.", result.right, result.total)}{" "}
           {result.late && t("Ҷавобҳо баъд аз тамом шудани вақт расиданд. ")}
           {!result.passed && result.wait_until && t("Дарсҳоро такрор кунед ва аз соати {0} боз кӯшиш кунед.", time(result.wait_until))}
-          {result.passed && !result.final && t("Сатҳи навбатӣ кушода шуд. Сертификат пас аз хатми ҳамаи 7 сатҳ дода мешавад.")}
+          {result.passed && !result.final && course.afterAll()}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {result.certificate && (
@@ -201,7 +204,7 @@ function Result({ result }) {
               <Award className="h-5 w-5" aria-hidden />{t("Сертификатро дидан")}
             </Link>
           )}
-          <Link to="/course" className="inline-flex min-h-[48px] items-center rounded-xl px-5 text-label-lg ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low">
+          <Link to={course.base} className="inline-flex min-h-[48px] items-center rounded-xl px-5 text-label-lg ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low">
             {result.passed && !result.final ? t("Ба сатҳи навбатӣ") : t("Ба курс")}
           </Link>
         </div>
@@ -215,6 +218,7 @@ function Result({ result }) {
                 {item.right ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-tertiary" aria-label={t("Дуруст")} /> : <X className="mt-0.5 h-4 w-4 shrink-0 text-error" aria-label={t("Хато")} />}
                 {i + 1}. {item.q}
               </span>
+              {item.sign && <span className="pl-6"><RoadSign code={item.sign} size="h-14" /></span>}
               {!item.right && (
                 <span className="pl-6 text-body-sm text-on-surface-variant">
                   {item.picked !== null && <>{t("Ҷавоби шумо:")} <s>{item.options[item.picked]}</s> · </>}
@@ -229,10 +233,11 @@ function Result({ result }) {
   );
 }
 
-export default function CourseExam() {
+export default function CourseExam({ kind = "ru" }) {
+  const course = COURSES[kind];
   const { level: levelParam } = useParams();
   const number = Number(levelParam);
-  const { data, error } = useApi("/course/");
+  const { data, error } = useApi(`${course.api}/`);
   const [exam, setExam] = useState(null);
   const [result, setResult] = useState(null);
 
@@ -243,20 +248,20 @@ export default function CourseExam() {
   if (error) return <ErrorBox error={error} className="mt-8" />;
   if (!data) return <Skeleton className="mt-8 h-96" />;
   const level = data.levels.find((l) => l.level === number);
-  if (!level) return <Navigate to="/course" replace />;
+  if (!level) return <Navigate to={course.base} replace />;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 pt-2 md:pt-6">
-      {!exam && <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>}
+      {!exam && <BackLink to={course.base}>{course.title()}</BackLink>}
       {result ? (
-        <Result result={result} />
+        <Result course={course} result={result} />
       ) : exam ? (
-        <Questions exam={exam} onFinished={setResult} />
+        <Questions course={course} exam={exam} onFinished={setResult} />
       ) : level.exam.passed ? (
         <div className="card flex flex-col items-start gap-4 p-8">
           <ShieldCheck className="h-8 w-8 text-tertiary" aria-hidden />
           <h1 className="text-[22px] font-semibold">{t("Шумо ин сатҳро аллакай супоридаед")}</h1>
-          <Link to={data.certificate ? `/certificates/${data.certificate.code}` : "/course"} className="text-label-lg text-primary underline underline-offset-4">
+          <Link to={data.certificate ? `/certificates/${data.certificate.code}` : course.base} className="text-label-lg text-primary underline underline-offset-4">
             {data.certificate ? t("Сертификатро дидан") : t("Ба курс")}
           </Link>
         </div>
@@ -264,7 +269,7 @@ export default function CourseExam() {
         <div className="card flex flex-col items-start gap-4 p-8">
           <h1 className="text-[22px] font-semibold">{t("Аввал дарсҳоро хатм кунед")}</h1>
           <p className="text-body-md text-on-surface-variant">{t("Барои имтиҳон ҳамаи дарсҳоро хатм кунед: {0} аз {1}", level.exam.lessons_done, level.exam.lessons_total)}</p>
-          <Link to="/course" className="text-label-lg text-primary underline underline-offset-4">{t("Ба курс")}</Link>
+          <Link to={course.base} className="text-label-lg text-primary underline underline-offset-4">{t("Ба курс")}</Link>
         </div>
       ) : level.exam.wait_until ? (
         <div className="card flex flex-col items-start gap-4 p-8">
@@ -273,7 +278,7 @@ export default function CourseExam() {
           <p className="text-body-md text-on-surface-variant">{t("Дар ин вақт дарсҳоро такрор кунед.")}</p>
         </div>
       ) : (
-        <Start level={level} info={data} onStarted={setExam} />
+        <Start course={course} level={level} info={data} onStarted={setExam} />
       )}
     </div>
   );

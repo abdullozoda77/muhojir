@@ -1,10 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import qrcode from "qrcode-generator";
 import { BadgeCheck, Copy, Download, Eye, Printer, ShieldAlert } from "lucide-react";
 import { t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { BackLink, Button, ErrorBox, Skeleton } from "../components/ui.jsx";
+import { COURSES } from "../courses.js";
 
 const GOLD = "#d9b765";
 const GOLD_DEEP = "#b8913e";
@@ -22,6 +23,28 @@ const SAMPLE = {
   percent: 94,
   issued_at: new Date().toISOString(),
   is_revoked: false,
+};
+
+const PAPER = {
+  ru: {
+    subtitle: "Курси онлайни забони русӣ · Онлайн-курс русского языка",
+    ring: "MUHOJIR • МАКТАБИ ЗАБОНИ РУСӢ • KING.TJ •",
+    tg: (c) => <>курси пурраи забони русии Muhojir — <b>{c.levels} сатҳ</b> ва <b>{c.lessons} дарс</b>, аз алифбо то гуфтугӯи озод — бомуваффақият хатм карда, ҳамаи имтиҳонҳоро бо натиҷаи миёнаи <b style={{ color: GOLD }}>{c.percent}%</b> супоридааст.</>,
+    ru: (c) => `успешно прошёл(-ла) полный курс русского языка Muhojir — ${c.levels} уровней и ${c.lessons} уроков, от алфавита до свободного разговора — и сдал(а) все экзамены со средним результатом ${c.percent}%.`,
+    footer: "Ҳуҷҷати давлатӣ нест ва имтиҳони давлатиро барои патент иваз намекунад · Не является государственным документом",
+  },
+  drive: {
+    subtitle: "Курси онлайни қоидаҳои ҳаракат · Онлайн-курс ПДД",
+    ring: "MUHOJIR • МАКТАБИ РОНАНДАГӢ • KING.TJ •",
+    tg: (c) => <>курси пурраи қоидаҳои ҳаракат дар роҳ (ПДД)-и Muhojir — <b>{c.levels} сатҳ</b> ва <b>{c.lessons} дарс</b>, аз аломатҳо то имтиҳони ГАИ — бомуваффақият хатм карда, ҳамаи имтиҳонҳоро бо натиҷаи миёнаи <b style={{ color: GOLD }}>{c.percent}%</b> супоридааст.</>,
+    ru: (c) => `успешно прошёл(-ла) полный онлайн-курс Правил дорожного движения Muhojir — ${c.levels} уровней и ${c.lessons} уроков, от дорожных знаков до экзамена в ГИБДД — и сдал(а) все экзамены со средним результатом ${c.percent}%.`,
+    footer: "Шаҳодатномаи ронандагӣ нест ва имтиҳони ГАИ-ро иваз намекунад · Не является водительским удостоверением",
+  },
+};
+
+const SAMPLES = {
+  ru: SAMPLE,
+  drive: { ...SAMPLE, number: "MJ-PDD-2026-00000", course: "drive", levels: 5, lessons: 25, percent: 96 },
 };
 
 function Qr({ text, className = "" }) {
@@ -42,7 +65,7 @@ function Qr({ text, className = "" }) {
   );
 }
 
-function Stamp({ year, className = "" }) {
+function Stamp({ year, ring, className = "" }) {
   const id = useId().replace(/:/g, "");
   return (
     <svg viewBox="0 0 120 120" className={className} aria-hidden>
@@ -59,7 +82,7 @@ function Stamp({ year, className = "" }) {
         <circle cx="60" cy="60" r="51" strokeWidth="1" />
         <circle cx="60" cy="60" r="32" strokeWidth="1.4" />
         <text fill={GOLD} stroke="none" fontSize="9.4" fontWeight="700" letterSpacing="1.1" fontFamily="Onest, sans-serif">
-          <textPath href={`#ring-${id}`}>MUHOJIR • МАКТАБИ ЗАБОНИ РУСӢ • KING.TJ •</textPath>
+          <textPath href={`#ring-${id}`}>{ring}</textPath>
         </text>
         <path d="M60 36 l3.2 6.6 7.2 1 -5.2 5 1.3 7.2 -6.5 -3.4 -6.5 3.4 1.3 -7.2 -5.2 -5 7.2 -1z" fill={GOLD} stroke="none" />
         <text x="60" y="70" textAnchor="middle" fill={GOLD} stroke="none" fontSize="10.5" fontWeight="800" letterSpacing="1.5" fontFamily="Onest, sans-serif">ТАСДИҚ</text>
@@ -115,6 +138,7 @@ function Flag({ className }) {
 }
 
 function Paper({ certificate, url, sample, paperRef }) {
+  const text = PAPER[certificate.course] || PAPER.ru;
   const issued = new Date(certificate.issued_at);
   const date = issued.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
   return (
@@ -149,7 +173,7 @@ function Paper({ certificate, url, sample, paperRef }) {
           <img src="/logo.png" alt="" className="h-[4.2cqw] w-[4.2cqw]" />
           <div className="flex flex-col items-start leading-tight">
             <span className="text-[2.2cqw] font-bold tracking-[0.04em]">Muhojir</span>
-            <span className="whitespace-nowrap text-[1.05cqw]" style={{ color: MUTED }}>Курси онлайни забони русӣ · Онлайн-курс русского языка</span>
+            <span className="whitespace-nowrap text-[1.05cqw]" style={{ color: MUTED }}>{text.subtitle}</span>
           </div>
         </div>
 
@@ -165,10 +189,10 @@ function Paper({ certificate, url, sample, paperRef }) {
         </p>
 
         <p className="mt-[1.6cqw] max-w-[74cqw] text-[1.55cqw] leading-snug">
-          курси пурраи забони русии Muhojir — <b>{certificate.levels} сатҳ</b> ва <b>{certificate.lessons} дарс</b>, аз алифбо то гуфтугӯи озод — бомуваффақият хатм карда, ҳамаи имтиҳонҳоро бо натиҷаи миёнаи <b style={{ color: GOLD }}>{certificate.percent}%</b> супоридааст.
+          {text.tg(certificate)}
         </p>
         <p className="mt-[0.6cqw] max-w-[74cqw] text-[1.35cqw] leading-snug" style={{ color: MUTED }}>
-          успешно прошёл(-ла) полный курс русского языка Muhojir — {certificate.levels} уровней и {certificate.lessons} уроков, от алфавита до свободного разговора — и сдал(а) все экзамены со средним результатом {certificate.percent}%.
+          {text.ru(certificate)}
         </p>
 
         <div className="mt-auto grid w-full grid-cols-[1fr_auto_1fr_auto] items-end gap-[2cqw] text-left">
@@ -179,7 +203,7 @@ function Paper({ certificate, url, sample, paperRef }) {
           <Seal levels={certificate.levels} className="mb-[-0.6cqw] h-[11cqw] w-[8.6cqw]" />
           <div className="relative flex flex-col items-center">
             <Signature className="h-[5cqw] w-[15cqw]" />
-            <Stamp year={issued.getFullYear()} className="absolute bottom-[3.4cqw] left-[56%] h-[9.5cqw] w-[9.5cqw] -rotate-[14deg]" />
+            <Stamp year={issued.getFullYear()} ring={text.ring} className="absolute bottom-[3.4cqw] left-[56%] h-[9.5cqw] w-[9.5cqw] -rotate-[14deg]" />
             <span className="w-[24cqw] whitespace-nowrap border-t-[0.1cqw] pt-[0.4cqw] text-center text-[1.1cqw]" style={{ borderColor: LIGHT, color: MUTED }}>Роҳбари лоиҳа · Руководитель проекта</span>
           </div>
           <div className="flex flex-col items-center gap-[0.3cqw]">
@@ -188,7 +212,7 @@ function Paper({ certificate, url, sample, paperRef }) {
           </div>
         </div>
         <p className="mt-[1.2cqw] text-[0.85cqw]" style={{ color: "#8797bf" }}>
-          {url.replace(/^https?:\/\//, "")} · Ҳуҷҷати давлатӣ нест ва имтиҳони давлатиро барои патент иваз намекунад · Не является государственным документом
+          {url.replace(/^https?:\/\//, "")} · {text.footer}
         </p>
       </div>
 
@@ -231,13 +255,15 @@ async function savePdf(node, number) {
 
 export default function Certificate({ sample = false }) {
   const { code } = useParams();
+  const [params] = useSearchParams();
   const { data: loaded, error } = useApi(sample ? null : `/course/certificates/${code}/`);
-  const data = sample ? SAMPLE : loaded;
+  const data = sample ? SAMPLES[params.get("course")] || SAMPLE : loaded;
+  const course = COURSES[data?.course] || COURSES.ru;
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const paperRef = useRef(null);
-  const url = `${window.location.origin}/certificates/${sample ? "sample" : code}`;
+  const url = `${window.location.origin}${sample ? course.sample : `/certificates/${code}`}`;
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -270,7 +296,7 @@ export default function Certificate({ sample = false }) {
 
   return (
     <div className="flex flex-col gap-5 pt-2 md:pt-6">
-      <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>
+      <BackLink to={course.base}>{course.title()}</BackLink>
       {error ? (
         <ErrorBox error={error} />
       ) : !data ? (
@@ -285,14 +311,14 @@ export default function Certificate({ sample = false }) {
             {sample ? <Eye className="h-6 w-6 shrink-0" aria-hidden /> : data.is_revoked ? <ShieldAlert className="h-6 w-6 shrink-0" aria-hidden /> : <BadgeCheck className="h-6 w-6 shrink-0" aria-hidden />}
             <p className="flex-1 text-body-md">
               {sample
-                ? t("Ин намуна аст. Сертификати ҳақиқӣ бо номи шумо пас аз хатми ҳамаи 7 сатҳ ва супоридани имтиҳони ниҳоӣ дода мешавад.")
+                ? t("Ин намуна аст. Сертификати ҳақиқӣ бо номи шумо пас аз хатми ҳамаи {0} сатҳ ва супоридани имтиҳони ниҳоӣ дода мешавад.", data.levels)
                 : data.is_revoked
                   ? t("Ин сертификат бекор карда шудааст ва эътибор надорад.")
                   : t("Сертификати ҳақиқӣ: № {0} ба {1} барои хатми пурраи курс дода шудааст.", data.number, data.full_name)}
             </p>
             <div className="flex flex-wrap gap-2">
               {sample ? (
-                <Link to="/course" className="inline-flex min-h-[44px] items-center rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">{t("Оғози курс")}</Link>
+                <Link to={course.base} className="inline-flex min-h-[44px] items-center rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">{t("Оғози курс")}</Link>
               ) : (
                 <>
                   <Button variant="plain" icon={Copy} onClick={copy}>{copied ? t("Нусха шуд") : t("Нусхаи пайванд")}</Button>

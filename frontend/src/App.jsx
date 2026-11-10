@@ -69,10 +69,13 @@ export default function App() {
         <Route path="help" element={<Private><Help /></Private>} />
         <Route path="checks" element={<Private><Checks /></Private>} />
         <Route path="exam" element={<Private><Exam /></Private>} />
-        <Route path="course" element={<Private><Course /></Private>} />
+        <Route path="course" element={<Private><Course key="ru" /></Private>} />
         <Route path="course/stats" element={<Private><CourseStats /></Private>} />
-        <Route path="course/:level/exam" element={<Private><CourseExam /></Private>} />
-        <Route path="course/:level/:number" element={<Private><Lesson /></Private>} />
+        <Route path="course/:level/exam" element={<Private><CourseExam key="ru" /></Private>} />
+        <Route path="course/:level/:number" element={<Private><Lesson key="ru" /></Private>} />
+        <Route path="driving" element={<Private><Course key="drive" kind="drive" /></Private>} />
+        <Route path="driving/:level/exam" element={<Private><CourseExam key="drive" kind="drive" /></Private>} />
+        <Route path="driving/:level/:number" element={<Private><Lesson key="drive" kind="drive" /></Private>} />
         <Route path="rate" element={<Rate />} />
         <Route path="feedback" element={<FeedbackPage />} />
         <Route path="certificates/sample" element={<Certificate sample />} />

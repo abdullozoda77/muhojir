@@ -7,6 +7,8 @@ import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { BackLink, Button, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { Reveal } from "../components/motion.jsx";
+import RoadSign, { SignRow } from "../components/RoadSign.jsx";
+import { COURSES } from "../courses.js";
 
 const shuffle = (list) => {
   const copy = [...list];
@@ -24,11 +26,11 @@ function Say({ text, className = "" }) {
   return <span lang="ru" className={className}>{text}</span>;
 }
 
-const progressKey = (level, number) => `lesson-progress-${level}-${number}`;
+const progressKey = (course, level, number) => `lesson-progress-${course.store}${level}-${number}`;
 
-function readProgress(level, number, total) {
+function readProgress(course, level, number, total) {
   try {
-    const saved = JSON.parse(localStorage.getItem(progressKey(level, number)));
+    const saved = JSON.parse(localStorage.getItem(progressKey(course, level, number)));
     if (saved && saved.index > 0 && saved.index < total) return saved;
   } catch {
   }
@@ -37,32 +39,32 @@ function readProgress(level, number, total) {
 
 const PENDING = "lesson-pending";
 
-function readPending() {
+function readPending(course) {
   try {
-    return JSON.parse(sessionStorage.getItem(PENDING));
+    return JSON.parse(sessionStorage.getItem(PENDING + course.store));
   } catch {
     return null;
   }
 }
 
-function keepPending(value) {
+function keepPending(course, value) {
   try {
-    if (value) sessionStorage.setItem(PENDING, JSON.stringify(value));
-    else sessionStorage.removeItem(PENDING);
+    if (value) sessionStorage.setItem(PENDING + course.store, JSON.stringify(value));
+    else sessionStorage.removeItem(PENDING + course.store);
   } catch {
   }
 }
 
-function keepProgress(level, number, value) {
+function keepProgress(course, level, number, value) {
   try {
-    if (value) localStorage.setItem(progressKey(level, number), JSON.stringify(value));
-    else localStorage.removeItem(progressKey(level, number));
+    if (value) localStorage.setItem(progressKey(course, level, number), JSON.stringify(value));
+    else localStorage.removeItem(progressKey(course, level, number));
   } catch {
   }
 }
 
-function sendPlace(level, number, value) {
-  api("/course/place/", { method: "PUT", body: { level: Number(level), number: Number(number), index: value?.index ?? 0, right: value?.right ?? 0 } }).catch(() => {});
+function sendPlace(course, level, number, value) {
+  api(`${course.api}/place/`, { method: "PUT", body: { level: Number(level), number: Number(number), index: value?.index ?? 0, right: value?.right ?? 0 } }).catch(() => {});
 }
 
 function Theory({ lesson }) {
@@ -75,6 +77,7 @@ function Theory({ lesson }) {
             {block.title}
           </h2>
           <p className="text-body-lg leading-relaxed text-on-surface">{block.text}</p>
+          <SignRow codes={block.signs} />
           {block.examples?.length > 0 && (
             <ul className="mt-1 flex flex-col divide-y divide-outline-variant rounded-xl bg-surface-container-low ring-1 ring-outline-variant">
               {block.examples.map(([ru, tg]) => (
@@ -112,6 +115,7 @@ function Choice({ exercise, onAnswer }) {
   };
   return (
     <div className="flex flex-col gap-4">
+      {exercise.sign && <RoadSign code={exercise.sign} size="h-28" />}
       {exercise.ru && <p lang="ru" className="rounded-xl bg-surface-container-low px-4 py-3 text-[20px] font-semibold ring-1 ring-outline-variant">{exercise.ru}</p>}
       <div className="grid gap-2 sm:grid-cols-2">
         {choices.map((choice) => {
@@ -231,9 +235,9 @@ function Practice({ lesson, start, onSave, onDone }) {
   );
 }
 
-function Result({ percent, lesson, user, saved, saveError, onRetry }) {
+function Result({ course, percent, lesson, user, saved, saveError, onRetry }) {
   const passed = percent >= lesson.lesson_pass;
-  const nextLink = lesson.number < lesson.lessons_total ? `/course/${lesson.level}/${lesson.number + 1}` : `/course/${lesson.level}/exam`;
+  const nextLink = lesson.number < lesson.lessons_total ? `${course.base}/${lesson.level}/${lesson.number + 1}` : `${course.base}/${lesson.level}/exam`;
   return (
     <div className="card flex flex-col items-center gap-4 p-8 text-center md:p-12">
       <span className={`flex h-24 w-24 items-center justify-center rounded-full text-[30px] font-semibold tabular-nums ring-4 ${passed ? "text-tertiary ring-tertiary/40" : "text-warning ring-warning-container/50"}`}>
@@ -248,7 +252,7 @@ function Result({ percent, lesson, user, saved, saveError, onRetry }) {
       <ErrorBox error={saveError} />
       <div className="flex flex-wrap justify-center gap-2">
         {passed && !user && (
-          <Link to="/login" state={{ from: `/course/${lesson.level}/${lesson.number}` }} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
+          <Link to="/login" state={{ from: `${course.base}/${lesson.level}/${lesson.number}` }} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
             {t("Ворид шудан ва идома додан")}
             <ArrowRight className="h-5 w-5" aria-hidden />
           </Link>
@@ -265,10 +269,11 @@ function Result({ percent, lesson, user, saved, saveError, onRetry }) {
   );
 }
 
-export default function Lesson() {
+export default function Lesson({ kind = "ru" }) {
+  const course = COURSES[kind];
   const { level, number } = useParams();
   const { user } = useAuth();
-  const { data: lesson, error, loading } = useApi(`/course/levels/${level}/lessons/${number}/?u=${user?.id ?? ""}`);
+  const { data: lesson, error, loading } = useApi(`${course.api}/levels/${level}/lessons/${number}/?u=${user?.id ?? ""}`);
   const [stage, setStage] = useState("learn");
   const [percent, setPercent] = useState(0);
   const [round, setRound] = useState(0);
@@ -283,29 +288,29 @@ export default function Lesson() {
 
   useEffect(() => {
     if (!lesson) return;
-    const saved = lesson.resume || readProgress(level, number, lesson.exercises.length);
+    const saved = lesson.resume || readProgress(course, level, number, lesson.exercises.length);
     setResume(saved);
     setStage(saved ? "practice" : "learn");
-    if (user) sendPlace(level, number, saved);
-  }, [lesson, level, number, user]);
+    if (user) sendPlace(course, level, number, saved);
+  }, [course, lesson, level, number, user]);
 
   useEffect(() => {
-    const pending = readPending();
+    const pending = readPending(course);
     if (!user || !lesson || !pending || pending.level !== Number(level) || pending.number !== Number(number)) return;
-    keepPending(null);
-    api(`/course/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score: pending.score } })
+    keepPending(course, null);
+    api(`${course.api}/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score: pending.score } })
       .then(() => {
         setPercent(pending.score);
         setSaved(true);
         setStage("done");
       })
       .catch(setSaveError);
-  }, [user, lesson, level, number]);
+  }, [course, user, lesson, level, number]);
 
   const save = (value) => {
-    keepProgress(level, number, value);
+    keepProgress(course, level, number, value);
     setResume(value);
-    if (user) sendPlace(level, number, value);
+    if (user) sendPlace(course, level, number, value);
   };
 
   const finish = async (score) => {
@@ -316,11 +321,11 @@ export default function Lesson() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (score < lesson.lesson_pass) return;
     if (!user) {
-      keepPending({ level: Number(level), number: Number(number), score });
+      keepPending(course, { level: Number(level), number: Number(number), score });
       return;
     }
     try {
-      await api(`/course/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score } });
+      await api(`${course.api}/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score } });
       setSaved(true);
     } catch (err) {
       setSaveError(err);
@@ -331,14 +336,14 @@ export default function Lesson() {
   if (error?.status === 403) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 pt-2 md:pt-6">
-        <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>
+        <BackLink to={course.base}>{course.title()}</BackLink>
         <div className="card flex flex-col items-start gap-4 p-8">
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high"><Lock className="h-6 w-6" aria-hidden /></span>
           <h1 className="text-[22px] font-semibold">{t("Ин дарс ҳоло баста аст")}</h1>
           <p className="text-body-md text-on-surface-variant">
             {user ? t("Дарсҳо бо тартиб кушода мешаванд: аввал дарси пешинаро хатм кунед.") : t("Барои идома додан ворид шавед — пешрафти шумо нигоҳ дошта мешавад ва дарсҳо бо тартиб кушода мешаванд.")}
           </p>
-          <Link to={user ? "/course" : "/login"} state={user ? undefined : { from: `/course/${level}/${number}` }} className="inline-flex min-h-[44px] items-center rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
+          <Link to={user ? course.base : "/login"} state={user ? undefined : { from: `${course.base}/${level}/${number}` }} className="inline-flex min-h-[44px] items-center rounded-xl bg-ink px-5 text-label-lg text-on-ink hover:bg-ink/90">
             {user ? t("Ба курс") : t("Ворид шудан")}
           </Link>
         </div>
@@ -349,7 +354,7 @@ export default function Lesson() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 pt-2 md:pt-6">
-      <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>
+      <BackLink to={course.base}>{course.title()}</BackLink>
       <header className="flex flex-col gap-2">
         <span className="text-label-md text-on-surface-variant">
           {t("Сатҳи {0}", lesson.level)} · {lesson.level_title} · {t("Дарси {0} аз {1}", lesson.number, lesson.lessons_total)}
@@ -369,12 +374,12 @@ export default function Lesson() {
       )}
       {stage === "practice" && <Practice key={round} lesson={lesson} start={resume} onSave={save} onDone={finish} />}
       {stage === "done" && (
-        <Result percent={percent} lesson={lesson} user={user} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
+        <Result course={course} percent={percent} lesson={lesson} user={user} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
       )}
 
       <nav className="flex justify-between gap-2 pt-2">
         {lesson.number > 1 ? (
-          <Link to={`/course/${lesson.level}/${lesson.number - 1}`} className="inline-flex min-h-[40px] items-center gap-1.5 text-label-md text-on-surface-variant hover:text-on-surface">
+          <Link to={`${course.base}/${lesson.level}/${lesson.number - 1}`} className="inline-flex min-h-[40px] items-center gap-1.5 text-label-md text-on-surface-variant hover:text-on-surface">
             <ArrowLeft className="h-4 w-4" aria-hidden />{t("Дарси пешина")}
           </Link>
         ) : <span />}

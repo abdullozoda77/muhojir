@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, FilePlus2, GraduationCap, MapPinned,
-  LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
+  ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Car, FilePlus2, GraduationCap, Languages,
+  MapPinned, LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { useApi, useDocuments } from "../hooks.js";
@@ -73,6 +73,8 @@ const SERVICES = [
   { to: "/checks", icon: SearchCheck, title: () => t("Санҷиши ҳуҷҷатҳо"), text: () => t("Патент, манъи даромадан, қарз.") },
   { to: "/help", icon: LifeBuoy, title: () => t("Ёрии ҳуқуқӣ"), text: () => t("Рақамҳои сафорат, хати боварӣ ва ҳуқуқшиносон.") },
   { to: "/documents", icon: ShieldCheck, title: () => t("Ҳуҷҷатҳои ман"), text: () => t("Мӯҳлатҳо ва ёдраскунӣ ба почта.") },
+  { to: "/course", icon: Languages, title: () => t("Курси забони русӣ"), text: () => t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс ва сертификат."), big: true, cta: () => t("Оғози курс") },
+  { to: "/driving", icon: Car, title: () => t("Курси ронандагӣ"), text: () => t("Қоидаҳои ҳаракат (ПДД) барои шаҳодатномаи русӣ: 5 сатҳ, 25 дарс, имтиҳонҳо ва сертификат."), big: true, cta: () => t("Оғози курс") },
 ];
 
 function TileIcon({ icon: Icon }) {

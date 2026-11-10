@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
   Menu, Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -34,6 +34,7 @@ function sections(user) {
     { to: "/guides", icon: BookOpen, label: t("Роҳнамо ва қонунҳо"), group: "more" },
     { to: "/checks", icon: SearchCheck, label: t("Санҷиши ҳуҷҷатҳо"), group: "more" },
     { to: "/course", icon: Languages, label: t("Курси забони русӣ"), group: "more" },
+    { to: "/driving", icon: Car, label: t("Курси ронандагӣ"), group: "more" },
     { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон"), group: "more" },
     { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ"), group: "more" },
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
@@ -138,6 +139,7 @@ const TONES = {
   "/guides": "bg-sky-500/15 text-sky-600 dark:text-sky-400",
   "/checks": "bg-violet-500/15 text-violet-600 dark:text-violet-400",
   "/course": "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  "/driving": "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
   "/exam": "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   "/help": "bg-rose-500/15 text-rose-600 dark:text-rose-400",
   "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
