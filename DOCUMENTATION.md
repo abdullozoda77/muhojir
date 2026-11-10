@@ -2197,7 +2197,7 @@ A generic, single database configuration.
 | `rubles(value)` | function | A sum in roubles with two decimals. |
 | `tjs(value)` | function | A sum in somoni with two decimals. |
 | `Sparkline` | function | The 30-day line of the NBT rate (SVG). |
-| `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. At the top: round flags of Russia and Tajikistan with the pair (RUB → TJS or TJS → RUB), the result in big type on one line and "for 1 000 ₽" (or "for 100 somoni") under it. In the somoni direction the CBR box shows 100 somoni in roubles. |
+| `RubleRate` | export function | The card. Converts both ways: "Rouble → somoni" and "Somoni → rouble"; the round ⇆ button between them (swap) flips the direction and carries the converted amount over. At the top: round flags of Russia and Tajikistan with the pair (RUB → TJS or TJS → RUB), the result in big type on one line and "for 1 000 ₽" (or "for 100 somoni") under it. In the somoni direction the CBR box shows 100 somoni in roubles. Under the amount two stacked boxes with big numbers: the result by the official rate (blue) and the CBR rate. |
 | `Flag` | function | A round flag: Russia drawn in SVG, Tajikistan from /flag-tj.svg. |
 | `Pair` | function | The two flags overlapping and the currency codes in the chosen direction. |
 

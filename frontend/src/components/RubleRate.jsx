@@ -140,15 +140,15 @@ export default function RubleRate() {
             </button>
           ))}
         </div>
-        <div className="grid gap-2 text-body-sm sm:grid-cols-2">
-          <div className="rounded-xl bg-primary-fixed/60 p-3">
-            <p className="text-on-surface-variant">{t("{0} бо қурби расмӣ", from === "rub" ? rub(amount) : tjs(amount))}</p>
-            <p className="font-semibold tabular-nums">{from === "rub" ? tjs(main.value * amount) : rubles(amount / main.value)}</p>
+        <div className="grid gap-3">
+          <div className="flex flex-col gap-1.5 rounded-2xl bg-primary-fixed/60 p-4 md:p-5">
+            <p className="text-body-md text-on-surface-variant">{t("{0} бо қурби расмӣ", from === "rub" ? rub(amount) : tjs(amount))}</p>
+            <p className="break-words text-[24px] sm:whitespace-nowrap sm:text-[28px] font-semibold leading-tight tracking-tight tabular-nums text-primary md:text-[32px]">{from === "rub" ? tjs(main.value * amount) : rubles(amount / main.value)}</p>
           </div>
           {nbt && cbr && (
-            <div className="rounded-xl bg-surface-container-low p-3">
-              <p className="text-on-surface-variant">{t("Банки марказии Русия")}</p>
-              <p className="font-semibold tabular-nums">{from === "rub" ? `1 000 ₽ = ${tjs(cbr.value * 1000)}` : `${tjs(100)} = ${rubles(100 / cbr.value)}`}</p>
+            <div className="flex flex-col gap-1.5 rounded-2xl bg-surface-container-low p-4 md:p-5">
+              <p className="text-body-md text-on-surface-variant">{t("Банки марказии Русия")}</p>
+              <p className="break-words text-[20px] sm:whitespace-nowrap sm:text-[22px] font-semibold leading-tight tracking-tight tabular-nums md:text-[24px]">{from === "rub" ? `1 000 ₽ = ${tjs(cbr.value * 1000)}` : `${tjs(100)} = ${rubles(100 / cbr.value)}`}</p>
             </div>
           )}
         </div>
