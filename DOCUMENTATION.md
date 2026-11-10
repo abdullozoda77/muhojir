@@ -2356,7 +2356,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Documents.jsx`
 
-**What it is for:** /documents — the user's documents: list or calendar view, add/edit, statuses and reminders.
+**What it is for:** /documents — the user's documents: list or calendar view, add/edit, statuses and reminders. ?add=1 opens the new document form, ?pay=ID the payment drawer.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2475,10 +2475,9 @@ A generic, single database configuration.
 | `HowItWorks` | function | — |
 | `JobsPanel` | function | Newest jobs in the user's city (or anywhere, when there are none there). |
 | `NewsPanel` | function | — |
-| `Ring` | function | — |
 | `DocTile` | function | — |
 | `GuestHome` | function | — |
-| `QUICK` | const | Shown beside the greeting while there are no documents yet (the hero button already adds one). |
+| `QuickActions` | function | The card beside the greeting: «Add document» (opens the form via /documents?add=1, shows the nearest deadline with a status dot), «Check patent» (/checks) and «Rouble rate» (/rate, today's 1 000 ₽ in somoni). The nearest deadline is the first tile in «Documents status». |
 | `MigrantHome` | function | — |
 | `Home` | export function | — |
 

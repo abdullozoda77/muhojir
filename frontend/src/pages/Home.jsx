@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, ArrowUpRight, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Clock, FilePlus2, GraduationCap, MapPinned,
-  LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet,
+  ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, FilePlus2, GraduationCap, MapPinned,
+  LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { useApi, useDocuments } from "../hooks.js";
 import { t } from "../i18n.js";
-import { date, num, todayTitle, usedPercent } from "../format.js";
+import { date, num, todayTitle } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
 import RubleRate from "../components/RubleRate.jsx";
 import FeedbackBanner from "../components/Feedback.jsx";
@@ -214,25 +214,6 @@ function NewsPanel() {
   );
 }
 
-function Ring({ days, pct, tone, size = 112 }) {
-  const stroke = 8;
-  const r = size / 2 - stroke;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg className="h-full w-full -rotate-90" viewBox={`0 0 ${size} ${size}`} aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-surface-container-high" />
-        <m.circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} initial={startShown() ? false : { strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - (pct ?? 100) / 100) }} transition={{ duration: 1.1, ease: EASE, delay: 0.2 }} className={tone} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-[30px] font-semibold leading-none tracking-tight tabular-nums"><CountUp value={Math.abs(days)} /></span>
-        <span className="mt-1 max-w-[72px] text-[12px] leading-tight text-on-surface-variant">{days < 0 ? t("рӯз пеш") : t("рӯз монд")}</span>
-      </div>
-    </div>
-  );
-}
-
-const RING_TONE = { expired: "text-error", expiring: "text-warning-container", valid: "text-tertiary-container" };
 const DOT = { expired: "bg-error", expiring: "bg-warning-container", valid: "bg-tertiary-container" };
 
 function DocTile({ doc }) {
@@ -303,7 +284,49 @@ function GuestHome() {
   );
 }
 
-const QUICK = ["/calculator", "/checks", "/exam"];
+function QuickActions({ next }) {
+  const { data: rates } = useApi("/rates/");
+  const rate = rates?.latest?.nbt || rates?.latest?.cbr;
+  const actions = [
+    {
+      to: "/documents?add=1",
+      icon: FilePlus2,
+      title: t("Ҳуҷҷат илова кардан"),
+      text: next
+        ? t("Наздиктарин: {0} · {1}", t(next.document_type_title), statusText(next))
+        : t("Мо пеш аз анҷоми мӯҳлат хабар медиҳем."),
+      dot: next && DOT[next.status],
+    },
+    { to: "/checks", icon: SearchCheck, title: t("Санҷиши патент"), text: t("Патент, манъи даромадан, қарз.") },
+    {
+      to: "/rate",
+      icon: Banknote,
+      title: t("Қурби рубл"),
+      text: rate ? t("1 000 ₽ = {0} сомонӣ", (rate.value * 1000).toFixed(2)) : t("Қурби расмӣ"),
+    },
+  ];
+  return (
+    <div className="card flex flex-col p-2">
+      <span className="flex items-center gap-2 px-4 pb-2 pt-4 text-label-md text-on-surface-variant">
+        <Zap className="h-4 w-4 text-primary" aria-hidden />
+        {t("Амалҳои зуд")}
+      </span>
+      {actions.map((a) => (
+        <Link key={a.to} to={a.to} className="group flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-surface-container-low">
+          <TileIcon icon={a.icon} />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[16px] font-semibold leading-tight">{a.title}</span>
+            <span className="flex min-w-0 items-center gap-1.5 text-body-sm text-on-surface-variant">
+              {a.dot && <span className={`h-2 w-2 shrink-0 rounded-full ${a.dot}`} aria-hidden />}
+              <span className="truncate">{a.text}</span>
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-outline transition-all group-hover:translate-x-0.5 group-hover:text-on-surface" aria-hidden />
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 function MigrantHome({ user }) {
   const { docs, types, loading } = useDocuments();
@@ -322,35 +345,7 @@ function MigrantHome({ user }) {
         ? t("Ҳамаи ҳуҷҷатҳо тартиб аст. Мо пеш аз мӯҳлат хабар медиҳем.")
         : t("Ҳуҷҷатҳои худро илова кунед — мо мӯҳлатҳоро назорат мекунем.");
 
-  const aside = loading ? (
-    <Skeleton className="h-44" />
-  ) : next ? (
-    <Link to="/documents" className="card flex items-center gap-6 p-6 transition-colors hover:ring-outline/50">
-      <Ring days={next.days_left} pct={usedPercent(next)} tone={RING_TONE[next.status]} />
-      <span className="flex min-w-0 flex-col gap-2">
-        <span className="inline-flex items-center gap-1.5 text-label-md text-on-surface-variant">
-          <Clock className="h-4 w-4" aria-hidden />
-          {next.status === "expired" ? t("Мӯҳлат гузашт") : t("Мӯҳлати наздиктарин")}
-        </span>
-        <span className="text-[22px] font-semibold leading-tight tracking-tight">{t(next.document_type_title)}</span>
-        <span className="text-body-sm text-on-surface-variant">{[next.region_name, t("то {0}", date(next.expires_at))].filter(Boolean).join(" · ")}</span>
-      </span>
-    </Link>
-  ) : (
-    <div className="card flex flex-col p-2">
-      <span className="px-4 pb-2 pt-4 text-label-md text-on-surface-variant">{t("Зуд оғоз кунед")}</span>
-      {QUICK.map((to) => SERVICES.find((s) => s.to === to)).map((s) => (
-        <Link key={s.to} to={s.to} className="group flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-surface-container-low">
-          <TileIcon icon={s.icon} />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[16px] font-semibold leading-tight">{s.title()}</span>
-            <span className="truncate text-body-sm text-on-surface-variant">{s.text()}</span>
-          </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-outline transition-all group-hover:translate-x-0.5 group-hover:text-on-surface" aria-hidden />
-        </Link>
-      ))}
-    </div>
-  );
+  const aside = <QuickActions next={next} />;
 
   return (
     <div className="flex flex-col gap-14 md:gap-20">
@@ -374,13 +369,13 @@ function MigrantHome({ user }) {
         </Intro>
       </HeroStage>
 
-      {docs.length > 1 && (
+      {docs.length > 0 && (
         <section className="flex flex-col gap-6">
           <Reveal>
             <SectionTitle kicker={t("Ҳуҷҷатҳо")} title={t("Ҳолати ҳуҷҷатҳо")} to="/documents" linkText={t("Ҳама")} />
           </Reveal>
           <Stagger inView className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {sorted.slice(1, 4).map((d) => (
+            {sorted.slice(0, 3).map((d) => (
               <StaggerItem key={d.id}>
                 <DocTile doc={d} />
               </StaggerItem>

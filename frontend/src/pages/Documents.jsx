@@ -66,6 +66,13 @@ export default function Documents() {
   const [params, setParams] = useSearchParams();
 
   useEffect(() => {
+    if (params.get("add")) {
+      setEditing({});
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams]);
+
+  useEffect(() => {
     const id = Number(params.get("pay"));
     const doc = id && docs.find((d) => d.id === id);
     if (doc) {
