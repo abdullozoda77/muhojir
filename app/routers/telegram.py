@@ -24,6 +24,13 @@ def status_json(link):
             "enabled": link.enabled if link else False}
 
 
+@router.get("/bot/")
+async def telegram_bot():
+    configured = telegram.configured()
+    return {"configured": configured,
+            "url": f"https://t.me/{settings.telegram_bot_name}" if configured else ""}
+
+
 @router.get("/")
 async def telegram_status(db: DB, user: CurrentUser):
     return status_json(await telegram.link_of(db, user))

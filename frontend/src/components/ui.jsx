@@ -17,6 +17,7 @@ const BUTTON = {
   accent: "bg-primary text-on-primary hover:bg-primary/90",
   light: "bg-surface-container-lowest text-on-surface ring-1 ring-inset ring-outline-variant hover:bg-surface-container-low",
   ghost: "text-on-surface-variant hover:bg-surface-container-low",
+  telegram: "bg-[#229ED9] text-white shadow-sm shadow-[#229ED9]/30 hover:bg-[#1c8cc2]",
 };
 
 export function Button({ variant = "primary", icon: Icon, loading, className = "", children, ...props }) {

@@ -16,6 +16,7 @@ import Footer from "./Footer.jsx";
 import SeasonFall from "./SeasonFall.jsx";
 import LiveToast from "./LiveToast.jsx";
 import { InstallBanner, InstallHeaderButton, InstallMenuButton } from "./InstallApp.jsx";
+import { TelegramHeaderButton } from "./TelegramConnect.jsx";
 import Assistant from "./Assistant.jsx";
 import { PageTransition } from "./motion.jsx";
 import { Skeleton } from "./ui.jsx";
@@ -319,6 +320,7 @@ export default function Layout() {
             <div className="hidden sm:block">
               <ThemeToggle />
             </div>
+            <TelegramHeaderButton />
             {user ? (
               <>
                 <IconButton to="/notifications" label={t("Огоҳиҳо")}>

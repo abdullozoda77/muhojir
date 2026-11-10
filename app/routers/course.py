@@ -260,7 +260,9 @@ async def exam_start(level: int, body: ExamStart, db: DB, user: CurrentUser):
         return exam_json(attempt)
     if moment := wait_until(attempt):
         raise ApiError(WAIT, 429, wait_until=moment.isoformat())
-    seen = [item["i"] for item in attempt.questions] if attempt else []
+    earlier = (await db.scalars(select(ExamAttempt.questions)
+                                .where(ExamAttempt.user_id == user.id, ExamAttempt.level == level))).all()
+    seen = [item["i"] for questions in earlier for item in questions]
     attempt = ExamAttempt(user_id=user.id, level=level, full_name=" ".join(body.full_name.split()),
                           questions=[shuffled(level, i) for i in course.pick_exam(level, seen)],
                           ends_at=utcnow() + timedelta(minutes=course.EXAM_MINUTES))

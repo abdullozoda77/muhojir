@@ -1,5 +1,6 @@
 import json
 import random
+from collections import Counter
 from functools import cache
 from pathlib import Path
 
@@ -55,11 +56,11 @@ def answer_key(question):
 def pick_exam(level_number, seen=()):
     pool = exam_pool(level_number)
     split = len(level(level_number)["exam"])
-    seen = set(seen)
+    seen = Counter(seen)
     picked, answers, rest = [], set(), []
     for group, want in ((range(split), EXAM_SIZE - EXAM_FROM_LESSONS), (range(split, len(pool)), EXAM_FROM_LESSONS)):
         group = random.sample(group, len(group))
-        group.sort(key=lambda i: i in seen)
+        group.sort(key=lambda i: seen[i])
         taken = 0
         for i in group:
             if taken < want and answer_key(pool[i]) not in answers:
@@ -68,7 +69,7 @@ def pick_exam(level_number, seen=()):
                 taken += 1
             else:
                 rest.append(i)
-    rest.sort(key=lambda i: (i in seen, answer_key(pool[i]) in answers))
+    rest.sort(key=lambda i: (seen[i], answer_key(pool[i]) in answers))
     picked += rest[:max(0, EXAM_SIZE - len(picked))]
     random.shuffle(picked)
     return picked

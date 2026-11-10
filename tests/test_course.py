@@ -35,6 +35,9 @@ def test_exam_questions_change_every_attempt():
         assert sum(i >= len(data["exam"]) for i in first) == course.EXAM_FROM_LESSONS, n
         second = course.pick_exam(n, first)
         assert len(set(first) & set(second)) <= course.EXAM_SIZE // 2, n
+        third = course.pick_exam(n, first + second)
+        assert len(set(third) - set(first) - set(second)) >= min(
+            course.EXAM_SIZE // 2, len(course.exam_pool(n)) - len(set(first) | set(second))), n
 
 
 async def finish_lessons(client, headers, level):

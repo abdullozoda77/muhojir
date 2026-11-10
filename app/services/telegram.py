@@ -35,6 +35,26 @@ NOT_LINKED = (
 )
 EXPIRED = "Пайванд кӯҳна шуд — дар сайт боз пахш кунед. / Ссылка устарела — нажмите ещё раз на сайте."
 STOPPED = "Telegram аз ҳисоби Muhojir ҷудо шуд. / Telegram отключён от аккаунта Muhojir."
+NOT_CONNECTED = "Telegram ба ягон ҳисоб пайваст нест. / Telegram не подключён ни к одному аккаунту.\n\n{0}"
+STATUS = (
+    "✅ Пайваст ба ҳисоби Muhojir: {name}\n"
+    "Ёдраскуниҳо: {state_tg}\nТелефон: {phone}\n\n"
+    "✅ Подключён к аккаунту Muhojir: {name}\n"
+    "Напоминания: {state_ru}\nТелефон: {phone}\n\n"
+    "/phone — рақам / номер · /stop — ҷудо кардан / отключить"
+)
+HELP = (
+    "Ин бот ёдраскуниҳои Muhojir-ро мефиристад: мӯҳлати ҳуҷҷатҳо ва хабарҳои ҳисоби шумо.\n"
+    "Этот бот присылает напоминания Muhojir: сроки документов и уведомления вашего аккаунта.\n\n"
+    "/status — ҳолат / статус\n/phone — рақами телефон / номер телефона\n"
+    "/stop — ҷудо кардан / отключить\n\n{0}"
+)
+COMMANDS = [
+    {"command": "status", "description": "Ҳолат / Статус"},
+    {"command": "phone", "description": "Рақами телефон / Номер телефона"},
+    {"command": "help", "description": "Кумак / Помощь"},
+    {"command": "stop", "description": "Ҷудо кардан / Отключить"},
+]
 
 
 def configured():
@@ -162,22 +182,42 @@ async def handle_update(db, update):
     if message.get("contact"):
         return await save_contact(db, chat["id"], sender.get("id"), message["contact"])
     text = (message.get("text") or "").strip()
-    if text.startswith("/start"):
-        code = text.removeprefix("/start").strip()
+    command = text.split()[0].split("@")[0].lower() if text else ""
+    link = await db.scalar(select(TelegramLink).where(TelegramLink.chat_id == chat["id"]))
+    if command == "/start":
+        code = text.removeprefix(text.split()[0]).strip()
         user_id = read_code(code) if code else None
         if user_id:
             return await connect(db, user_id, chat)
-        return await send(chat["id"], EXPIRED if code else NOT_LINKED.format(settings.site_url))
-    if text == "/stop":
-        link = await db.scalar(select(TelegramLink).where(TelegramLink.chat_id == chat["id"]))
+        if code:
+            return await send(chat["id"], EXPIRED)
         if link:
-            await db.delete(link)
-            await db.commit()
+            return await send_status(db, link)
+        return await send(chat["id"], NOT_LINKED.format(settings.site_url))
+    if command == "/help":
+        return await send(chat["id"], HELP.format(settings.site_url))
+    if link is None:
+        return await send(chat["id"], NOT_CONNECTED.format(settings.site_url) if command == "/stop"
+                          else NOT_LINKED.format(settings.site_url), reply_markup={"remove_keyboard": True})
+    if command == "/stop":
+        await db.delete(link)
+        await db.commit()
         return await send(chat["id"], STOPPED, reply_markup={"remove_keyboard": True})
-    return await send(chat["id"], NOT_LINKED.format(settings.site_url))
+    if command == "/phone":
+        return await send(chat["id"], SHARE_PHONE, reply_markup=phone_keyboard())
+    return await send_status(db, link)
+
+
+async def send_status(db, link):
+    user = await db.get(User, link.user_id)
+    name = user.full_name or user.email or user.phone or f"#{user.id}"
+    return await send(link.chat_id, STATUS.format(
+        name=name, phone=user.phone or "—",
+        state_tg="фаъол" if link.enabled else "хомӯш", state_ru="включены" if link.enabled else "выключены"))
 
 
 async def set_webhook(base_url):
     url = f"{base_url.rstrip('/')}/api/telegram/webhook/{webhook_secret()}/"
+    await call("setMyCommands", commands=COMMANDS)
     return await call("setWebhook", url=url, secret_token=webhook_secret(),
                       allowed_updates=["message"], drop_pending_updates=True)

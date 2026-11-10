@@ -45,8 +45,15 @@ def test_link_codes():
     assert len(code) <= 64
 
 
+async def test_bot_link_is_public(client, bot):
+    assert (await client.get("/api/telegram/bot/")).json() == {"configured": True, "url": "https://t.me/MuhojirTestBot"}
+    await telegram.set_webhook("https://king.tj")
+    assert bot[0]["method"] == "setMyCommands" and {"command": "stop", "description": "Ҷудо кардан / Отключить"} in bot[0]["commands"]
+
+
 async def test_not_configured(client, user):
     headers, _ = user
+    assert (await client.get("/api/telegram/bot/")).json() == {"configured": False, "url": ""}
     r = await client.get("/api/telegram/", headers=headers)
     assert r.status_code == 200 and r.json()["configured"] is False
     assert (await client.post("/api/telegram/link/", headers=headers)).status_code == 503
@@ -99,9 +106,22 @@ async def test_connect_notify_phone_and_stop(client, user, bot):
     profile = (await client.get("/api/auth/profile/", headers=headers)).json()
     assert profile["phone"] == "+79991112233"
 
+    await post_update(client, update("/start"))
+    assert "+79991112233" in bot[-1]["text"] and "Подключён" in bot[-1]["text"]
+    await post_update(client, update("/status@MuhojirTestBot"))
+    assert "включены" in bot[-1]["text"]
+    await post_update(client, update("/phone"))
+    assert bot[-1]["reply_markup"]["keyboard"][0][0]["request_contact"] is True
+    await post_update(client, update("/help"))
+    assert "/status" in bot[-1]["text"]
+
     await post_update(client, update("/stop"))
     status = (await client.get("/api/telegram/", headers=headers)).json()
     assert status["connected"] is False
+    await post_update(client, update("/stop"))
+    assert "не подключён" in bot[-1]["text"]
+    await post_update(client, update("/status"))
+    assert "Профиль" in bot[-1]["text"]
 
     await post_update(client, update("/start"))
     assert "Профиль" in bot[-1]["text"]

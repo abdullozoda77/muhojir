@@ -47,10 +47,12 @@ function readSeen() {
 
 function pickRound(section, pool) {
   const seen = new Set(readSeen()[section] || []);
-  const mixed = shuffle(pool);
-  const round = [...mixed.filter((q) => !seen.has(q.id)), ...mixed.filter((q) => seen.has(q.id))].slice(0, ROUND_SIZE);
+  const fresh = shuffle(pool.filter((q) => !seen.has(q.id)));
+  const round = [...fresh, ...shuffle(pool.filter((q) => seen.has(q.id)))].slice(0, ROUND_SIZE);
+  const ids = round.map((q) => q.id);
+  const next = fresh.length > ROUND_SIZE ? [...seen, ...ids] : ids.slice(fresh.length);
   try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify({ ...readSeen(), [section]: round.map((q) => q.id) }));
+    localStorage.setItem(SEEN_KEY, JSON.stringify({ ...readSeen(), [section]: next }));
   } catch {
   }
   return round;

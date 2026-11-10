@@ -653,7 +653,7 @@ A generic, single database configuration.
 
 ### `app/routers/course.py`
 
-**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool (course.pick_exam, questions of the previous try are avoided) with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
+**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool (course.pick_exam, questions of all earlier tries are avoided, the least seen first) with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -911,6 +911,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `telegram_bot` | async function · `GET /api/telegram/bot/` | Public: is the bot set up and its t.me link (the Telegram icon in the header, also for guests). |
 | `telegram_status` | async function · `GET /api/telegram/` | The user's Telegram state. |
 | `telegram_link` | async function · `POST /api/telegram/link/` | A personal link to the bot with a signed code valid 24 hours. |
 | `telegram_update` | async function · `PATCH /api/telegram/` | Turns Telegram messages on or off. |
@@ -951,7 +952,7 @@ A generic, single database configuration.
 | `exam_pool(level)` | function | The level's exam pool (cached): the 25 exam questions first, then every «choice» exercise of its 10 lessons (65 questions). |
 | `exam_question(level, index)` | function | One question of the level's exam pool. |
 | `answer_key(question)` | function | The right option in lower case; two questions with the same right answer never go into one exam. |
-| `pick_exam(level, seen)` | function | Picks a new exam: 10 questions from the exam questions and 10 from the lesson exercises (EXAM_FROM_LESSONS), questions not in `seen` (the previous attempt) first, then shuffles them, so each try is different. |
+| `pick_exam(level, seen)` | function | Picks a new exam: 10 questions from the exam questions and 10 from the lesson exercises (EXAM_FROM_LESSONS), the least seen in `seen` (all earlier attempts) first, then shuffles them, so each try is different. |
 
 ### `app/services/emails.py`
 
@@ -1150,8 +1151,8 @@ A generic, single database configuration.
 | `send_to_user(db, user, title, message)` | async function | Sends a notification (bold title, text, site link) if the user has an enabled link; called by notify() and by the admin panel. |
 | `connect(db, user_id, chat)` | async function | Links the chat after /start CODE and asks for the phone number. |
 | `save_contact(db, chat_id, sender_id, contact)` | async function | Checks and saves the shared phone number. |
-| `handle_update(db, update)` | async function | /start CODE, /start, /stop, a shared contact; other text gets the help message. Only private chats. |
-| `set_webhook(base_url)` | async function | Tells Telegram to send updates to {base_url}/api/telegram/webhook/{secret}/. |
+| `handle_update(db, update)` | async function | /start CODE connects; /start or /status in a connected chat shows the account, phone and on/off; /phone asks for the phone again; /help lists the commands; /stop disconnects (or says nothing was connected); a shared contact saves the phone. Unknown chats get the «open Profile on the site» message. Only private chats. |
+| `set_webhook(base_url)` | async function | Sets the bot's command menu (setMyCommands: status, phone, help, stop) and tells Telegram to send updates to {base_url}/api/telegram/webhook/{secret}/. |
 
 ### `app/services/trudvsem.py`
 
@@ -2221,7 +2222,9 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `TelegramConnect` | export function | The card. |
+| `TelegramConnect` | export function | The card: blue «Connect Telegram» button; when connected the on/off switch, «Open bot» and a red outlined «Disconnect». |
+| `TelegramHeaderButton` | export function | Telegram icon in the header for everyone (hidden while the bot is not set up): a guest goes to the bot, a user gets a connect link, a connected user opens the bot. |
+| `TelegramLogo` | export function | The Telegram logo as SVG. |
 
 ### `frontend/src/components/SeasonFall.jsx`
 
@@ -2421,7 +2424,7 @@ A generic, single database configuration.
 | `BEST_KEY` | const | our goal for practice: three answers out of four |
 | `SEEN_KEY` | const | localStorage key with the question ids of the last round of each section. |
 | `readSeen` | function | Reads those ids. |
-| `pickRound` | function | 15 random questions of a section, not-seen ones first, and remembers them. |
+| `pickRound` | function | 15 random questions of a section: all not-seen questions are used before any repeats; the seen list starts again when the section is used up. |
 | `prepare` | const | Each option keeps whether it is the right one, so the order can change freely. |
 | `readBest` | function | — |
 | `saveBest` | function | — |
