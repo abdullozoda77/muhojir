@@ -9,6 +9,7 @@ REDIS_DB=15
 PG_USER=muhojir
 PG_DB=muhojir
 DOMAIN=king.tj
+ALIASES="muhojir.king.tj"
 OLD_SITE=/etc/nginx/sites-available/muhojir
 NODE_DIR=/home/$APP_USER/.local/node22
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -179,9 +180,9 @@ write_nginx() {
     if [ "$1" = https ]; then
       echo "server {"
       echo "    listen 80;"
-      echo "    server_name $DOMAIN www.$DOMAIN;"
+      echo "    server_name $DOMAIN www.$DOMAIN $ALIASES;"
       echo "    location /.well-known/acme-challenge/ { root /var/www/certbot; }"
-      echo "    location / { return 301 https://$DOMAIN\$request_uri; }"
+      echo "    location / { return 301 https://\$host\$request_uri; }"
       echo "}"
       echo "server {"
       echo "    listen 443 ssl http2;"
@@ -192,7 +193,7 @@ write_nginx() {
       echo "}"
       echo "server {"
       echo "    listen 443 ssl http2;"
-      echo "    server_name $DOMAIN;"
+      echo "    server_name $DOMAIN $ALIASES;"
       echo "    ssl_certificate $CERT_DIR/fullchain.pem;"
       echo "    ssl_certificate_key $CERT_DIR/privkey.pem;"
       echo "    ssl_protocols TLSv1.2 TLSv1.3;"
@@ -202,7 +203,7 @@ write_nginx() {
     elif [ "$1" = http ]; then
       echo "server {"
       echo "    listen 80;"
-      echo "    server_name $DOMAIN www.$DOMAIN;"
+      echo "    server_name $DOMAIN www.$DOMAIN $ALIASES;"
       echo "    location /.well-known/acme-challenge/ { root /var/www/certbot; }"
       echo "    include snippets/muhojir-api-site.conf;"
       echo "}"
@@ -223,21 +224,43 @@ if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
   [ -n "$DOMAIN" ] && { ufw allow 80/tcp; ufw allow 443/tcp; }
 fi
 
+cert_names() {
+  local args="-d $DOMAIN -d www.$DOMAIN" name
+  for name in $ALIASES; do args="$args -d $name"; done
+  echo "$args"
+}
+cert_covers_aliases() {
+  local name
+  for name in $ALIASES; do
+    openssl x509 -in "$CERT_DIR/fullchain.pem" -noout -text | grep -q "DNS:$name\b" || return 1
+  done
+}
+get_cert() {
+  command -v certbot >/dev/null || { apt-get update -qq && apt-get install -y -qq certbot; }
+  echo
+  echo "Getting a free HTTPS certificate for $DOMAIN www.$DOMAIN $ALIASES from Let's Encrypt."
+  echo "certbot may ask for your email (for expiry warnings) and to accept the Let's Encrypt terms."
+  certbot certonly --webroot -w /var/www/certbot $(cert_names) --cert-name "$DOMAIN" --expand --deploy-hook "systemctl reload nginx"
+}
+
 SITE_URL=http://$SERVER_IP:$PUBLIC_PORT
 if [ -z "$DOMAIN" ]; then
   write_nginx port
 elif [ -f "$CERT_DIR/fullchain.pem" ]; then
   write_nginx https
+  if ! cert_covers_aliases; then
+    if get_cert; then
+      write_nginx https
+    else
+      echo "The certificate does not cover $ALIASES yet: $DOMAIN keeps working. Check that $ALIASES point to $SERVER_IP, then run this script again."
+    fi
+  fi
 else
   write_nginx http
-  command -v certbot >/dev/null || { apt-get update -qq && apt-get install -y -qq certbot; }
-  echo
-  echo "Getting a free HTTPS certificate for $DOMAIN and www.$DOMAIN from Let's Encrypt."
-  echo "certbot asks for your email (for expiry warnings) and to accept the Let's Encrypt terms."
-  if certbot certonly --webroot -w /var/www/certbot -d "$DOMAIN" -d "www.$DOMAIN" --cert-name "$DOMAIN" --deploy-hook "systemctl reload nginx"; then
+  if get_cert; then
     write_nginx https
   else
-    echo "No certificate yet: the site works on http://$DOMAIN. Check that $DOMAIN and www.$DOMAIN point to $SERVER_IP, then run this script again."
+    echo "No certificate yet: the site works on http://$DOMAIN. Check that $DOMAIN www.$DOMAIN $ALIASES point to $SERVER_IP, then run this script again."
   fi
 fi
 if [ -n "$DOMAIN" ]; then
@@ -274,10 +297,13 @@ curl -sS -o /dev/null -w "site: HTTP %{http_code}\n" "http://127.0.0.1:$PUBLIC_P
 curl -sS -o /dev/null -w "API:  HTTP %{http_code}\n" "http://127.0.0.1:$PUBLIC_PORT/api/documents/document-types/"
 if [ -n "$DOMAIN" ]; then
   curl -sS -o /dev/null -w "site ($SITE_URL): HTTP %{http_code}\n" --resolve "$DOMAIN:443:127.0.0.1" --resolve "$DOMAIN:80:127.0.0.1" "$SITE_URL/" || true
+  for name in $ALIASES; do
+    curl -sS -o /dev/null -w "site (${SITE_URL/$DOMAIN/$name}): HTTP %{http_code}\n" --resolve "$name:443:127.0.0.1" --resolve "$name:80:127.0.0.1" "${SITE_URL/$DOMAIN/$name}/" || true
+  done
 fi
 
 echo
-echo "Muhojir (FastAPI): $SITE_URL/  (also http://$SERVER_IP:$PUBLIC_PORT/)"
+echo "Muhojir (FastAPI): $SITE_URL/  ${ALIASES:+(also ${SITE_URL/$DOMAIN/$ALIASES}/) }(also http://$SERVER_IP:$PUBLIC_PORT/)"
 echo "Admin account:     cd $APP && sudo -u $APP_USER .venv/bin/python -m app.cli createsuperuser"
 echo "Email, AI, tickets: nano $APP/.env   (EMAIL_*, GEMINI_API_KEY, TRAVELPAYOUTS_TOKEN, GOOGLE_CLIENT_ID)   then   systemctl restart muhojir-api muhojir-api-celery"
 echo "Logs:              journalctl -u muhojir-api -u muhojir-api-celery -u muhojir-api-celerybeat -f"
