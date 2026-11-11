@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Loader2, X, XCircle } from "lucide-react";
 import { t } from "../i18n.js";
 import { daysText } from "../format.js";
@@ -149,9 +149,10 @@ export function Drawer({ open, onClose, title, subtitle, icon: Icon, footer, chi
   );
 }
 
-export function PageHeader({ eyebrow, title, text, children, icon: Icon }) {
+export function PageHeader({ eyebrow, title, text, children, icon: Icon, back = "/", backText }) {
   return (
-    <section className="mb-2 pt-2 md:pt-8">
+    <section className="mb-2 pt-2 md:pt-6">
+      {back && <div className="mb-3"><BackLink to={back}>{backText}</BackLink></div>}
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <Intro className="flex max-w-3xl flex-col gap-3">
           {eyebrow && (
@@ -194,11 +195,23 @@ export function BrandBadge() {
   );
 }
 
-export function BackLink({ to, children }) {
+export function useGoBack(fallback = "/") {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (event) => {
+    if (event?.metaKey || event?.ctrlKey || event?.shiftKey || event?.button > 0) return;
+    event?.preventDefault();
+    if (location.key !== "default" && window.history.state?.idx > 0) navigate(-1);
+    else navigate(fallback);
+  };
+}
+
+export function BackLink({ to = "/", children }) {
+  const goBack = useGoBack(to);
   return (
-    <Link to={to} className="group inline-flex min-h-[40px] items-center gap-1.5 self-start text-label-md text-on-surface-variant transition-colors hover:text-on-surface">
+    <Link to={to} onClick={goBack} className="group inline-flex min-h-[40px] items-center gap-1.5 self-start text-label-md text-on-surface-variant transition-colors hover:text-on-surface">
       <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
-      {children}
+      {children ?? t("Бозгашт")}
     </Link>
   );
 }

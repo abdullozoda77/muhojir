@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BookOpenCheck, Check, GraduationCap, Landmark, RotateCcw, Scale, Shuffle, Volume2, X } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, GraduationCap, Landmark, RotateCcw, Scale, Shuffle, X } from "lucide-react";
 import { apiAll } from "../api.js";
 import { t, useLang } from "../i18n.js";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
-import { canSpeak, speak } from "../speech.js";
 
 const SECTIONS = [
   { key: "mixed", icon: Shuffle, title: () => t("Санҷиши омехта"), text: () => t("15 саволи тасодуфӣ аз ҳамаи қисмҳо") },
-  { key: "language", icon: BookOpenCheck, title: () => t("Забони русӣ"), text: () => t("Грамматика, хониш ва шунидан") },
+  { key: "language", icon: BookOpenCheck, title: () => t("Забони русӣ"), text: () => t("Грамматика ва хониш") },
   { key: "history", icon: Landmark, title: () => t("Таърихи Русия"), text: () => t("Санаҳо, идҳо ва шахсиятҳо") },
   { key: "law", icon: Scale, title: () => t("Асосҳои қонун"), text: () => t("Конститутсия ва ҳуқуқу вазифаҳои муҳоҷир") },
 ];
@@ -66,25 +65,6 @@ function saveBest(section, percent) {
   }
 }
 
-function Listen({ text }) {
-  const [shown, setShown] = useState(false);
-  return (
-    <div className="flex flex-col gap-3 rounded-xl bg-surface-container-low p-4 ring-1 ring-outline-variant">
-      <div className="flex flex-wrap gap-2">
-        {canSpeak && (
-          <Button icon={Volume2} onClick={() => speak(text)}>
-            {t("Гӯш кардан")}
-          </Button>
-        )}
-        <Button variant="plain" onClick={() => setShown((s) => !s)}>
-          {shown ? t("Матнро пинҳон кардан") : t("Матнро нишон додан")}
-        </Button>
-      </div>
-      {shown && <p className="rounded-lg bg-surface-container-lowest p-4 text-body-lg ring-1 ring-outline-variant">{text}</p>}
-    </div>
-  );
-}
-
 function Quiz({ section, questions, onExit, onNew }) {
   const [list, setList] = useState(() => prepare(questions));
   const [index, setIndex] = useState(0);
@@ -97,7 +77,6 @@ function Quiz({ section, questions, onExit, onNew }) {
 
   useEffect(() => {
     if (done) saveBest(section, percent);
-    return () => canSpeak && window.speechSynthesis.cancel();
   }, [done, section, percent]);
 
   const choose = (choice) => {
@@ -107,7 +86,6 @@ function Quiz({ section, questions, onExit, onNew }) {
   };
 
   const next = () => {
-    if (canSpeak) window.speechSynthesis.cancel();
     setPicked(null);
     setIndex((i) => i + 1);
   };
@@ -152,7 +130,6 @@ function Quiz({ section, questions, onExit, onNew }) {
         <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(index / list.length) * 100}%` }} />
       </div>
 
-      {q.listen_text && <Listen key={q.id} text={q.listen_text} />}
       <h2 className="text-[22px] font-semibold leading-snug tracking-tight md:text-[26px]" lang="ru">{q.question}</h2>
 
       <div className="flex flex-col gap-2.5">

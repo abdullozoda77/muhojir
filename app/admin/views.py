@@ -190,7 +190,7 @@ class ExamQuestionAdmin(Base, model=ExamQuestion):
     column_list = [ExamQuestion.question, ExamQuestion.section, ExamQuestion.answer, ExamQuestion.is_active, ExamQuestion.order]
     column_searchable_list = [ExamQuestion.question]
     column_default_sort = [(ExamQuestion.section, False), (ExamQuestion.order, False)]
-    form_columns = [ExamQuestion.section, ExamQuestion.question, ExamQuestion.listen_text, ExamQuestion.options,
+    form_columns = [ExamQuestion.section, ExamQuestion.question, ExamQuestion.options,
                     ExamQuestion.answer, ExamQuestion.explanation, ExamQuestion.explanation_ru, ExamQuestion.is_active, ExamQuestion.order]
     form_choices = {"section": [("language", "Забони русӣ"), ("history", "Таърихи Русия"), ("law", "Асосҳои қонун")]}
 

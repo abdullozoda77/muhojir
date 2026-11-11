@@ -3,7 +3,7 @@ import { ArrowRight, BarChart3, TrendingUp, CalendarDays, Check, Clock, Flame, P
 import { lang, t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { ago } from "../format.js";
-import { BackLink, BrandBadge, PageHeader, Skeleton } from "../components/ui.jsx";
+import { BrandBadge, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Heatmap, LevelBars, LineChart, Ring, StatCard, StatTile } from "../components/Stats.jsx";
 
 const levelTitle = (level) => (lang === "ru" && level.title_ru) || level.title;
@@ -22,8 +22,7 @@ export default function CourseStats() {
   const percent = data.lessons_total ? Math.round((data.lessons_done / data.lessons_total) * 100) : 0;
   return (
     <div className="flex flex-col gap-4">
-      <BackLink to="/course">{t("Курси забони русӣ")}</BackLink>
-      <PageHeader eyebrow={t("Курси забони русӣ")} title={t("Омори ман")} text={t("Пешрафти шумо дар дарсҳо ва имтиҳонҳо, рӯзҳои фаъол ва натиҷаҳо.")} icon={BarChart3} />
+      <PageHeader back="/course" eyebrow={t("Курси забони русӣ")} title={t("Омори ман")} text={t("Пешрафти шумо дар дарсҳо ва имтиҳонҳо, рӯзҳои фаъол ва натиҷаҳо.")} icon={BarChart3} />
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f2452] via-[#132f6b] to-[#1d4ed8] p-5 text-white shadow-[0_24px_60px_-30px_rgba(29,78,216,0.8)] md:p-6">
         <div className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-5">

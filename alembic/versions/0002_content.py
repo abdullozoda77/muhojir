@@ -46,6 +46,8 @@ def upgrade():
             if table_name == "law_news":
                 links += [{"law_news_id": row["id"], "document_type_id": t} for t in row.pop("document_types")]
                 row["created_by_id"] = None
+            if table_name == "exam_questions" and "listen_text" in table.c:
+                row.setdefault("listen_text", "")
             for column in special:
                 row[column] = Decimal(row[column]) if column == "patent_monthly_price" else when(row[column])
             rows.append({key: value for key, value in row.items() if key in table.c})

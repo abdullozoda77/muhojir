@@ -11,7 +11,7 @@ import { lang, setLang, t } from "../i18n.js";
 import { useApi } from "../hooks.js";
 import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
-import { BrandBadge, Button, ErrorBox, Field } from "../components/ui.jsx";
+import { BackLink, BrandBadge, Button, ErrorBox, Field } from "../components/ui.jsx";
 import TelegramConnect from "../components/TelegramConnect.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
@@ -297,6 +297,7 @@ export default function Profile() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 lg:gap-8">
+      <BackLink />
       <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 text-white shadow-[0_24px_60px_-28px_rgba(29,78,216,0.7)] md:p-8 lg:p-10 dark:from-[#0f1d4a] dark:via-[#132a66] dark:to-[#1a3a8a] dark:shadow-none dark:ring-1 dark:ring-white/10">
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-sky-300/20 blur-2xl" aria-hidden />

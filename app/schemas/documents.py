@@ -137,7 +137,6 @@ def news_json(n):
 class ExamQuestionIn(Form):
     section: Literal["language", "history", "law"]
     question: str = Field(max_length=500)
-    listen_text: str = ""
     options: list[str]
     answer: int = Field(ge=0)
     explanation: str = ""
@@ -155,7 +154,7 @@ class ExamQuestionPatch(ExamQuestionIn):
 
 
 def exam_question_json(q):
-    return {"id": q.id, "section": q.section, "question": q.question, "listen_text": q.listen_text, "options": q.options,
+    return {"id": q.id, "section": q.section, "question": q.question, "options": q.options,
             "answer": q.answer, "explanation": tr(q, "explanation"), "is_active": q.is_active, "order": q.order}
 
 

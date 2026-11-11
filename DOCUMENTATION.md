@@ -360,7 +360,7 @@ A generic, single database configuration.
 | `MigrationCenter` | class · table `migration_centers` | A migration center where papers are handed in. Editors add them; the site shows them by region. |
 | `ReminderLog` | class · table `reminder_logs` | Remembers which reminders were already sent, so the daily job never sends the same one twice. The end date is part of the key: after the user renews a document, its reminders start again. |
 | `LawNews` | class · table `law_news` | News about migration law, written in Tajik. |
-| `ExamQuestion` | class · table `exam_questions` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. A listening question has listen_text: the site reads it aloud in Russian before the question. |
+| `ExamQuestion` | class · table `exam_questions` | A practice question for the exam in Russian language, history and law that is needed for the patent. options is a list of answers; answer is the number (from 0) of the right one. |
 | `*_ru` | — | The content tables also have Russian columns (`*_ru`): document_types title/description, guide_steps title/body/required_papers/cost_note/deadline_note/where/example, law_news title/summary/body, exam_questions explanation, migration_centers working_hours. Empty = the Tajik text is shown. Editors fill them in the admin panel. |
 
 ### `app/models/feedback.py`
@@ -1498,6 +1498,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0021_no_listening.py`
+
+**What it is for:** Removes listening from the patent exam practice: the 8 listening questions become reading ones (the text is put into the question, «Прочитайте: «…» …»), then the listen_text column is dropped. Revision ID: 0021 Revises: 0020
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Rewrites the listening questions from app/seed/exam_questions.json and drops listen_text. |
+| `downgrade()` | function | Adds an empty listen_text column back. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1889,16 +1898,6 @@ A generic, single database configuration.
 | `isIOS` | export const | — |
 | `useInstall` | export function | {installed, canInstall, install()}: canInstall is true where the browser can install it with one button. |
 | `useOnline` | export function | — |
-
-### `frontend/src/speech.js`
-
-**What it is for:** Reads Russian text aloud with the browser's voice (only the patent exam practice uses it; the course has no audio).
-
-| Name | Kind | What it does |
-|---|---|---|
-| `canSpeak` | const | Whether the browser can speak. |
-| `speak(text, rate)` | function | Says the text in Russian. |
-| `hush()` | function | Stops speaking. |
 
 ### `frontend/src/theme.js`
 
@@ -2320,8 +2319,9 @@ A generic, single database configuration.
 | `Field` | export function | — |
 | `BrandBadge` | export function | The Muhojir logo with its name for the blue cards (profile, course statistics); on phones a faint big logo in the corner instead. |
 | `Drawer` | export function | Side panel on desktop, full-height sheet on phones. Rendered into document.body (portal) so it covers the site header and the bottom menu and the ✕ button is always visible. Optional footer: a sticky bottom bar. Closes on Escape and on the dark backdrop; the page behind is locked with useScrollLock. |
-| `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). |
-| `BackLink` | export function | "← Back" above a detail page: a quiet text link. |
+| `PageHeader` | export function | The top of every page: a small label, a headline, one line of text, and the page's main actions on the right. Plain, on the page, with a hairline under it. children: buttons (any variant). back: where «← Back» goes when there is no previous page (default "/"; false hides it); backText: its text. |
+| `useGoBack(fallback)` | export function | Returns a click handler that goes back to the page the user came from (browser history inside the site); when the page was opened directly, it goes to `fallback`. |
+| `BackLink` | export function | "← Back": a quiet text link that returns to the previous page (useGoBack); `to` is used only when there is no previous page. Without children the text is «Back». |
 | `Switch` | export function | An on/off row with an icon, a title and a hint (role=switch); used for «we deliver» and «in stock». |
 
 
@@ -2390,10 +2390,11 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Lesson.jsx`
 
-**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%.
+**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%. The exercises come in a new random order every time the practice starts (and on «Again»); the order is kept in the browser with the progress, so a resumed lesson continues in the same order.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `newOrder(total)` | const | A shuffled list of exercise numbers. |
 | `Practice` | function | Exercises one by one. |
 | `Lesson` | export function | — |
 
@@ -2417,7 +2418,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Exam.jsx`
 
-**What it is for:** Practice for the exam in Russian language, history and law that is needed for the patent. Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place. Every round (each section and the mixed test) is 15 random questions; the questions of the previous round of that section are put last, so a new round is different.
+**What it is for:** Practice for the exam in Russian language, history and law that is needed for the patent. Questions come from the admin panel; answers are shuffled here, so the right one is not always in the same place. Every round (each section and the mixed test) is 15 random questions; the questions of the previous round of that section are put last, so a new round is different. There is no listening and no audio.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2428,7 +2429,6 @@ A generic, single database configuration.
 | `prepare` | const | Each option keeps whether it is the right one, so the order can change freely. |
 | `readBest` | function | — |
 | `saveBest` | function | — |
-| `Listen` | function | — |
 | `Quiz` | function | — |
 | `Exam` | export function | — |
 

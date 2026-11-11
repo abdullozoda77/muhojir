@@ -7,7 +7,7 @@ import { t } from "../i18n.js";
 import { CITIES, SHOP_CATEGORIES, UNITS } from "../constants.js";
 import { PROOF_KINDS, Price, ProductPhoto, ProofThumb, ShopLogo, ShopStatus, fitPhoto } from "../components/Shop.jsx";
 import LocationPicker from "../components/LocationPicker.jsx";
-import { BackLink, Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
+import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
 
 const EMPTY_SHOP = {
   name: "", category: "grocery", description: "", city: "Москва", address: "", phone: "", whatsapp: "", telegram: "",
@@ -567,8 +567,7 @@ export default function MyShops() {
 
   return (
     <div className="flex flex-col gap-6">
-      <BackLink to="/shops">{t("Ҳамаи мағозаҳо")}</BackLink>
-      <PageHeader title={t("Мағозаҳои ман")} text={t("Мағоза кушоед, молҳо ва нархҳоро илова кунед. Харидорон бо телефон, WhatsApp ё Telegram ба шумо менависанд.")} icon={Store}>
+      <PageHeader back="/shops" title={t("Мағозаҳои ман")} text={t("Мағоза кушоед, молҳо ва нархҳоро илова кунед. Харидорон бо телефон, WhatsApp ё Telegram ба шумо менависанд.")} icon={Store}>
         <Button icon={Plus} onClick={() => setForm({ open: true, shop: null })}>{t("Мағозаи нав")}</Button>
       </PageHeader>
       <ErrorBox error={error} />

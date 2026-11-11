@@ -215,7 +215,6 @@ class ExamQuestion(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     section: Mapped[str] = mapped_column(String(20))
     question: Mapped[str] = mapped_column(String(500))
-    listen_text: Mapped[str] = mapped_column(Text, default="")
     options: Mapped[list] = mapped_column(JSON)
     answer: Mapped[int] = mapped_column(Integer)
     explanation: Mapped[str] = mapped_column(Text, default="")

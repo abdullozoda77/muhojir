@@ -19,6 +19,8 @@ const shuffle = (list) => {
   return copy;
 };
 
+const newOrder = (total) => shuffle([...Array(total).keys()]);
+
 const clean = (text) => text.toLowerCase().replace(/ё/g, "е").replace(/[.,!?;:«»"—–-]/g, " ").replace(/\s+/g, " ").trim();
 const pieces = (text) => text.replace(/[.,!?;:«»"—–]/g, " ").split(/\s+/).filter(Boolean);
 
@@ -192,11 +194,11 @@ function Build({ exercise, onAnswer }) {
   );
 }
 
-function Practice({ lesson, start, onSave, onDone }) {
+function Practice({ lesson, order, start, onSave, onDone }) {
   const [index, setIndex] = useState(start?.index ?? 0);
   const [answered, setAnswered] = useState(null);
   const [right, setRight] = useState(start?.right ?? 0);
-  const exercise = lesson.exercises[index];
+  const exercise = lesson.exercises[order[index]];
   const total = lesson.exercises.length;
 
   const answer = (ok) => {
@@ -280,6 +282,7 @@ export default function Lesson({ kind = "ru" }) {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [resume, setResume] = useState(null);
+  const [order, setOrder] = useState([]);
 
   useEffect(() => {
     setSaved(false);
@@ -288,7 +291,11 @@ export default function Lesson({ kind = "ru" }) {
 
   useEffect(() => {
     if (!lesson) return;
-    const saved = lesson.resume || readProgress(course, level, number, lesson.exercises.length);
+    const total = lesson.exercises.length;
+    const local = readProgress(course, level, number, total);
+    const saved = lesson.resume || local;
+    const kept = local?.order;
+    setOrder(saved && kept?.length === total && new Set(kept).size === total ? kept : newOrder(total));
     setResume(saved);
     setStage(saved ? "practice" : "learn");
     if (user) sendPlace(course, level, number, saved);
@@ -308,7 +315,7 @@ export default function Lesson({ kind = "ru" }) {
   }, [course, user, lesson, level, number]);
 
   const save = (value) => {
-    keepProgress(course, level, number, value);
+    keepProgress(course, level, number, value && { ...value, order });
     setResume(value);
     if (user) sendPlace(course, level, number, value);
   };
@@ -372,9 +379,9 @@ export default function Lesson({ kind = "ru" }) {
           </Button>
         </>
       )}
-      {stage === "practice" && <Practice key={round} lesson={lesson} start={resume} onSave={save} onDone={finish} />}
+      {stage === "practice" && order.length > 0 && <Practice key={round} lesson={lesson} order={order} start={resume} onSave={save} onDone={finish} />}
       {stage === "done" && (
-        <Result course={course} percent={percent} lesson={lesson} user={user} saved={saved} saveError={saveError} onRetry={() => { save(null); setRound((r) => r + 1); setStage("practice"); }} />
+        <Result course={course} percent={percent} lesson={lesson} user={user} saved={saved} saveError={saveError} onRetry={() => { save(null); setOrder(newOrder(lesson.exercises.length)); setRound((r) => r + 1); setStage("practice"); }} />
       )}
 
       <nav className="flex justify-between gap-2 pt-2">

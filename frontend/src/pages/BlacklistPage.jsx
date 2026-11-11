@@ -3,7 +3,7 @@ import { Search, ShieldAlert } from "lucide-react";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
-import { BackLink, Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
 
 export default function BlacklistPage() {
   const [search, setSearch] = useState("");
@@ -13,8 +13,7 @@ export default function BlacklistPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <BackLink to="/jobs">{t("Ҷойи кор")}</BackLink>
-      <PageHeader icon={ShieldAlert} eyebrow={t("Барои ҳама кушода")} title={t("Рӯйхати сиёҳи корфармоён")} text={t("Корфармоёне, ки коргарон аз онҳо шикоят кардаанд, бо сабабҳояшон. Пеш аз сафар ширкатро дар ин ҷо санҷед.")} />
+      <PageHeader back="/jobs" icon={ShieldAlert} eyebrow={t("Барои ҳама кушода")} title={t("Рӯйхати сиёҳи корфармоён")} text={t("Корфармоёне, ки коргарон аз онҳо шикоят кардаанд, бо сабабҳояшон. Пеш аз сафар ширкатро дар ин ҷо санҷед.")} />
 
       <form onSubmit={(e) => (e.preventDefault(), setQuery(search.trim()))} className="flex gap-2">
         <label className="relative flex-1">

@@ -77,7 +77,7 @@ chart of the last days. Money transfer services use their own, usually worse, ra
 form; also law news. A guide can be opened for one document.
 - [news] Law news (part of the guides page).
 - [checks] Document checks: official sites to check the patent, an entry ban, and debts (ФССП).
-- [exam] Exam practice: 100 practice questions for the state exam for the patent (Russian language with listening, history, \
+- [exam] Exam practice: 100 practice questions for the state exam for the patent (Russian language, history, \
 basics of law), with explanations in Tajik.
 - [course] Russian language course: free, in Tajik, 7 levels × 10 lessons from the alphabet to free speech (about A0-B1). \
 Lessons open one after another; each lesson has theory, words and exercises (at least 60% to pass). After 10 lessons there \
