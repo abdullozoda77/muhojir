@@ -88,8 +88,14 @@ function Count({ n, tone = "bg-secondary text-on-secondary" }) {
   return <span className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${tone}`}>{n}</span>;
 }
 
+const FLAGS = {
+  tg: "linear-gradient(to bottom, #cc0000 0 28.6%, #ffffff 28.6% 71.4%, #006600 71.4% 100%)",
+  ru: "linear-gradient(to bottom, #ffffff 0 33.4%, #0039a6 33.4% 66.7%, #d52b1e 66.7% 100%)",
+};
+
 export function LangSwitch() {
   const { user, setUser } = useAuth();
+  const { dark } = useTheme();
   const choose = async (next) => {
     if (next === lang) return;
     setLang(next);
@@ -99,29 +105,48 @@ export function LangSwitch() {
     }
   };
   return (
-    <div className="relative inline-flex items-center gap-0.5 rounded-md bg-surface-container-low p-[2px] ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
+    <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 ${dark ? "bg-[#0f2257] ring-white/15" : "bg-surface-container-low ring-outline-variant"}`} role="group" aria-label={t("Забон")}>
       <m.span
         aria-hidden
-        className="absolute left-[2px] top-[2px] h-6 w-7 rounded-[5px] bg-ink shadow-sm"
+        className={`absolute left-[2px] top-[2px] h-6 w-7 overflow-hidden rounded-[5px] ${dark ? "bg-white" : "ring-1 ring-black/10"}`}
         initial={false}
         animate={{ x: lang === "ru" ? 30 : 0 }}
-        transition={{ type: "spring", stiffness: 520, damping: 34 }}
-      />
+        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+      >
+        {!dark && (
+          <AnimatePresence initial={false}>
+            <m.span
+              key={lang}
+              className="absolute inset-0"
+              style={{ background: FLAGS[lang] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            />
+          </AnimatePresence>
+        )}
+      </m.span>
       {[
         ["tg", "TJ"],
         ["ru", "RU"],
-      ].map(([code, name]) => (
-        <m.button
-          key={code}
-          type="button"
-          onClick={() => choose(code)}
-          aria-pressed={lang === code}
-          whileTap={{ scale: 0.88 }}
-          className={`relative z-10 flex h-6 w-7 items-center justify-center rounded-[5px] text-[11px] font-semibold leading-none tracking-wide transition-colors duration-300 ${lang === code ? "text-on-ink" : "text-on-surface-variant hover:text-on-surface"}`}
-        >
-          {name}
-        </m.button>
-      ))}
+      ].map(([code, name]) => {
+        const active = lang === code;
+        const tone = active
+          ? dark ? "text-[#0f2257]" : "text-black [text-shadow:0_0_3px_#fff,0_0_2px_#fff]"
+          : dark ? "text-white/50 hover:text-white" : "text-on-surface-variant hover:text-on-surface";
+        return (
+          <button
+            key={code}
+            type="button"
+            onClick={() => choose(code)}
+            aria-pressed={active}
+            className={`relative z-10 flex h-6 w-7 items-center justify-center rounded-[5px] text-[11px] font-semibold leading-none tracking-wide transition-[color,transform] duration-300 active:scale-90 ${tone}`}
+          >
+            {name}
+          </button>
+        );
+      })}
     </div>
   );
 }
