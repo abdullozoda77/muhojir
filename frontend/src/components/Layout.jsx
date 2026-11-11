@@ -108,42 +108,29 @@ export function LangSwitch() {
     <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 ${dark ? "bg-[#0f2257] ring-white/15" : "bg-surface-container-low ring-outline-variant"}`} role="group" aria-label={t("Забон")}>
       <m.span
         aria-hidden
-        className={`absolute left-[2px] top-[2px] h-6 w-7 overflow-hidden rounded-[5px] ${dark ? "bg-white" : "ring-1 ring-black/10"}`}
+        className={`absolute left-[2px] top-[2px] h-5 w-6 rounded-[4px] ${dark ? "bg-white" : "bg-white shadow-sm ring-1 ring-black/10"}`}
         initial={false}
-        animate={{ x: lang === "ru" ? 30 : 0 }}
+        animate={{ x: lang === "ru" ? 26 : 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 32 }}
-      >
-        {!dark && (
-          <AnimatePresence initial={false}>
-            <m.span
-              key={lang}
-              className="absolute inset-0"
-              style={{ background: FLAGS[lang] }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          </AnimatePresence>
-        )}
-      </m.span>
+      />
       {[
-        ["tg", "TJ"],
-        ["ru", "RU"],
-      ].map(([code, name]) => {
+        ["tg", "TJ", "Тоҷикӣ"],
+        ["ru", "RU", "Русский"],
+      ].map(([code, name, label]) => {
         const active = lang === code;
-        const tone = active
-          ? dark ? "text-[#0f2257]" : "text-black [text-shadow:0_0_3px_#fff,0_0_2px_#fff]"
-          : dark ? "text-white/50 hover:text-white" : "text-on-surface-variant hover:text-on-surface";
         return (
           <button
             key={code}
             type="button"
             onClick={() => choose(code)}
             aria-pressed={active}
-            className={`relative z-10 flex h-6 w-7 items-center justify-center rounded-[5px] text-[11px] font-semibold leading-none tracking-wide transition-[color,transform] duration-300 active:scale-90 ${tone}`}
+            aria-label={label}
+            title={label}
+            className={`relative z-10 flex h-5 w-6 items-center justify-center rounded-[4px] text-[10px] font-semibold leading-none tracking-wide transition-[color,transform,opacity] duration-300 active:scale-90 ${
+              dark ? (active ? "text-[#0f2257]" : "text-white/50 hover:text-white") : active ? "" : "opacity-45 hover:opacity-80"
+            }`}
           >
-            {name}
+            {dark ? name : <span className="block h-3 w-[18px] rounded-[2px] ring-1 ring-black/15" style={{ background: FLAGS[code] }} />}
           </button>
         );
       })}
