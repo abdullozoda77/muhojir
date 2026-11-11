@@ -321,7 +321,8 @@ export default function Layout() {
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
-        <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none">
+        <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none lg:justify-center lg:gap-6 xl:gap-10">
+          <div className="flex shrink-0 items-center gap-3">
           <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className={`-ml-1 hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors lg:flex ${side ? "bg-primary-fixed text-on-primary-fixed ring-primary/20" : "text-on-surface ring-outline-variant hover:bg-surface-container-high"}`}>
             <AnimatePresence mode="wait" initial={false}>
               <m.span key={side ? "x" : "menu"} className="block" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
@@ -331,7 +332,8 @@ export default function Layout() {
             <span className="hidden xl:inline">{t("Меню")}</span>
           </button>
           <Logo />
-          <nav className="mx-auto hidden min-w-0 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
+          </div>
+          <nav className="hidden min-w-0 shrink-0 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
               <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
                 {i.short || i.label}
@@ -340,7 +342,7 @@ export default function Layout() {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-0">
             <InstallHeaderButton />
             <div className="hidden sm:block">
               <LangSwitch />
