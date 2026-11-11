@@ -2114,7 +2114,7 @@ A generic, single database configuration.
 | `useCounters` | function | Counters: unread notifications and documents that need attention (ending soon or expired). |
 | `Logo` | function | — |
 | `Count` | function | — |
-| `LangSwitch` | export function | The small language switch (54×24 px): a white highlight slides smoothly to the chosen language. Dark theme: TJ / RU letters, dark blue and white only. Light theme: no letters, only the two flags (Tajikistan, Russia); the other one is faded. |
+| `LangSwitch` | export function | The small language switch (62×28 px): a white highlight slides smoothly to the chosen language. Dark theme: TJ / RU letters, dark blue and white only. Light theme: no letters, only the two flags (Tajikistan, Russia); the other one is faded. |
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `TONES` | const | A soft colour of the icon tile for each sidebar link. |
