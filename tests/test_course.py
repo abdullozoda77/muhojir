@@ -40,6 +40,31 @@ def test_exam_questions_change_every_attempt():
             course.EXAM_SIZE // 2, len(course.exam_pool(n)) - len(set(first) | set(second))), n
 
 
+def test_russian_texts_exist_for_both_courses():
+    tajik = set("ҳҷқғӣӯҲҶҚҒӢӮ")
+    for kind in course.COURSES.values():
+        assert kind.russian, kind.key
+        for key, value in kind.russian.items():
+            assert value.strip() and value != key, (kind.key, key)
+    for data in course.DRIVE.levels():
+        for lesson in data["lessons"]:
+            shown = course.DRIVE.translated(lesson, "ru")
+            for text in [shown["title"], shown["goal"]] + [b["text"] for b in shown["theory"]] + [
+                    e["q"] for e in shown["exercises"]] + [o for e in shown["exercises"] for o in e["options"]]:
+                assert not tajik & set(text), (data["level"], text)
+
+
+async def test_lesson_comes_in_russian(client):
+    r = await client.get("/api/drive/levels/1/lessons/1/", headers={"Accept-Language": "ru"})
+    assert r.status_code == 200, r.text
+    lesson = r.json()
+    assert lesson["title"] == "Права и документы" and lesson["level_title"] == "Общие положения"
+    r = await client.get("/api/drive/levels/1/lessons/1/")
+    assert r.json()["title"] == "Шаҳодатнома ва ҳуҷҷатҳо"
+    r = await client.get("/api/course/", headers={"Accept-Language": "ru"})
+    assert r.json()["levels"][0]["lessons"][1]["title"] == "Новые буквы: Ы, Ц, Щ, Ь"
+
+
 async def finish_lessons(client, headers, level):
     for number in range(1, course.LESSONS_PER_LEVEL + 1):
         r = await client.post(f"/api/course/levels/{level}/lessons/{number}/complete/", headers=headers, json={"score": 90})

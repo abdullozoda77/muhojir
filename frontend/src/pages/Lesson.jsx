@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, Lightbulb, Lock, RotateCcw, Undo2, X } from "lucide-react";
 import { api } from "../api.js";
-import { t } from "../i18n.js";
+import { t, useLang } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { BackLink, Button, ErrorBox, Skeleton } from "../components/ui.jsx";
@@ -69,7 +69,9 @@ function sendPlace(course, level, number, value) {
   api(`${course.api}/place/`, { method: "PUT", body: { level: Number(level), number: Number(number), index: value?.index ?? 0, right: value?.right ?? 0 } }).catch(() => {});
 }
 
-function Theory({ lesson }) {
+function Theory({ lesson, course }) {
+  const lang = useLang();
+  const both = !(lang === "ru" && course.termsOnly);
   return (
     <div className="flex flex-col gap-4">
       {lesson.theory.map((block) => (
@@ -85,7 +87,7 @@ function Theory({ lesson }) {
               {block.examples.map(([ru, tg]) => (
                 <li key={ru} className="flex flex-col gap-0.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <Say text={ru} className="text-body-lg font-semibold" />
-                  <span className="text-body-md text-on-surface-variant">{tg}</span>
+                  {both && <span className="text-body-md text-on-surface-variant">{tg}</span>}
                 </li>
               ))}
             </ul>
@@ -98,7 +100,7 @@ function Theory({ lesson }) {
           {lesson.words.map(([ru, tg]) => (
             <li key={ru} className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 ring-1 ring-inset ring-outline-variant">
               <Say text={ru} className="text-body-lg font-semibold" />
-              <span className="text-right text-body-sm text-on-surface-variant">{tg}</span>
+              {both && <span className="text-right text-body-sm text-on-surface-variant">{tg}</span>}
             </li>
           ))}
         </ul>
@@ -373,7 +375,7 @@ export default function Lesson({ kind = "ru" }) {
 
       {stage === "learn" && (
         <>
-          <Theory lesson={lesson} />
+          <Theory lesson={lesson} course={course} />
           <Button icon={ArrowRight} className="self-end" onClick={() => { setStage("practice"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
             {resume ? t("Идомаи машқҳо: {0} аз {1}", resume.index + 1, lesson.exercises.length) : t("Ба машқҳо")}
           </Button>

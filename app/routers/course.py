@@ -2,7 +2,7 @@ import random
 import secrets
 from datetime import timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import Field
 from sqlalchemy import select
 
@@ -42,9 +42,13 @@ class ExamAnswers(Form):
     answers: list[int | None] = Field(max_length=max(c.exam_size for c in course.COURSES.values()))
 
 
-def level_info(data):
+def lang_of(request):
+    return "ru" if request.headers.get("accept-language", "").lower().startswith("ru") else "tg"
+
+
+def level_info(kind, data, lang):
     return {"level": data["level"], "title": data["title"], "title_ru": data.get("title_ru", ""),
-            "cefr": data.get("cefr", ""), "text": data.get("text", "")}
+            "cefr": data.get("cefr", ""), "text": kind.tr(data.get("text", ""), lang)}
 
 
 def certificate_json(c):
@@ -125,23 +129,23 @@ def build(kind, prefix, tag):
         return await db.scalar(select(CoursePlace).where(CoursePlace.user_id == user.id,
                                                          CoursePlace.course == kind.key))
 
-    def place_json(place, done):
+    def place_json(place, done, lang="tg"):
         item = kind.lesson(place.level, place.number) if place else None
         if not item:
             return None
-        return {"level": place.level, "number": place.number, "title": item["title"], "index": place.index,
+        return {"level": place.level, "number": place.number, "title": kind.tr(item["title"], lang), "index": place.index,
                 "total": len(item["exercises"]), "finished": (place.level, place.number) in done}
 
     async def must_unlocked(db, user, level, number):
         if not is_unlocked(level, number, await progress_of(db, user), await passed_levels(db, user)):
             raise ApiError(LOCKED, 403, code="locked")
 
-    def exam_json(attempt):
+    def exam_json(attempt, lang):
         questions = []
         for item in attempt.questions:
             q = kind.exam_question(attempt.level, item["i"])
-            questions.append({"q": q["q"], "ru": q.get("ru", ""), "sign": q.get("sign", ""),
-                              "options": [q["options"][k] for k in item["order"]]})
+            questions.append({"q": kind.tr(q["q"], lang), "ru": q.get("ru", ""), "sign": q.get("sign", ""),
+                              "options": [kind.tr(q["options"][k], lang) for k in item["order"]]})
         return {"id": attempt.id, "level": attempt.level, "full_name": attempt.full_name, "questions": questions,
                 "ends_at": attempt.ends_at.isoformat(), "minutes": kind.exam_minutes,
                 "pass_percent": kind.pass_percent}
@@ -152,7 +156,8 @@ def build(kind, prefix, tag):
         return {"i": index, "order": order}
 
     @router.get("/")
-    async def overview(db: DB, user: OptionalUser):
+    async def overview(request: Request, db: DB, user: OptionalUser):
+        lang = lang_of(request)
         done = await progress_of(db, user)
         passed = await passed_levels(db, user)
         certificate = await certificate_of(db, user)
@@ -160,7 +165,7 @@ def build(kind, prefix, tag):
         result = []
         for data in kind.levels():
             n = data["level"]
-            lessons = [{"number": i, "title": item["title"], "goal": item.get("goal", ""),
+            lessons = [{"number": i, "title": kind.tr(item["title"], lang), "goal": kind.tr(item.get("goal", ""), lang),
                         "score": done[(n, i)].score if (n, i) in done else None,
                         "unlocked": is_unlocked(n, i, done, passed)}
                        for i, item in enumerate(data["lessons"], start=1)]
@@ -173,15 +178,16 @@ def build(kind, prefix, tag):
                 moment = wait_until(attempt)
                 exam["wait_until"] = moment.isoformat() if moment else None
                 exam["open"] = bool(is_open(attempt))
-            result.append({**level_info(data), "unlocked": lessons[0]["unlocked"], "lessons": lessons, "exam": exam})
+            result.append({**level_info(kind, data, lang), "unlocked": lessons[0]["unlocked"], "lessons": lessons, "exam": exam})
         return {"course": kind.key, "levels": result,
                 "certificate": certificate_json(certificate) if certificate else None,
-                "place": place_json(place, done),
+                "place": place_json(place, done, lang),
                 "exam_size": kind.exam_size, "exam_minutes": kind.exam_minutes,
                 "pass_percent": kind.pass_percent, "lesson_pass": kind.lesson_pass}
 
     @router.get("/levels/{level}/lessons/{number}/")
-    async def lesson_detail(level: int, number: int, db: DB, user: OptionalUser):
+    async def lesson_detail(level: int, number: int, request: Request, db: DB, user: OptionalUser):
+        lang = lang_of(request)
         data = must_level(level)
         item = kind.lesson(level, number)
         if not item:
@@ -192,12 +198,13 @@ def build(kind, prefix, tag):
         resume = None
         if place and (place.level, place.number) == (level, number) and 0 < place.index < len(item["exercises"]):
             resume = {"index": place.index, "right": min(place.right, place.index)}
-        return {**item, "level": level, "number": number, "level_title": data["title"],
+        return {**kind.translated(item, lang), "level": level, "number": number,
+                "level_title": (lang == "ru" and data.get("title_ru")) or data["title"],
                 "lessons_total": len(data["lessons"]), "score": done.score if done else None,
                 "lesson_pass": kind.lesson_pass, "resume": resume}
 
     @router.put("/place/")
-    async def save_place(body: PlaceIn, db: DB, user: CurrentUser):
+    async def save_place(body: PlaceIn, request: Request, db: DB, user: CurrentUser):
         must_level(body.level)
         item = kind.lesson(body.level, body.number)
         if not item:
@@ -211,7 +218,7 @@ def build(kind, prefix, tag):
         place.level, place.number, place.index, place.right = body.level, body.number, index, min(body.right, index)
         place.updated_at = utcnow()
         await db.commit()
-        return place_json(place, await progress_of(db, user))
+        return place_json(place, await progress_of(db, user), lang_of(request))
 
     @router.post("/levels/{level}/lessons/{number}/complete/")
     async def lesson_complete(level: int, number: int, body: LessonDone, db: DB, user: CurrentUser):
@@ -235,7 +242,7 @@ def build(kind, prefix, tag):
         return {"level": level, "number": number, "score": done.score}
 
     @router.post("/levels/{level}/exam/", status_code=201)
-    async def exam_start(level: int, body: ExamStart, db: DB, user: CurrentUser):
+    async def exam_start(level: int, body: ExamStart, request: Request, db: DB, user: CurrentUser):
         data = must_level(level)
         passed = await passed_levels(db, user)
         if level in passed:
@@ -247,7 +254,7 @@ def build(kind, prefix, tag):
             raise ApiError(LESSONS_FIRST)
         attempt = await last_attempt(db, user, level)
         if is_open(attempt):
-            return exam_json(attempt)
+            return exam_json(attempt, lang_of(request))
         if moment := wait_until(attempt):
             raise ApiError(WAIT, 429, wait_until=moment.isoformat())
         earlier = (await db.scalars(select(ExamAttempt.questions)
@@ -259,7 +266,7 @@ def build(kind, prefix, tag):
                               ends_at=utcnow() + timedelta(minutes=kind.exam_minutes))
         db.add(attempt)
         await db.commit()
-        return exam_json(attempt)
+        return exam_json(attempt, lang_of(request))
 
     async def own_attempt(db, user, attempt_id):
         attempt = await db.get(ExamAttempt, attempt_id)
@@ -268,11 +275,11 @@ def build(kind, prefix, tag):
         return attempt
 
     @router.get("/exams/{attempt_id}/")
-    async def exam_detail(attempt_id: int, db: DB, user: CurrentUser):
+    async def exam_detail(attempt_id: int, request: Request, db: DB, user: CurrentUser):
         attempt = await own_attempt(db, user, attempt_id)
         if not is_open(attempt):
             raise ApiError(FINISHED)
-        return exam_json(attempt)
+        return exam_json(attempt, lang_of(request))
 
     async def issue(db, user, attempt):
         passed = await passed_levels(db, user)
@@ -290,7 +297,8 @@ def build(kind, prefix, tag):
         return certificate
 
     @router.post("/exams/{attempt_id}/submit/")
-    async def exam_submit(attempt_id: int, body: ExamAnswers, db: DB, user: CurrentUser):
+    async def exam_submit(attempt_id: int, body: ExamAnswers, request: Request, db: DB, user: CurrentUser):
+        lang = lang_of(request)
         attempt = await own_attempt(db, user, attempt_id)
         if attempt.finished_at:
             raise ApiError(FINISHED)
@@ -302,8 +310,8 @@ def build(kind, prefix, tag):
             order = item["order"]
             ok = not late and answer is not None and 0 <= answer < len(order) and order[answer] == q["answer"]
             right += ok
-            review.append({"q": q["q"], "ru": q.get("ru", ""), "sign": q.get("sign", ""),
-                           "options": [q["options"][k] for k in order],
+            review.append({"q": kind.tr(q["q"], lang), "ru": q.get("ru", ""), "sign": q.get("sign", ""),
+                           "options": [kind.tr(q["options"][k], lang) for k in order],
                            "answer": order.index(q["answer"]), "picked": answer, "right": ok})
         total = len(attempt.questions)
         percent = round(right * 100 / total) if total else 0

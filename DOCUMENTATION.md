@@ -439,7 +439,7 @@ A generic, single database configuration.
 
 ### `app/models/course.py`
 
-**What it is for:** Tables of the Russian course: lesson progress, level exams and the course certificate.
+**What it is for:** Tables of the Russian course: lesson progress, level exams and the course certificate. Since migration 0020 every table has a course column («ru» or «drive»), so the driving course keeps its own rows.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -653,7 +653,7 @@ A generic, single database configuration.
 
 ### `app/routers/course.py`
 
-**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool (course.pick_exam, questions of all earlier tries are avoided, the least seen first) with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code.
+**What it is for:** /api/course/: the Russian course. Lessons open one by one (lesson N after lesson N-1, a new level after the exam of the previous level). Level exams are graded on the server: 20 random questions from the level's pool (course.pick_exam, questions of all earlier tries are avoided, the least seen first) with shuffled options, 30 minutes (+1 minute grace), 80% to pass, a new try 1 hour after a failed one. Passing the level 7 exam gives the course certificate; anyone can check it by its code. The same routes are built twice by build(): /api/course/ for the Russian course and /api/drive/ for the driving course (separate progress, exams and certificate MJ-PDD). With the header Accept-Language: ru (the site sends it when it is in Russian) levels, lessons, the place and exam questions come in Russian.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -667,6 +667,8 @@ A generic, single database configuration.
 | `POST /api/course/exams/{attempt_id}/submit/` | async function | Grades the answers and returns the result with a review; after level 7 also the certificate. |
 | `GET /api/course/certificates/` | async function | The user's certificate (a list with 0 or 1 item). |
 | `GET /api/course/certificates/{code}/` | async function | Public check of a certificate by its code. |
+| `lang_of(request)` | function | «ru» when Accept-Language starts with ru, else «tg». |
+| `build(kind, prefix, tag)` | function | Makes the router of one course (all routes above). `router` = Russian course, `drive_router` = /api/drive/. |
 
 ### `app/routers/documents.py`
 
@@ -942,7 +944,7 @@ A generic, single database configuration.
 
 ### `app/services/course.py`
 
-**What it is for:** Reads the course content from app/seed/course/level1.json … level7.json (cached in memory) and keeps the course rules: 7 levels, 10 lessons each, 20 exam questions, 30 minutes, 80% to pass an exam, 60% to finish a lesson, 60 minutes before a new try. Each level file has title, title_ru, cefr, text, lessons (theory blocks with examples, words, exercises of type «choice» or «build») and exam (a pool of 25 questions). Lesson texts are in Tajik; there is no audio.
+**What it is for:** Both courses run on one engine, the Course class: RU (the Russian course, app/seed/course/level1…7.json: 7 levels × 10 lessons, 20 exam questions in 30 minutes, 80% to pass an exam, 60% to finish a lesson, certificate MJ-RU) and DRIVE (the driving course, traffic rules ПДД for Russian driving licences, app/seed/driving/level1…5.json: 5 levels × 5 lessons of 7 questions, 20 questions in 20 minutes like the ГАИ exam, 90% to pass, 70% to finish a lesson, certificate MJ-PDD). A new try comes 60 minutes after a failed exam. Each level file has title, title_ru, cefr, text, lessons (theory blocks with examples, words, exercises) and exam (a pool of questions); driving questions can show a road sign (sign). Texts are in Tajik; their Russian versions are in levelN.ru.json next to each file (Tajik text → Russian text). Words and examples stay as pairs, and in the Russian course the answers that are the Tajik meaning of a Russian word stay Tajik, because that is what the course teaches. There is no audio.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -953,6 +955,12 @@ A generic, single database configuration.
 | `exam_question(level, index)` | function | One question of the level's exam pool. |
 | `answer_key(question)` | function | The right option in lower case; two questions with the same right answer never go into one exam. |
 | `pick_exam(level, seen)` | function | Picks a new exam: 10 questions from the exam questions and 10 from the lesson exercises (EXAM_FROM_LESSONS), the least seen in `seen` (all earlier attempts) first, then shuffles them, so each try is different. |
+| `Course` | class | One course: its folder, rules and certificate prefix. The functions above are its methods; the module-level names (level, levels, pick_exam…) are the Russian course's. |
+| &nbsp;&nbsp;↳ `russian` | cached property | All Tajik → Russian texts of the course from levelN.ru.json. |
+| &nbsp;&nbsp;↳ `tr(text, lang)` | method | The Russian text for lang "ru" (or the text itself if there is none). |
+| &nbsp;&nbsp;↳ `translated(value, lang)` | method | A copy of a lesson (or level, list) for the site language: title, goal, text, q, explain and options in Russian for "ru"; words, examples, the Russian phrase (ru) and «build» sentences are not touched. |
+| `RU`, `DRIVE`, `COURSES` | const | The two courses and a dictionary of them by key («ru», «drive»). |
+| `warm_up()` | function | Loads both courses (pools and Russian texts) at start. |
 
 ### `app/services/emails.py`
 
@@ -1498,6 +1506,15 @@ A generic, single database configuration.
 | `upgrade()` | function | Creates the table. |
 | `downgrade()` | function | Drops it. |
 
+### `alembic/versions/0020_driving_course.py`
+
+**What it is for:** The driving course next to the Russian one: a course column («ru» by default) in lesson_progress, exam_attempts, certificates and course_places; the unique rules now include course (one place per user and course). Revision ID: 0020 Revises: 0019
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Adds the columns and rebuilds course_places. |
+| `downgrade()` | function | Deletes driving rows and drops the columns. |
+
 ### `alembic/versions/0021_no_listening.py`
 
 **What it is for:** Removes listening from the patent exam practice: the 8 listening questions become reading ones (the text is put into the question, «Прочитайте: «…» …»), then the listen_text column is dropped. Revision ID: 0021 Revises: 0020
@@ -1551,8 +1568,12 @@ A generic, single database configuration.
 
 ### `tests/test_course.py`
 
-**What it is for:** Tests of the course: every level file is complete, each exam attempt gets different questions, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check.
+**What it is for:** Tests of the course: every level file is complete, each exam attempt gets different questions, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check. Also: every Russian text exists and differs from the Tajik one, no Tajik letters are left in a driving lesson shown in Russian, and a lesson asked with Accept-Language: ru comes in Russian.
 
+
+### `tests/test_driving.py`
+
+**What it is for:** Tests of the driving course: all 5 level files are complete (5 lessons × 7 questions, a full exam), its progress and exams are separate from the Russian course, passing all 5 levels gives its own MJ-PDD certificate, and a driving exam cannot be sent to the Russian course API.
 
 ### `tests/test_feedback.py`
 
@@ -1824,6 +1845,14 @@ A generic, single database configuration.
 | `SHOP_CATEGORIES, shopCategory` | export const | Kinds of shops with icons (same keys as app/models/market.py). |
 | `UNITS, unitLabel` | export const | Units of a price. |
 | `CITIES` | export const | Big cities for the city suggestions. |
+
+### `frontend/src/courses.js`
+
+**What it is for:** The settings of the two courses for the shared pages (Course, Lesson, CourseExam, Certificate).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `COURSES` | export const | «ru» (/course, API /course) and «drive» (/driving, API /drive): icon, localStorage prefix (store), texts of the page, sample certificate link, how the level tag is shown. termsOnly (driving): on the Russian site the term lists show only the Russian term, without the Tajik translation. |
 
 ### `frontend/src/format.js`
 
@@ -2253,6 +2282,17 @@ A generic, single database configuration.
 | `ProductCard` | export function | A product; with showShop it shows and links to its shop. |
 
 
+### `frontend/src/components/RoadSign.jsx`
+
+**What it is for:** Russian road signs and traffic lights drawn in SVG for the driving course (no pictures to download), by their ПДД number (2.1, 3.27, 5.19.1…) or a light code.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `RoadSign` | export default function | One sign or traffic light by code, with an optional caption (its name). |
+| `SignRow` | export function | A row of signs under a theory block (codes from the lesson's signs). |
+| `signName(code)` | export function | The sign's name. |
+| `TrafficLight` | function | A traffic light with the given lights on. |
+
 ### `frontend/src/components/Snowfall.jsx`
 
 **What it is for:** Falling snow drawn on a canvas (winter, December–February).
@@ -2374,7 +2414,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Course.jsx`
 
-**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the lesson where the user stopped (`place` from the server, with the exercise number) or else to the next lesson, the level of that place opened and a card with the user's certificate or a link to the sample.
+**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the lesson where the user stopped (`place` from the server, with the exercise number) or else to the next lesson, the level of that place opened and a card with the user's certificate or a link to the sample. The same page is /driving for the driving course (kind="drive", settings from courses.js).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2390,7 +2430,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Lesson.jsx`
 
-**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%. The exercises come in a new random order every time the practice starts (and on «Again»); the order is kept in the browser with the progress, so a resumed lesson continues in the same order.
+**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%. The exercises come in a new random order every time the practice starts (and on «Again»); the order is kept in the browser with the progress, so a resumed lesson continues in the same order. Also /driving/:level/:number; road signs are drawn with RoadSign. On the Russian site the lesson texts come in Russian from the server; for the driving course the term lists then show only the Russian terms.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2400,7 +2440,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/CourseExam.jsx`
 
-**What it is for:** /course/:level/exam — the level exam: the name for the certificate, then questions with a timer; answers are kept in the browser and sent automatically when time is over; the result shows a review of mistakes.
+**What it is for:** /course/:level/exam — the level exam: the name for the certificate, then questions with a timer; answers are kept in the browser and sent automatically when time is over; the result shows a review of mistakes. Also /driving/:level/exam (20 questions in 20 minutes, 90%).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2408,7 +2448,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Certificate.jsx`
 
-**What it is for:** /certificates/:code and /certificates/sample — the dark-blue A4 certificate (stamp, signature, seal, number and a QR code to this page). «Download PDF» draws the certificate into an A4 PDF in the browser (html-to-image + jsPDF); «Print» also works. The sample has a watermark and is open to everyone.
+**What it is for:** /certificates/:code and /certificates/sample — the dark-blue A4 certificate (stamp, signature, seal, number and a QR code to this page). «Download PDF» draws the certificate into an A4 PDF in the browser (html-to-image + jsPDF); «Print» also works. The sample has a watermark and is open to everyone. /certificates/sample?course=drive is the sample of the driving certificate (5 levels, 25 lessons, «not a driving licence»).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2460,7 +2500,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner).
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner). Among the service tiles two big ones lead to the courses: «Russian course» (/course) and «Driving course» (/driving).
 
 | Name | Kind | What it does |
 |---|---|---|

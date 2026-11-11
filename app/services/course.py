@@ -5,6 +5,8 @@ from functools import cached_property
 from pathlib import Path
 
 SEED_DIR = Path(__file__).resolve().parents[1] / "seed"
+TEXT_KEYS = ("title", "goal", "text", "q", "explain")
+NESTED_KEYS = ("lessons", "theory", "exercises", "exam")
 RETRY_MINUTES = 60
 GRACE_SECONDS = 60
 
@@ -26,6 +28,37 @@ class Course:
             path = self.folder / f"level{number}.json"
             if path.exists():
                 result[number] = json.loads(path.read_text(encoding="utf-8")) | {"level": number}
+        return result
+
+    @cached_property
+    def russian(self):
+        result = {}
+        for number in range(1, self.total_levels + 1):
+            path = self.folder / f"level{number}.ru.json"
+            if path.exists():
+                result |= json.loads(path.read_text(encoding="utf-8"))
+        return result
+
+    def tr(self, text, lang):
+        return self.russian.get(text, text) if lang == "ru" and isinstance(text, str) else text
+
+    def translated(self, value, lang):
+        if lang != "ru":
+            return value
+        if isinstance(value, list):
+            return [self.translated(item, lang) for item in value]
+        if not isinstance(value, dict):
+            return value
+        result = dict(value)
+        for key, item in value.items():
+            if key in TEXT_KEYS:
+                result[key] = self.tr(item, lang)
+            elif key == "options":
+                result[key] = [self.tr(option, lang) for option in item]
+            elif key in NESTED_KEYS:
+                result[key] = self.translated(item, lang)
+        if value.get("title_ru"):
+            result["title"] = value["title_ru"]
         return result
 
     @cached_property
@@ -107,3 +140,4 @@ pick_exam = RU.pick_exam
 def warm_up():
     for c in COURSES.values():
         c.pools
+        c.russian
