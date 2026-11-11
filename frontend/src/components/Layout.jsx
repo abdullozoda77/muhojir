@@ -99,14 +99,28 @@ export function LangSwitch() {
     }
   };
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-lg bg-surface-container-low p-[3px] ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
+    <div className="relative inline-flex items-center gap-0.5 rounded-md bg-surface-container-low p-[2px] ring-1 ring-outline-variant" role="group" aria-label={t("Забон")}>
+      <m.span
+        aria-hidden
+        className="absolute left-[2px] top-[2px] h-6 w-7 rounded-[5px] bg-ink shadow-sm"
+        initial={false}
+        animate={{ x: lang === "ru" ? 30 : 0 }}
+        transition={{ type: "spring", stiffness: 520, damping: 34 }}
+      />
       {[
         ["tg", "TJ"],
         ["ru", "RU"],
       ].map(([code, name]) => (
-        <button key={code} type="button" onClick={() => choose(code)} aria-pressed={lang === code} className={`flex h-7 w-8 items-center justify-center rounded-md text-[12px] font-semibold leading-none tracking-wide transition-colors ${lang === code ? "bg-ink text-on-ink shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}>
+        <m.button
+          key={code}
+          type="button"
+          onClick={() => choose(code)}
+          aria-pressed={lang === code}
+          whileTap={{ scale: 0.88 }}
+          className={`relative z-10 flex h-6 w-7 items-center justify-center rounded-[5px] text-[11px] font-semibold leading-none tracking-wide transition-colors duration-300 ${lang === code ? "text-on-ink" : "text-on-surface-variant hover:text-on-surface"}`}
+        >
           {name}
-        </button>
+        </m.button>
       ))}
     </div>
   );

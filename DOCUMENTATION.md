@@ -2114,7 +2114,7 @@ A generic, single database configuration.
 | `useCounters` | function | Counters: unread notifications and documents that need attention (ending soon or expired). |
 | `Logo` | function | — |
 | `Count` | function | — |
-| `LangSwitch` | export function | — |
+| `LangSwitch` | export function | The small TJ / RU language switch: the dark highlight slides to the chosen language (spring) and the button shrinks a little when pressed. |
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `TONES` | const | A soft colour of the icon tile for each sidebar link. |
