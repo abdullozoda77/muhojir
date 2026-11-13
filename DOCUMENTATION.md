@@ -2192,7 +2192,7 @@ A generic, single database configuration.
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `TONES` | const | A soft colour of the icon tile for each sidebar link. |
-| `AppsMenu` | function | Wide screens: the «⊞ All ⌄» item after «Shops» in the top tabs opens a 3-column grid of coloured tiles with every page that is not in the top tabs (the «More» and «From the home page» groups) and, for editors, a link to /admin; it closes on a tile, outside click, Esc or a page change. It replaced the side panel. |
+| `AppsMenu` | function | Wide screens: the «⊞ All ⌄» item after «Shops» in the top tabs dims and locks the page behind it (nothing below can be clicked or scrolled, the AI button included) and opens a 4-column grid of coloured tiles with every page that is not in the top tabs (the «More» and «From the home page» groups) and, for editors, a link to /admin; it closes on a tile, outside click, Esc or a page change. It replaced the side panel. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35, on the home page 0.6) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 

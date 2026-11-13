@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
   Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
@@ -180,60 +181,82 @@ const TONES = {
 function AppsMenu({ items, counts, user }) {
   const [open, setOpen] = useState(false);
   const box = useRef(null);
+  const sheet = useRef(null);
+  const [spot, setSpot] = useState({ top: 0, right: 0 });
   const { pathname, hash } = useLocation();
   const list = items.filter((i) => i.group === "more" || i.group === "home");
 
   useEffect(() => setOpen(false), [pathname, hash]);
+  useScrollLock(open);
   useEffect(() => {
     if (!open) return undefined;
-    const onDown = (e) => box.current && !box.current.contains(e.target) && setOpen(false);
+    const onDown = (e) => !box.current?.contains(e.target) && !sheet.current?.contains(e.target) && setOpen(false);
     const onKey = (e) => e.key === "Escape" && setOpen(false);
+    const onResize = () => setOpen(false);
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
     return () => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
     };
   }, [open]);
 
   return (
     <div ref={box} className="relative hidden lg:block">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="true" className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+      <button type="button" onClick={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setSpot({ top: r.bottom + 14, right: Math.max(16, window.innerWidth - r.right) });
+        setOpen((v) => !v);
+      }} aria-expanded={open} aria-haspopup="true" className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
         <LayoutGrid className="h-4 w-4" aria-hidden />
         {t("Ҳама")}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
-      <AnimatePresence>
-        {open && (
-          <m.div
-            initial={{ opacity: 0, y: -6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            style={{ transformOrigin: "top right" }}
-            className="absolute right-0 top-full z-50 mt-4 w-[372px] rounded-2xl bg-surface-container-lowest p-3 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-1 ring-outline-variant"
-            role="menu"
-          >
-            <div className="grid grid-cols-3 gap-1">
-              {list.map((i) => (
-                <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center transition-colors ${isActive && !i.hash ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary-fixed text-primary"}`}>
-                    <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-                  </span>
-                  <span className="line-clamp-2 text-[12.5px] leading-tight text-on-surface">{i.short || i.label}</span>
-                  {i.badge && counts[i.badge] > 0 && <span className="absolute right-2 top-2"><Count n={counts[i.badge]} /></span>}
-                </NavLink>
-              ))}
-            </div>
-            {canEdit(user) && (
-              <a href="/admin/" className="mt-2 flex min-h-[40px] items-center justify-center gap-2 rounded-xl border-t border-outline-variant pt-2 text-label-md text-on-surface-variant hover:text-on-surface">
-                <PenSquare className="h-4 w-4" aria-hidden />
-                {t("Идораи мундариҷа")}
-              </a>
-            )}
-          </m.div>
-        )}
-      </AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <m.div className="fixed inset-0 z-[66] hidden bg-black/45 backdrop-blur-[2px] lg:block" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} onClick={() => setOpen(false)} aria-hidden />
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <m.div
+              initial={{ opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.96 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              ref={sheet}
+              style={{ transformOrigin: "top right", top: spot.top, right: spot.right }}
+              className="fixed z-[67] w-[468px] rounded-2xl bg-surface-container-lowest p-3 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-1 ring-outline-variant"
+              role="menu"
+            >
+              <div className="grid grid-cols-4 gap-1">
+                {list.map((i) => (
+                  <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors ${isActive && !i.hash ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary-fixed text-primary"}`}>
+                      <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+                    </span>
+                    <span className="line-clamp-2 text-[12px] leading-tight text-on-surface">{i.short || i.label}</span>
+                    {i.badge && counts[i.badge] > 0 && <span className="absolute right-2 top-2"><Count n={counts[i.badge]} /></span>}
+                  </NavLink>
+                ))}
+              </div>
+              {canEdit(user) && (
+                <a href="/admin/" className="mt-2 flex min-h-[40px] items-center justify-center gap-2 rounded-xl border-t border-outline-variant pt-2 text-label-md text-on-surface-variant hover:text-on-surface">
+                  <PenSquare className="h-4 w-4" aria-hidden />
+                  {t("Идораи мундариҷа")}
+                </a>
+              )}
+            </m.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
