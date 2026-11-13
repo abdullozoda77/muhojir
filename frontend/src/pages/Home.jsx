@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Car, FilePlus2, GraduationCap, Languages,
+  ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Car, FilePlus2, FileType2, GraduationCap, Languages,
   MapPinned, LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
@@ -71,6 +71,7 @@ const SERVICES = [
   { to: "/guides", icon: BookOpen, title: () => t("Роҳнамо"), text: () => t("Қадам ба қадам: куҷо равед, чӣ баред.") },
   { to: "/exam", icon: GraduationCap, title: () => t("Имтиҳон"), text: () => t("100 саволи машқӣ бо шарҳ.") },
   { to: "/checks", icon: SearchCheck, title: () => t("Санҷиши ҳуҷҷатҳо"), text: () => t("Патент, манъи даромадан, қарз.") },
+  { to: "/translate", icon: FileType2, title: () => t("Тарҷумаи ҳуҷҷатҳо"), text: () => t("Тоҷикӣ, русӣ, англисӣ, чинӣ: фаврӣ бо ИИ ё расмӣ бо нотариус.") },
   { to: "/help", icon: LifeBuoy, title: () => t("Ёрии ҳуқуқӣ"), text: () => t("Рақамҳои сафорат, хати боварӣ ва ҳуқуқшиносон.") },
   { to: "/documents", icon: ShieldCheck, title: () => t("Ҳуҷҷатҳои ман"), text: () => t("Мӯҳлатҳо ва ёдраскунӣ ба почта.") },
   { to: "/course", icon: Languages, title: () => t("Курси забони русӣ"), text: () => t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс ва сертификат."), big: true, cta: () => t("Оғози курс") },

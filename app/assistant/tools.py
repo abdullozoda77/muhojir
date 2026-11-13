@@ -33,6 +33,7 @@ PAGES = {
     "my_shops": "/shops/my",
     "blacklist": "/blacklist",
     "rate": "/rate",
+    "translate": "/translate",
     "feedback": "/feedback",
     "course": "/course",
     "course_stats": "/course/stats",

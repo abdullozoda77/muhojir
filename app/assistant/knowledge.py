@@ -93,6 +93,9 @@ for documents; in 30 regions of Russia; ratings and reviews, "near me", a route 
 suggest a new place.
 - [calculator] Patent calculator: the monthly patent price in every region of Russia for 2026, the total for 1-12 months, \
 the documents needed and migration centers.
+- [translate] Document translation between Tajik, Russian, English and Chinese: an instant AI translation of a photo, \
+PDF or text (for understanding only), or an order for an official translation, with a notary if needed; the translator \
+sends the price first and the finished file comes to the same page.
 - [rate] Official ruble rate: rubles to somoni and back by the National Bank of Tajikistan and the Bank of Russia, with a \
 chart of the last days. Money transfer services use their own, usually worse, rate.
 - [guides] Guides and laws: step-by-step guides for each document with where to go, what to bring and a filled-in sample \

@@ -37,6 +37,7 @@ const Rate = lazy(() => import("./pages/Rate.jsx"));
 const Housing = lazy(() => import("./pages/Housing.jsx"));
 const HousingDetail = lazy(() => import("./pages/HousingDetail.jsx"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage.jsx"));
+const Translate = lazy(() => import("./pages/Translate.jsx"));
 
 function Private({ children }) {
   const { user, loading } = useAuth();
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="news/:id" element={<Private><NewsDetail /></Private>} />
         <Route path="help" element={<Private><Help /></Private>} />
         <Route path="checks" element={<Private><Checks /></Private>} />
+        <Route path="translate" element={<Private><Translate /></Private>} />
         <Route path="exam" element={<Private><Exam /></Private>} />
         <Route path="course" element={<Private><Course key="ru" /></Private>} />
         <Route path="course/stats" element={<Private><CourseStats /></Private>} />

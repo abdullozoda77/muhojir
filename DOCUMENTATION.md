@@ -466,6 +466,18 @@ A generic, single database configuration.
 |---|---|---|
 | `TelegramLink` | class · table `telegram_links` | user (one link per user), chat_id (one per chat), username, enabled (the user can pause messages), linked_at. |
 
+### `app/models/translations.py`
+
+**What it is for:** Table of document translations: instant AI translations and orders for an official translation.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `LANGUAGES` | const | The 4 languages: tg Tajik, ru Russian, en English, zh Chinese. |
+| `DOC_TYPES` | const | Kinds of document for an order: passport, birth and marriage certificates, diploma, driving licence, contract, medical certificate, other. |
+| `TRANSLATION_KINDS` | const | ai (instant, by the AI) or order (official, by a translator). |
+| `ORDER_STATUSES` | const | new (waiting for a price), priced, working, done, cancelled. |
+| `Translation` | class · table `translations` | One translation of a user: kind, languages (source may be auto for AI), document kind, the uploaded file (orders only; AI photos are not kept), source and result text (AI), notary, phone, note, status, price, the translator's note and the finished file. doc_type_label and direction are for showing; result_upload is an empty field for the upload box in the admin panel. |
+
 ### `app/models/travel.py`
 
 **What it is for:** Database tables of air tickets: airports (TJ and RU) and price alerts (flight watches).
@@ -920,6 +932,24 @@ A generic, single database configuration.
 | `telegram_disconnect` | async function · `DELETE /api/telegram/` | Removes the link and tells the chat. |
 | `telegram_webhook` | async function · `POST /api/telegram/webhook/{secret}/` | Receives the bot's messages from Telegram. |
 
+### `app/routers/translations.py`
+
+**What it is for:** /api/translations/: instant AI translation and orders for an official translation; editors set the price and upload the finished file.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `options()` | async function · `GET /api/translations/options/` | The 4 languages, the document kinds, whether the AI is on, the file and text limits. |
+| `translate_now(...)` | async function · `POST /api/translations/ai/` | Logged in, 30 an hour. A form with target_lang, source_lang (or auto), text and/or a file (photo or PDF up to 10 MB, checked by its first bytes). The file goes to the AI and is not saved; the result is saved in the history. AI errors come back with code (not_configured, busy, unavailable, no_text, refused). |
+| `order_translation(...)` | async function · `POST /api/translations/orders/` | Logged in, 10 an hour. Languages, document kind, the file (required), notary, phone (or the profile phone), note. Saves the file privately and notifies editors. |
+| `my_translations(db, user)` | async function · `GET /api/translations/mine/` | The user's last 100 translations and orders. |
+| `list_orders(...)` | async function · `GET /api/translations/orders/` | Editors: all orders, newest first; ?status=. |
+| `translation_file` / `translation_result` | async function · `GET /api/translations/{id}/file/`, `/result/` | The uploaded document and the finished translation: only the owner and editors. |
+| `cancel_order(...)` | async function · `POST /api/translations/{id}/cancel/` | The owner cancels an order while it is new or priced; editors are told. |
+| `delete_translation(...)` | async function · `DELETE /api/translations/{id}/` | The owner deletes an AI translation or a done/cancelled order with its files. |
+| `update_order(...)` | async function · `PATCH /api/translations/{id}/` | Editors: status, price, note. priced needs a price, done needs the finished file. A new status notifies the owner (site, email, Telegram). |
+| `upload_result(...)` | async function · `POST /api/translations/{id}/result/` | Editors: uploads the finished file, marks the order done and notifies the owner. |
+| `tell_owner(db, translation)` | async function | The notification about a new status (the price, the translator's note); also used by the admin panel. |
+
 ### `app/routers/ws.py`
 
 **What it is for:** Live notifications. Browsers can not send an Authorization header with a WebSocket, so the page passes its access token in the address: /ws/notifications/?token=<access token>. Without a valid token the connection is closed with code 4401, which the page understands as "get a fresh token and connect again".
@@ -1162,6 +1192,16 @@ A generic, single database configuration.
 | `handle_update(db, update)` | async function | /start CODE connects; /start or /status in a connected chat shows the account, phone and on/off; /phone asks for the phone again; /help lists the commands; /stop disconnects (or says nothing was connected); a shared contact saves the phone. Unknown chats get the «open Profile on the site» message. Only private chats. |
 | `set_webhook(base_url)` | async function | Sets the bot's command menu (setMyCommands: status, phone, help, stop) and tells Telegram to send updates to {base_url}/api/telegram/webhook/{secret}/. |
 
+### `app/services/translate.py`
+
+**What it is for:** Instant AI translation of text, a photo or a PDF between Tajik, Russian, English and Chinese, with the assistant's keys: Gemini first (with its fallback models), else Claude.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `instructions(source_lang, target_lang)` | function | The translator's rules: translate every line, keep the layout, copy numbers exactly, names in the target spelling with the original in brackets, stamps and signatures in square brackets, [unreadable] where it cannot be read, only the translation; NO_TEXT when there is nothing to translate. |
+| `translate(source_lang, target_lang, text, data, mime)` | async function | Asks the active AI and returns the translation; raises AssistantError when the AI is off, busy, refuses or finds no text. |
+| `_gemini(...)` / `_claude(...)` | async function | The call to Gemini (the file as inline bytes, 90 s, a model that fails rests 5 minutes) or to Claude (an image or a PDF document block). |
+
 ### `app/services/trudvsem.py`
 
 **What it is for:** Real job ads from «Работа России» (trudvsem.ru), the state job portal. Its ads are open data with a free API (no key): https://opendata.trudvsem.ru/api/v1/vacancies/region/<code>?text=...&offset=<page>&limit=<n> We import the jobs migrants usually look for, in the regions where most of them work. Ads of recruitment agencies are skipped (a common way to cheat migrants), and contact persons' names and phones are not copied: people apply on the source page (external_url).
@@ -1302,6 +1342,7 @@ A generic, single database configuration.
 | `ExchangeRateAdmin` | class | Official rates (view only). |
 | `FeedbackAdmin` | class | Feedback: editors set the status and write a reply; a new reply notifies the author. |
 | `HousingAdmin` | class | Housing listings: editors approve or reject (a reason is required), change or delete; the owner is notified, photo files are deleted with the listing. |
+| `TranslationAdmin` | class | Orders for an official translation (AI translations are not listed): editors set the status, price and a note, and upload the finished file in the «Тарҷумаи тайёр» box, which marks the order done; priced needs a price, done needs the file; a new status notifies the customer. |
 
 
 ---
@@ -1538,6 +1579,14 @@ A generic, single database configuration.
 | `upgrade()` | function | Writes question, options, answer, explanation and explanation_ru of these ids from app/seed/exam_questions.json and content_ru.json. |
 | `downgrade()` | function | Does nothing (the old questions are not brought back). |
 
+### `alembic/versions/0023_translations.py`
+
+**What it is for:** Creates the translations table with indexes on user, kind, status and date.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` / `downgrade()` | function | Creates / drops the table. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1698,6 +1747,17 @@ A generic, single database configuration.
 | `banks(monkeypatch)` | function | A fake NBT (with broken bytes, like the real one) and CBR answer. |
 | `test_rates_are_fetched_once_and_kept(client, banks)` | async function | Both rates are read and saved; the second request does not ask the banks again. |
 | `test_rates_do_not_break_when_banks_are_down(monkeypatch)` | async function | Banks are down: nothing is saved and nothing breaks. |
+
+### `tests/test_translations.py`
+
+**What it is for:** Tests of document translation (the AI is replaced by a fake).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_options_and_guests` | async function | 4 languages and document kinds; guests get 401. |
+| `test_ai_translation` | async function | Off → 503 not_configured; empty, same language and unknown language are refused; text, a photo and a PDF reach the AI with the right languages; a non-photo file is refused; NO_TEXT → 422 no_text; history and delete. |
+| `test_certified_order` | async function | A phone is required; an order notifies editors; only the owner and editors get the file; the price, the note and the finished file reach the owner as notifications; a done order cannot be cancelled. |
+| `test_cancel_order` | async function | An open order cannot be deleted; it can be cancelled and then deleted. |
 
 ### `tests/test_travel.py`
 
@@ -2764,4 +2824,17 @@ A generic, single database configuration.
 | `AirlineLinks` | function | — |
 | `TravelTips` | function | — |
 | `Tickets` | export function | — |
+
+### `frontend/src/pages/Translate.jsx`
+
+**What it is for:** /translate — document translation (logged in): the instant AI tab and the official order tab, languages tg/ru/en/zh, and «My translations».
+
+| Name | Kind | What it does |
+|---|---|---|
+| `LanguagePair` | function | From/to selects with a swap button; the AI tab also has «Auto»; the target list hides the source language. |
+| `FilePicker` | function | Photo or PDF up to 10 MB with the name and a clear button. |
+| `AiTranslator` | function | Text and/or file → POST /translations/ai/ (photos are shrunk to 2400 px first); shows the result with copy and .txt download, and a note that official papers need the official translation. |
+| `OrderForm` | function | Languages, document kind, file, notary switch, phone (from the profile), note → POST /translations/orders/; then a «received» message. |
+| `HistoryItem` | function | One translation: AI or official, status, price and the translator's note, show the text, open my file or the finished translation, cancel, delete. |
+| `Translate` | export function | The page: header, the two tabs and the history. |
 

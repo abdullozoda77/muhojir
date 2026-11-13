@@ -73,6 +73,12 @@ const SERVER_MESSAGES = {
   "Введённый пароль состоит только из цифр.": "Парол набояд танҳо аз рақамҳо иборат бошад.",
   "Введённый пароль слишком похож на email.": "Парол ба почтаи электронӣ хеле монанд аст.",
   "Введите правильный адрес электронной почты.": "Суроғаи дурусти почтаи электрониро нависед.",
+  "Write the text or add a photo of the document.": "Матнро нависед ё сурати ҳуҷҷатро илова кунед.",
+  "Choose a different language to translate into.": "Забони дигарро барои тарҷума интихоб кунед.",
+  "Send a photo (jpg, png, webp) or a PDF.": "Сурат (jpg, png, webp) ё PDF фиристед.",
+  "Write a phone number so the translator can reach you.": "Рақами телефонро нависед, то тарҷумон бо шумо тамос гирад.",
+  "The translator is already working on it; this order cannot be cancelled.": "Тарҷумон аллакай кор мекунад — фармоишро бекор карда намешавад.",
+  "Cancel the order first.": "Аввал фармоишро бекор кунед.",
 };
 
 export function errorText(data) {
