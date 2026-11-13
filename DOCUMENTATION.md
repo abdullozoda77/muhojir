@@ -2827,14 +2827,13 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Translate.jsx`
 
-**What it is for:** /translate — document translation (logged in): the instant AI tab and the official order tab, languages tg/ru/en/zh, and «My translations».
+**What it is for:** /translate — document translation (logged in): instant AI translation, languages tg/ru/en/zh, and «My translations». The official order form was taken off the page for now (the API and the admin section stay for later).
 
 | Name | Kind | What it does |
 |---|---|---|
 | `LanguagePair` | function | From/to selects with a swap button; the AI tab also has «Auto»; the target list hides the source language. |
 | `FilePicker` | function | Photo or PDF up to 10 MB with the name and a clear button. |
 | `AiTranslator` | function | Text and/or file → POST /translations/ai/ (photos are shrunk to 2400 px first); shows the result with copy and .txt download, and a note that official papers need the official translation. |
-| `OrderForm` | function | Languages, document kind, file, notary switch, phone (from the profile), note → POST /translations/orders/; then a «received» message. |
 | `HistoryItem` | function | One translation: AI or official, status, price and the translator's note, show the text, open my file or the finished translation, cancel, delete. |
 | `Translate` | export function | The page: header, the two tabs and the history. |
 

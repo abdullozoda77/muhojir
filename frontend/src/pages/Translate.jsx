@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftRight, BadgeCheck, CheckCircle2, Copy, Download, FileText, FileType2, FileUp, Languages, Sparkles, Stamp, Trash2, X } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, Copy, Download, FileText, FileType2, FileUp, Languages, Sparkles, Stamp, Trash2, X } from "lucide-react";
 import { api, fileProblem, openPrivateFile } from "../api.js";
-import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago, rub } from "../format.js";
 import { fitPhoto } from "../components/Shop.jsx";
-import { Button, EmptyState, ErrorBox, Field, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
+import { Button, EmptyState, ErrorBox, Field, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Reveal } from "../components/motion.jsx";
 
 const LANGS = [
@@ -121,7 +120,7 @@ function ResultActions({ item }) {
   );
 }
 
-function AiTranslator({ options, onDone, onOrder }) {
+function AiTranslator({ options, onDone }) {
   const [from, setFrom] = useState("auto");
   const [to, setTo] = useState("ru");
   const [text, setText] = useState("");
@@ -161,9 +160,7 @@ function AiTranslator({ options, onDone, onOrder }) {
 
   if (!options.ai_enabled) {
     return (
-      <EmptyState icon={Sparkles} title={t("Тарҷумони ИИ ҳоло фаъол нест")} text={t("Ҳуҷҷатро ба тарҷумон фиристед — тарҷумаи расмӣ мегиред.")}>
-        <Button icon={Stamp} onClick={onOrder}>{t("Фармоиши тарҷумаи расмӣ")}</Button>
-      </EmptyState>
+      <EmptyState icon={Sparkles} title={t("Тарҷумони ИИ ҳоло фаъол нест")} text={t("Каме баъдтар боз кӯшиш кунед.")} />
     );
   }
 
@@ -190,89 +187,10 @@ function AiTranslator({ options, onDone, onOrder }) {
           <ResultActions item={result} />
         </div>
       )}
-      <div className="flex flex-col gap-2 rounded-xl bg-warning-fixed/60 p-3.5 text-body-sm text-on-warning-fixed sm:flex-row sm:items-center sm:justify-between">
-        <span>{t("Тарҷумаи ИИ барои фаҳмидани ҳуҷҷат аст. Барои идораҳо, суд ва муҳоҷират тарҷумаи расмӣ лозим аст.")}</span>
-        <button type="button" onClick={onOrder} className="shrink-0 self-start text-label-md underline underline-offset-2 sm:self-auto">{t("Фармоиш додан")}</button>
-      </div>
+      <p className="rounded-xl bg-warning-fixed/60 p-3.5 text-body-sm text-on-warning-fixed">
+        {t("Тарҷумаи ИИ барои фаҳмидани ҳуҷҷат аст. Барои идораҳо, суд ва муҳоҷират тарҷумаи расмӣ лозим аст.")}
+      </p>
     </div>
-  );
-}
-
-function OrderForm({ options, onDone }) {
-  const { user } = useAuth();
-  const [from, setFrom] = useState("tg");
-  const [to, setTo] = useState("ru");
-  const [docType, setDocType] = useState("passport");
-  const [file, setFile] = useState(null);
-  const [notarized, setNotarized] = useState(false);
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const [sent, setSent] = useState(false);
-
-  useEffect(() => {
-    if (from === to) setTo(LANGS.find((l) => l.code !== from).code);
-  }, [from, to]);
-
-  const send = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const body = new FormData();
-      Object.entries({ source_lang: from, target_lang: to, doc_type: docType, notarized, phone, note }).forEach(([k, v]) => body.append(k, v));
-      body.append("file", file, file.name);
-      await api("/translations/orders/", { method: "POST", body });
-      setSent(true);
-      setFile(null);
-      setNote("");
-      onDone();
-    } catch (err) {
-      setError(err);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (sent) {
-    return (
-      <div className="flex flex-col items-start gap-3 rounded-xl bg-tertiary-fixed p-4 text-on-tertiary-fixed">
-        <span className="flex items-center gap-2 text-[16px] font-semibold">
-          <CheckCircle2 className="h-5 w-5" aria-hidden />
-          {t("Фармоиш қабул шуд!")}
-        </span>
-        <p className="text-body-md">{t("Тарҷумон ҳуҷҷатро мебинад ва нархро мефиристад. Хабар дар огоҳиҳо, почта ва Telegram меояд.")}</p>
-        <Button variant="plain" onClick={() => setSent(false)}>{t("Боз як ҳуҷҷат")}</Button>
-      </div>
-    );
-  }
-
-  const fieldError = (name) => error?.data?.[name];
-  return (
-    <form onSubmit={send} className="flex flex-col gap-4">
-      <LanguagePair from={from} to={to} onFrom={setFrom} onTo={setTo} />
-      <Field label={t("Навъи ҳуҷҷат")}>
-        <select className="input" value={docType} onChange={(e) => setDocType(e.target.value)}>
-          {options.doc_types.map((d) => <option key={d.code} value={d.code}>{t(d.name)}</option>)}
-        </select>
-      </Field>
-      <Field label={t("Ҳуҷҷат")} required>
-        <FilePicker file={file} onChange={setFile} hint={t("Ҳамаи саҳифаҳо дар як PDF ё сурати равшан")} error={fieldError("file")} />
-      </Field>
-      <Switch checked={notarized} onChange={setNotarized} icon={Stamp} title={t("Бо тасдиқи нотариус")} text={t("Барои муҳоҷират, ЗАГС, суд ва идораҳои давлатӣ")} />
-      <Field label={t("Телефон")} required error={fieldError("phone")} hint={t("Тарҷумон барои нарх ва мӯҳлат занг мезанад ё менависад.")}>
-        <input className="input" type="tel" inputMode="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 123-45-67" />
-      </Field>
-      <Field label={t("Изоҳ (агар хоҳед)")} error={fieldError("note")}>
-        <textarea className="input min-h-[90px] resize-y" rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("Масалан: то ҷумъа лозим аст, барои РВП.")} />
-      </Field>
-      <ErrorBox error={error && !fieldError("file") && !fieldError("phone") && !fieldError("note") ? error : null} />
-      <Button type="submit" icon={BadgeCheck} loading={busy} disabled={!file || phone.trim().length < 5}>
-        {t("Фармоиш додан")}
-      </Button>
-      <p className="text-body-sm text-on-surface-variant">{t("Нарх пас аз дидани ҳуҷҷат маълум мешавад. То розӣ шудани шумо ҳеҷ пул намегирем.")}</p>
-    </form>
   );
 }
 
@@ -340,42 +258,20 @@ function HistoryItem({ item, onChange }) {
 
 export default function Translate() {
   const { data: options, error: optionsError } = useApi("/translations/options/");
-  const [tab, setTab] = useState("ai");
   const [tick, setTick] = useState(0);
   const { data: mine } = useApi(`/translations/mine/?t=${tick}`);
-  const top = useRef(null);
   const refresh = () => setTick((n) => n + 1);
-  const goOrder = () => {
-    setTab("order");
-    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const tabs = [
-    ["ai", Sparkles, t("Тарҷумаи фаврӣ (ИИ)")],
-    ["order", Stamp, t("Тарҷумаи расмӣ")],
-  ];
-
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow={t("Ҳуҷҷатҳо")} title={t("Тарҷумаи ҳуҷҷатҳо")} text={t("Тоҷикӣ, русӣ, англисӣ ва чинӣ: тарҷумаи фаврӣ бо ИИ ё тарҷумаи расмӣ бо нотариус.")} icon={FileType2} />
+      <PageHeader eyebrow={t("Ҳуҷҷатҳо")} title={t("Тарҷумаи ҳуҷҷатҳо")} text={t("Тоҷикӣ, русӣ, англисӣ ва чинӣ: матн ё сурати ҳуҷҷатро фиристед — тарҷума дар чанд сония тайёр.")} icon={FileType2} />
       <div className="grid items-start gap-6 xl:grid-cols-12">
         <Reveal className="xl:col-span-7">
-          <section ref={top} className="flex scroll-mt-24 flex-col gap-5 rounded-2xl bg-surface-container-lowest p-4 ring-1 ring-outline-variant sm:p-6">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-container-low p-1">
-              {tabs.map(([value, Icon, label]) => (
-                <button key={value} type="button" onClick={() => setTab(value)} aria-pressed={tab === value} className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-2 text-center text-label-md transition-colors ${tab === value ? "bg-surface-container-lowest text-on-surface shadow-sm ring-1 ring-outline-variant" : "text-on-surface-variant hover:text-on-surface"}`}>
-                  <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                  {label}
-                </button>
-              ))}
-            </div>
+          <section className="flex flex-col gap-5 rounded-2xl bg-surface-container-lowest p-4 ring-1 ring-outline-variant sm:p-6">
             <ErrorBox error={optionsError} />
             {!options ? (
               <Skeleton className="h-72" />
-            ) : tab === "ai" ? (
-              <AiTranslator options={options} onDone={refresh} onOrder={goOrder} />
             ) : (
-              <OrderForm options={options} onDone={refresh} />
+              <AiTranslator options={options} onDone={refresh} />
             )}
           </section>
         </Reveal>
