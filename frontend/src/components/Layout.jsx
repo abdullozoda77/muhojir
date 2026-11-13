@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
-  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
   Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -245,6 +245,12 @@ function AppsMenu({ items, counts, user }) {
                     {i.badge && counts[i.badge] > 0 && <span className="absolute right-2 top-2"><Count n={counts[i.badge]} /></span>}
                   </NavLink>
                 ))}
+                <button type="button" onClick={() => setOpen(false)} className="group flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors hover:bg-surface-container-low">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-on-surface">
+                    <ArrowLeft className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+                  </span>
+                  <span className="text-[12px] leading-tight text-on-surface-variant group-hover:text-on-surface">{t("Бозгашт")}</span>
+                </button>
               </div>
               {canEdit(user) && (
                 <a href="/admin/" className="mt-2 flex min-h-[40px] items-center justify-center gap-2 rounded-xl border-t border-outline-variant pt-2 text-label-md text-on-surface-variant hover:text-on-surface">
