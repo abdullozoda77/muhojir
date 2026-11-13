@@ -15,6 +15,7 @@ from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.support import HelpContact
 from app.models.telegram import TelegramLink
 from app.models.travel import AIRLINES, Airport, FlightWatch
+from app.models.translations import DOC_TYPES, LANGUAGES, ORDER_STATUSES, TRANSLATION_KINDS, Translation
 
 __all__ = [
     "User", "EmailCode", "Notification", "RevokedToken",
@@ -31,4 +32,5 @@ __all__ = [
     "RATE_SOURCES", "ExchangeRate",
     "FEEDBACK_KINDS", "FEEDBACK_STATUSES", "Feedback",
     "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
+    "LANGUAGES", "DOC_TYPES", "TRANSLATION_KINDS", "ORDER_STATUSES", "Translation",
 ]

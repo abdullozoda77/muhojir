@@ -1,5 +1,5 @@
 from sqladmin import ModelView
-from wtforms import PasswordField
+from wtforms import FileField, PasswordField
 from wtforms.validators import Optional
 
 from app.core.security import hash_password, password_problems
@@ -13,6 +13,7 @@ from app.models import Certificate, ExamAttempt, LessonProgress
 from app.models import RATE_SOURCES, ExchangeRate
 from app.models import FEEDBACK_STATUSES, Feedback
 from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
+from app.models import ORDER_STATUSES, Translation
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -34,6 +35,7 @@ EDITOR_VIEWS = {
     "exchange-rate": ("list", "details"),
     "feedback": ("list", "details", "edit", "delete"),
     "housing": ("list", "details", "edit", "delete"),
+    "translation": ("list", "details", "edit"),
 }
 
 
@@ -62,6 +64,9 @@ class DeletesPrivateFiles:
             request.state.private_files = [*(await db.scalars(docs)).all(), *(await db.scalars(pays)).all()]
             if isinstance(model, User):
                 request.state.private_files += (await db.scalars(select(Feedback.photo).where(Feedback.user_id == model.id))).all()
+                for row in (await db.execute(select(Translation.file, Translation.result_file)
+                                             .where(Translation.user_id == model.id))).all():
+                    request.state.private_files += list(row)
 
     async def after_model_delete(self, model, request):
         from app.core.files import delete_private
@@ -518,6 +523,55 @@ class HousingAdmin(Base, model=Housing):
             await delete_image(name, "housing")
 
 
+class TranslationAdmin(Base, model=Translation):
+    name, name_plural, icon, category = "Тарҷума", "Фармоишҳои тарҷума", "fa-solid fa-language", "Ҳуҷҷатҳо ва роҳнамо"
+    column_list = [Translation.id, Translation.doc_type, Translation.source_lang, Translation.target_lang, Translation.user,
+                   Translation.phone, Translation.notarized, Translation.status, Translation.price, Translation.created_at]
+    column_searchable_list = [Translation.phone, Translation.note, Translation.file_name]
+    column_sortable_list = [Translation.created_at, Translation.status, Translation.price]
+    column_default_sort = [(Translation.created_at, True)]
+    column_formatters = {"doc_type": lambda m, a: m.doc_type_label}
+    column_details_exclude_list = [Translation.file, Translation.result_file]
+    form_columns = [Translation.status, Translation.price, Translation.editor_note]
+    form_choices = {"status": [(st, st) for st in ORDER_STATUSES]}
+    can_create = False
+
+    def list_query(self, request):
+        return super().list_query(request).where(Translation.kind == "order")
+
+    def count_query(self, request):
+        return super().count_query(request).where(Translation.kind == "order")
+
+    async def scaffold_form(self, rules=None):
+        form = await super().scaffold_form(rules)
+        form.result_upload = FileField("Тарҷумаи тайёр (PDF ё сурат) — пас аз боркунӣ ҳолат «done» мешавад")
+        return form
+
+    async def on_model_change(self, data, model, is_created, request):
+        from app.core.files import save_private
+
+        upload = data.pop("result_upload", None)
+        if upload is not None and getattr(upload, "filename", ""):
+            request.state.old_result = model.result_file
+            data["result_file"] = await save_private(upload, "translations", "result_upload")
+            data["status"] = "done"
+        if data.get("status") == "priced" and data.get("price") is None:
+            raise ValueError("Write the price.")
+        if data.get("status") == "done" and not (data.get("result_file") or model.result_file):
+            raise ValueError("Upload the translated file first.")
+        request.state.status_changed = data.get("status") not in (None, model.status)
+
+    async def after_model_change(self, data, model, is_created, request):
+        from app.core.files import delete_private
+        from app.db.session import SessionLocal
+        from app.routers.translations import tell_owner
+
+        await delete_private(getattr(request.state, "old_result", ""))
+        if getattr(request.state, "status_changed", False):
+            async with SessionLocal() as db:
+                await tell_owner(db, await db.get(Translation, model.id))
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -527,5 +581,5 @@ VIEWS = [
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
-    ExchangeRateAdmin, FeedbackAdmin, HousingAdmin,
+    ExchangeRateAdmin, FeedbackAdmin, HousingAdmin, TranslationAdmin,
 ]
