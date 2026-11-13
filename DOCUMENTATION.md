@@ -1314,7 +1314,7 @@ A generic, single database configuration.
 
 ### `app/admin/templates/sqladmin/base.html`
 
-**What it is for:** Makes the whole admin panel dark: extends the original SQLAdmin base page (sqladmin_original/base.html), turns on the dark Tabler theme (data-bs-theme="dark") before the page is drawn, and recolours the parts Tabler does not cover: grey buttons, the select2 drop-downs and the flatpickr calendar.
+**What it is for:** Makes the whole admin panel dark: extends the original SQLAdmin base page (sqladmin_original/base.html), turns on the dark Tabler theme (data-bs-theme="dark") before the page is drawn, and recolours the parts Tabler does not cover: grey buttons, the select2 drop-downs and the flatpickr calendar. On phones (under 768px) the side menu becomes a top bar: name on the left, a small logout icon and the menu button on the right, the menu opens below as a full-width list; forms lose the box-inside-a-box, list headers and buttons wrap instead of overflowing.
 
 
 ---
