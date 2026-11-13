@@ -1524,6 +1524,16 @@ A generic, single database configuration.
 | `upgrade()` | function | Rewrites the listening questions from app/seed/exam_questions.json and drops listen_text. |
 | `downgrade()` | function | Adds an empty listen_text column back. |
 
+### `alembic/versions/0022_better_exam_questions.py`
+
+**What it is for:** Replaces 8 patent exam questions (ids 9, 11, 13, 14, 55, 56, 61, 65) whose right answer was copied straight from the question text: now the answer has to be understood (a paraphrase, a number in digits, a time to work out). Revision ID: 0022 Revises: 0021
+
+| Name | Kind | What it does |
+|---|---|---|
+| `load(name)` | function | Reads a JSON file from app/seed. |
+| `upgrade()` | function | Writes question, options, answer, explanation and explanation_ru of these ids from app/seed/exam_questions.json and content_ru.json. |
+| `downgrade()` | function | Does nothing (the old questions are not brought back). |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1568,7 +1578,7 @@ A generic, single database configuration.
 
 ### `tests/test_course.py`
 
-**What it is for:** Tests of the course: every level file is complete, each exam attempt gets different questions, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check. Also: every Russian text exists and differs from the Tajik one, no Tajik letters are left in a driving lesson shown in Russian, and a lesson asked with Accept-Language: ru comes in Russian.
+**What it is for:** Tests of the course: every level file is complete, each exam attempt gets different questions, lessons open one by one, scores, level exams, waiting after a failed exam, the single certificate after all 7 levels and its public check. Also: every Russian text exists and differs from the Tajik one, no Tajik letters are left in a driving lesson shown in Russian, and a lesson asked with Accept-Language: ru comes in Russian. In no lesson or exam question (Tajik or Russian view) is the right answer the same word that is asked.
 
 
 ### `tests/test_driving.py`

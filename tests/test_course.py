@@ -54,6 +54,21 @@ def test_russian_texts_exist_for_both_courses():
                 assert not tajik & set(text), (data["level"], text)
 
 
+def test_answer_never_repeats_the_word_asked():
+    def same(a, b):
+        a, b = (s.lower().replace("ё", "е").strip(" .!?«»") for s in (a, b))
+        return a == b or a.startswith(b) or b.startswith(a)
+
+    for kind in course.COURSES.values():
+        for data in kind.levels():
+            for lang in ("tg", "ru"):
+                shown = kind.translated(data, lang)
+                items = shown["exam"] + [e for lesson in shown["lessons"] for e in lesson["exercises"]]
+                for e in items:
+                    if e.get("ru") and isinstance(e.get("answer"), int):
+                        assert not same(e["ru"], e["options"][e["answer"]]), (kind.key, data["level"], e["ru"])
+
+
 async def test_lesson_comes_in_russian(client):
     r = await client.get("/api/drive/levels/1/lessons/1/", headers={"Accept-Language": "ru"})
     assert r.status_code == 200, r.text
