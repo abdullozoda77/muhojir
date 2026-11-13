@@ -105,7 +105,7 @@ export function LangSwitch() {
     }
   };
   return (
-    <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 ${dark ? "bg-primary-container ring-white/20" : "bg-surface-container-low ring-outline-variant"}`} role="group" aria-label={t("Забон")}>
+    <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 ${dark ? "bg-surface-container-low ring-outline-variant" : "bg-surface-container-low ring-outline-variant"}`} role="group" aria-label={t("Забон")}>
       <m.span
         aria-hidden
         className={`absolute left-[2px] top-[2px] h-6 w-7 rounded-[5px] ${dark ? "bg-white" : "bg-white shadow-sm ring-1 ring-black/10"}`}
@@ -127,7 +127,7 @@ export function LangSwitch() {
             aria-label={label}
             title={label}
             className={`relative z-10 flex h-6 w-7 items-center justify-center rounded-[5px] text-[11px] font-semibold leading-none tracking-wide transition-[color,transform,opacity] duration-300 active:scale-90 ${
-              dark ? (active ? "text-primary-container" : "text-white/70 hover:text-white") : active ? "" : "opacity-45 hover:opacity-80"
+              dark ? (active ? "text-background" : "text-white/60 hover:text-white") : active ? "" : "opacity-45 hover:opacity-80"
             }`}
           >
             {dark ? name : <span className="block h-3.5 w-5 rounded-[2px] ring-1 ring-black/15" style={{ background: FLAGS[code] }} />}
