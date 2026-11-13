@@ -1,0 +1,58 @@
+{% extends "sqladmin_original/base.html" %}
+{% block head_tail %}
+<meta name="color-scheme" content="dark">
+<script>document.documentElement.setAttribute("data-bs-theme", "dark");</script>
+<style>
+  .btn-light,
+  .btn-secondary {
+    --tblr-btn-bg: var(--tblr-bg-surface-secondary);
+    --tblr-btn-border-color: var(--tblr-border-color);
+    --tblr-btn-color: var(--tblr-body-color);
+    --tblr-btn-hover-bg: var(--tblr-bg-surface-tertiary);
+    --tblr-btn-hover-border-color: var(--tblr-border-color);
+    --tblr-btn-hover-color: var(--tblr-body-color);
+    --tblr-btn-active-bg: var(--tblr-bg-surface-tertiary);
+    --tblr-btn-active-color: var(--tblr-body-color);
+  }
+  .select2-container--default .select2-selection,
+  .select2-dropdown,
+  .select2-search__field {
+    background-color: var(--tblr-bg-forms) !important;
+    border-color: var(--tblr-border-color) !important;
+    color: var(--tblr-body-color) !important;
+  }
+  .select2-container--default .select2-selection__rendered,
+  .select2-results__option { color: var(--tblr-body-color) !important; }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: var(--tblr-bg-surface-secondary) !important;
+    border-color: var(--tblr-border-color) !important;
+    color: var(--tblr-body-color) !important;
+  }
+  .select2-container--default .select2-results__option--highlighted,
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--tblr-primary) !important;
+    color: #fff !important;
+  }
+  .select2-container--default .select2-results__option[aria-selected=true] {
+    background-color: var(--tblr-bg-surface-secondary) !important;
+  }
+  .flatpickr-calendar,
+  .flatpickr-months .flatpickr-month,
+  .flatpickr-weekdays,
+  span.flatpickr-weekday,
+  .flatpickr-time input,
+  .flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: var(--tblr-bg-surface) !important;
+    color: var(--tblr-body-color) !important;
+    fill: var(--tblr-body-color) !important;
+  }
+  .flatpickr-day { color: var(--tblr-body-color); }
+  .flatpickr-day:hover,
+  .flatpickr-day.today { background: var(--tblr-bg-surface-secondary); border-color: var(--tblr-border-color); }
+  .flatpickr-day.prevMonthDay,
+  .flatpickr-day.nextMonthDay,
+  .flatpickr-day.flatpickr-disabled { color: var(--tblr-secondary); }
+  .flatpickr-months .flatpickr-prev-month svg,
+  .flatpickr-months .flatpickr-next-month svg { fill: var(--tblr-body-color); }
+</style>
+{% endblock %}

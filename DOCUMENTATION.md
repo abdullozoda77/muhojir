@@ -1312,6 +1312,10 @@ A generic, single database configuration.
 
 **What it is for:** The start page of the admin panel (/admin): site statistics and a warning when the job import is late.
 
+### `app/admin/templates/sqladmin/base.html`
+
+**What it is for:** Makes the whole admin panel dark: extends the original SQLAdmin base page (sqladmin_original/base.html), turns on the dark Tabler theme (data-bs-theme="dark") before the page is drawn, and recolours the parts Tabler does not cover: grey buttons, the select2 drop-downs and the flatpickr calendar.
+
 
 ---
 
