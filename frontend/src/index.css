@@ -208,6 +208,9 @@ html.dark {
   textarea.input {
     @apply h-auto py-3 leading-relaxed;
   }
+  select.input {
+    @apply truncate pr-10;
+  }
   .label {
     @apply mb-1.5 block text-label-md text-on-surface;
   }

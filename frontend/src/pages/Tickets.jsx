@@ -26,7 +26,7 @@ function places(airports) {
     const several = airports.filter((x) => x.city_code === a.city_code).length > 1;
     if (several && !seen.has(a.city_code)) {
       seen.add(a.city_code);
-      out.push({ value: a.city_code, label: `${cityName(a)} — ${t("ҳамаи фурудгоҳҳо")} (${a.city_code})` });
+      out.push({ value: a.city_code, label: `${cityName(a)} (${a.city_code}) — ${t("ҳамаи фурудгоҳҳо")}` });
     }
     out.push({ value: a.code, label: several ? `${cityName(a)}, ${a.name} (${a.code})` : `${cityName(a)} (${a.code})` });
   }
