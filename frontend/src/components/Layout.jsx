@@ -1,8 +1,8 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
-  Menu, Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -177,64 +177,66 @@ const TONES = {
   "/feedback": "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400",
 };
 
-function SideLink({ item, counts }) {
-  const tone = TONES[item.to] || "bg-primary-fixed text-primary";
-  return (
-    <NavLink
-      to={item.to}
-      end={item.end}
-      className={({ isActive }) => {
-        const on = isActive && !item.hash;
-        return `group relative flex min-h-[42px] items-center gap-3 rounded-xl px-2 py-1.5 text-[14px] transition-all duration-200 ${on ? "bg-surface-container-high font-semibold text-on-surface ring-1 ring-inset ring-outline-variant" : "text-on-surface-variant hover:translate-x-0.5 hover:bg-surface-container-low hover:text-on-surface"}`;
-      }}
-    >
-      {({ isActive }) => {
-        const on = isActive && !item.hash;
-        return (
-          <>
-            {on && <span className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary" aria-hidden />}
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] transition-colors ${on ? "bg-primary text-on-primary shadow-sm" : tone}`}>
-              <item.icon className="h-[17px] w-[17px]" strokeWidth={2.2} aria-hidden />
-            </span>
-            <span className="flex-1 truncate leading-tight">{item.label}</span>
-            {item.badge && <Count n={counts[item.badge]} />}
-          </>
-        );
-      }}
-    </NavLink>
-  );
-}
-
-function useSidebarOpen() {
+function AppsMenu({ items, counts, user }) {
   const [open, setOpen] = useState(false);
-  const toggle = useCallback(() => setOpen((v) => !v), []);
-  return [open, toggle];
-}
+  const box = useRef(null);
+  const { pathname, hash } = useLocation();
+  const list = items.filter((i) => i.group === "more" || i.group === "home");
 
-function Sidebar({ items, counts, user, open }) {
-  const groups = [
-    [t("Боз"), items.filter((i) => i.group === "more")],
-    [t("Аз саҳифаи асосӣ"), items.filter((i) => i.group === "home")],
-  ].filter(([, list]) => list.length);
+  useEffect(() => setOpen(false), [pathname, hash]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => box.current && !box.current.contains(e.target) && setOpen(false);
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <aside id="sidebar" inert={!open} className={`fixed bottom-0 right-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-l border-outline-variant bg-background transition-transform duration-300 ease-out lg:flex ${open ? "translate-x-0" : "translate-x-full"}`} aria-label={t("Боз")}>
-      <nav className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-3 py-5">
-        {groups.map(([title, list], index) => (
-          <div key={title || "main"} className={`flex flex-col gap-1 ${index ? "border-t border-outline-variant/70 pt-5" : ""}`}>
-            {title && <span className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-outline">{title}</span>}
-            {list.map((i) => (
-              <SideLink key={i.to} item={i} counts={counts} />
-            ))}
-          </div>
-        ))}
-        {canEdit(user) && (
-          <a href="/admin/" className="flex min-h-[38px] items-center gap-3 rounded-lg border-t border-outline-variant px-2.5 pt-3 text-label-md text-on-surface-variant hover:text-on-surface">
-            <PenSquare className="h-[18px] w-[18px]" aria-hidden />
-            {t("Идораи мундариҷа")}
-          </a>
+    <div ref={box} className="relative hidden lg:block">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="true" aria-label={t("Ҳамаи бахшҳо")} title={t("Ҳамаи бахшҳо")} className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"}`}>
+        <AnimatePresence mode="wait" initial={false}>
+          <m.span key={open ? "x" : "grid"} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }} className="block">
+            {open ? <X className="h-5 w-5" aria-hidden /> : <LayoutGrid className="h-5 w-5" aria-hidden />}
+          </m.span>
+        </AnimatePresence>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <m.div
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            style={{ transformOrigin: "top right" }}
+            className="absolute right-0 top-full z-50 mt-3 w-[372px] rounded-2xl bg-surface-container-lowest p-3 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-1 ring-outline-variant"
+            role="menu"
+          >
+            <div className="grid grid-cols-3 gap-1">
+              {list.map((i) => (
+                <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center transition-colors ${isActive && !i.hash ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary-fixed text-primary"}`}>
+                    <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+                  </span>
+                  <span className="line-clamp-2 text-[12.5px] leading-tight text-on-surface">{i.short || i.label}</span>
+                  {i.badge && counts[i.badge] > 0 && <span className="absolute right-2 top-2"><Count n={counts[i.badge]} /></span>}
+                </NavLink>
+              ))}
+            </div>
+            {canEdit(user) && (
+              <a href="/admin/" className="mt-2 flex min-h-[40px] items-center justify-center gap-2 rounded-xl border-t border-outline-variant pt-2 text-label-md text-on-surface-variant hover:text-on-surface">
+                <PenSquare className="h-4 w-4" aria-hidden />
+                {t("Идораи мундариҷа")}
+              </a>
+            )}
+          </m.div>
         )}
-      </nav>
-    </aside>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -297,7 +299,6 @@ export default function Layout() {
   const online = useOnline();
   const update = useAppUpdate();
   const [scrolled, setScrolled] = useState(false);
-  const [side, toggleSide] = useSidebarOpen();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -345,6 +346,7 @@ export default function Layout() {
               <ThemeToggle />
             </div>
             <TelegramHeaderButton />
+            <AppsMenu items={items} counts={counts} user={user} />
             {user ? (
               <>
                 <IconButton to="/notifications" label={t("Огоҳиҳо")}>
@@ -381,21 +383,11 @@ export default function Layout() {
                 {t("Ворид шудан")}
               </Link>
             )}
-              <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className={`hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors lg:flex ${side ? "bg-primary-fixed text-on-primary-fixed ring-primary/20" : "text-on-surface ring-outline-variant hover:bg-surface-container-high"}`}>
-                <AnimatePresence mode="wait" initial={false}>
-                  <m.span key={side ? "x" : "menu"} className="block" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    {side ? <X className="h-[18px] w-[18px]" aria-hidden /> : <Menu className="h-[18px] w-[18px]" aria-hidden />}
-                  </m.span>
-                </AnimatePresence>
-                <span className="hidden xl:inline">{t("Меню")}</span>
-              </button>
           </div>
         </div>
       </header>
 
-      <Sidebar items={items} counts={counts} user={user} open={side} />
-
-      <main className={`relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] transition-[padding] duration-300 ease-out ${side ? "lg:pr-60" : ""}`}>
+      <main className={`relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)]`}>
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {update.ready && (
             <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">

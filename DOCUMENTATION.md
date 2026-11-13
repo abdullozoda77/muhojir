@@ -2192,9 +2192,7 @@ A generic, single database configuration.
 | `IconButton` | function | — |
 | `ThemeToggle` | export function | — |
 | `TONES` | const | A soft colour of the icon tile for each sidebar link. |
-| `SideLink` | function | One link of the sidebar: icon, name, counter. The "News" link (/guides#news) is never shown as active, so it does not light up together with "Guides". |
-| `useSidebarOpen` | function | Whether the sidebar is open; the "Menu" button left of the logo (☰ icon and the word, highlighted with ✕ while the sidebar is open) toggles it; it is always closed when the site is opened. When closed the sidebar slides out to the left, becomes inert and the page takes the full width. |
-| `Sidebar` | function | The left sidebar on wide screens: the "More" group (patent price, guides, checks, Russian course, exam, legal help, saved jobs and receipts) and the "From the home page" group (official rate /rate, news, feedback /feedback); for editors also the content admin link. |
+| `AppsMenu` | function | Wide screens: the ⊞ button next to the bell (it turns into ✕ when open) opens a 3-column grid of coloured tiles with every page that is not in the top tabs (the «More» and «From the home page» groups) and, for editors, a link to /admin; it closes on a tile, outside click, Esc or a page change. It replaced the side panel. |
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35, on the home page 0.6) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 
