@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
   Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -198,12 +198,10 @@ function AppsMenu({ items, counts, user }) {
 
   return (
     <div ref={box} className="relative hidden lg:block">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="true" aria-label={t("Ҳамаи бахшҳо")} title={t("Ҳамаи бахшҳо")} className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"}`}>
-        <AnimatePresence mode="wait" initial={false}>
-          <m.span key={open ? "x" : "grid"} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }} className="block">
-            {open ? <X className="h-5 w-5" aria-hidden /> : <LayoutGrid className="h-5 w-5" aria-hidden />}
-          </m.span>
-        </AnimatePresence>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="true" className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+        <LayoutGrid className="h-4 w-4" aria-hidden />
+        {t("Ҳама")}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       <AnimatePresence>
         {open && (
@@ -213,7 +211,7 @@ function AppsMenu({ items, counts, user }) {
             exit={{ opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
             style={{ transformOrigin: "top right" }}
-            className="absolute right-0 top-full z-50 mt-3 w-[372px] rounded-2xl bg-surface-container-lowest p-3 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-1 ring-outline-variant"
+            className="absolute right-0 top-full z-50 mt-4 w-[372px] rounded-2xl bg-surface-container-lowest p-3 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-1 ring-outline-variant"
             role="menu"
           >
             <div className="grid grid-cols-3 gap-1">
@@ -335,6 +333,7 @@ export default function Layout() {
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
             ))}
+            <AppsMenu items={items} counts={counts} user={user} />
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-0">
@@ -346,7 +345,6 @@ export default function Layout() {
               <ThemeToggle />
             </div>
             <TelegramHeaderButton />
-            <AppsMenu items={items} counts={counts} user={user} />
             {user ? (
               <>
                 <IconButton to="/notifications" label={t("Огоҳиҳо")}>
