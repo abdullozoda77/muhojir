@@ -209,8 +209,8 @@ function AppsMenu({ items, counts, user }) {
         const r = e.currentTarget.getBoundingClientRect();
         setSpot({ top: r.bottom + 14, right: Math.max(16, window.innerWidth - r.right) });
         setOpen((v) => !v);
-      }} aria-expanded={open} aria-haspopup="true" className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
-        <LayoutGrid className="h-4 w-4" aria-hidden />
+      }} aria-expanded={open} aria-haspopup="true" className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors 2xl:px-3 ${open ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+        <LayoutGrid className="hidden h-4 w-4 xl:block" aria-hidden />
         {t("Ҳама")}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
@@ -345,13 +345,14 @@ export default function Layout() {
       <div className="flag-line fixed inset-x-0 top-[env(safe-area-inset-top)] z-50 h-[3px]" aria-hidden />
 
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
-        <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none lg:justify-center lg:gap-6 xl:gap-10">
+        <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none lg:justify-center lg:gap-6 2xl:gap-10">
           <div className="flex shrink-0 items-center gap-3">
           <Logo />
           </div>
           <nav className="hidden min-w-0 shrink-0 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
             {tabs.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors xl:px-3 ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `relative flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-label-md transition-colors 2xl:px-3 ${isActive ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:text-on-surface"}`}>
+                <i.icon className="hidden h-4 w-4 shrink-0 xl:block" aria-hidden />
                 {i.short || i.label}
                 {i.badge && <Count n={counts[i.badge]} tone="bg-warning-fixed text-on-warning-fixed" />}
               </NavLink>
