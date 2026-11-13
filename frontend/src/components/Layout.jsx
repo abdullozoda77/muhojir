@@ -105,7 +105,7 @@ export function LangSwitch() {
     }
   };
   return (
-    <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 ${dark ? "bg-surface-container-low ring-outline-variant" : "bg-surface-container-low ring-outline-variant"}`} role="group" aria-label={t("Забон")}>
+    <div className={`relative inline-flex items-center gap-0.5 rounded-md p-[2px] ring-1 bg-surface-container-low ring-outline-variant`} role="group" aria-label={t("Забон")}>
       <m.span
         aria-hidden
         className={`absolute left-[2px] top-[2px] h-6 w-7 rounded-[5px] ${dark ? "bg-white" : "bg-white shadow-sm ring-1 ring-black/10"}`}
