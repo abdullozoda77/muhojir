@@ -86,8 +86,8 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
             for tool in TOOLS
         ])],
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-        thinking_config=types.ThinkingConfig(thinking_level="low"),
-        max_output_tokens=2048,
+        thinking_config=types.ThinkingConfig(thinking_level="medium"),
+        max_output_tokens=4096,
     )
     question = [
         types.Content(role="user" if m["role"] == "user" else "model", parts=[types.Part.from_text(text=m["content"])])

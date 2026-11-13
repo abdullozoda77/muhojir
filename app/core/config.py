@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     site_url: str = "https://king.tj"
     overpass_urls: str = "https://maps.mail.ru/osm/tools/overpass/api/interpreter,https://overpass-api.de/api/interpreter"
     assistant_model: str = "claude-opus-5"
-    assistant_effort: str = "low"
+    assistant_effort: str = "medium"
 
     @property
     def cors_origins(self):
