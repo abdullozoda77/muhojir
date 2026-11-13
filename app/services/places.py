@@ -148,7 +148,7 @@ async def save(db, element, region, category):
 
 async def import_places(db, regions=None, categories=None, pause=5.0, log=print):
     counts = {"created": 0, "updated": 0, "skipped": 0, "failed": 0}
-    headers = {"User-Agent": "Muhojir places import (https://king.tj)"}
+    headers = {"User-Agent": "Muhojir places import (https://muhojir.king.tj)"}
     by_code = {code: name for name, code in REGIONS.items()}
     regions = [by_code.get(r, r) for r in regions or REGIONS]
     unknown = [r for r in regions if r not in REGIONS]

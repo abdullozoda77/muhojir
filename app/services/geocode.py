@@ -6,7 +6,7 @@ import httpx
 from app.core import cache
 
 URL = "https://nominatim.openstreetmap.org/search"
-HEADERS = {"User-Agent": "Muhojir/1.0 (https://king.tj)"}
+HEADERS = {"User-Agent": "Muhojir/1.0 (https://muhojir.king.tj)"}
 CACHE_SECONDS = 7 * 24 * 3600
 GAP = 1.1
 

@@ -85,7 +85,7 @@ tests/               pytest
 
 ## Server
 
-Site: **https://king.tj** and **https://muhojir.king.tj** (also http://31.25.238.204:8070). nginx on port 8070 and on 80/443 for king.tj and muhojir.king.tj,
+Site: **https://muhojir.king.tj** (king.tj and www.king.tj redirect to it; also http://31.25.238.204:8070). nginx on port 8070 and on 80/443 for king.tj and muhojir.king.tj,
 uvicorn on 127.0.0.1:8071, Redis database 15. setup.sh takes king.tj from the old Django Muhojir (it stays on
 port 8040 only) and uses the certificate already issued for king.tj. First install (as root):
 

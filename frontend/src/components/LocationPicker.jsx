@@ -28,7 +28,7 @@ export function satelliteUrl(lat, lon) {
 const point = (lat, lon) => ({ lat: +lat.toFixed(6), lon: +lon.toFixed(6) });
 
 function geoProblem(error) {
-  if (!window.isSecureContext) return t("Ҷойгиршавӣ танҳо дар суроғаи бехатар (https://king.tj) кор мекунад. Ҷойро дар харита пахш кунед.");
+  if (!window.isSecureContext) return t("Ҷойгиршавӣ танҳо дар суроғаи бехатар (https://muhojir.king.tj) кор мекунад. Ҷойро дар харита пахш кунед.");
   if (error?.code === 1) return t("Шумо иҷозати ҷойгиршавиро надодед. Дар танзимоти браузер ё телефон ба ин сайт иҷозат диҳед ва боз пахш кунед, ё ҷойро дар харита пахш кунед.");
   if (error?.code === 3) return t("Ҷойгиршавӣ дер ёфт нашуд. Ба кӯча ё назди тиреза бароед ва боз кӯшиш кунед, ё ҷойро дар харита пахш кунед.");
   return t("Ҷойи шумо ёфт нашуд. GPS-ро дар телефон фаъол кунед ё ҷойро дар харита пахш кунед.");
