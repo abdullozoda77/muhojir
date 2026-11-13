@@ -91,7 +91,7 @@ export default function Assistant() {
     setBusy(true);
     try {
       const data = await api("/assistant/", { method: "POST", body: { messages: history, page: pathname + search } });
-      const reply = data.reply || (data.refused ? t("Бубахшед, ба ин савол ҷавоб дода наметавонам.") : t("Ҷавоб нашуд. Боз пурсед."));
+      const reply = data.reply || (data.refused ? t("Бубахшед, ман ба ин гуна саволҳо ҷавоб дода наметавонам — ин манъ аст.") : t("Ҷавоб нашуд. Боз пурсед."));
       setMessages([...history, { role: "assistant", content: reply }]);
       if (data.navigate) navigate(data.navigate);
     } catch (err) {
