@@ -45,6 +45,7 @@ async def translate(source_lang, target_lang, text="", data=None, mime=""):
     if provider is None:
         raise AssistantError("not_configured", "The AI translator is not set up yet.", 503)
     prompt = instructions(source_lang, target_lang)
+    text = f"Text to translate:\n{text}" if text else ""
     if provider == "gemini":
         return finish(await _gemini(prompt, text, data, mime))
     return finish(await _claude(prompt, text, data, mime))

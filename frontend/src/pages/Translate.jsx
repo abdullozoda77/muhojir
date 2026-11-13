@@ -28,6 +28,7 @@ const AI_ERRORS = {
   busy: "Тарҷумон банд аст. Баъд аз як дақиқа боз кӯшиш кунед.",
   unavailable: "Тарҷумон ҳоло дастрас нест. Каме баъдтар кӯшиш кунед.",
   no_text: "Дар файл матн ёфт нашуд. Сурати равшантар фиристед.",
+  no_text_typed: "Ин матнро тарҷума карда нашуд. Онро тафтиш кунед ва боз кӯшиш кунед.",
   refused: "Ин ҳуҷҷатро тарҷума карда намешавад.",
 };
 
@@ -151,7 +152,7 @@ function AiTranslator({ options, onDone }) {
       setResult(done);
       onDone();
     } catch (err) {
-      const code = err.data?.code;
+      const code = err.data?.code === "no_text" && !file ? "no_text_typed" : err.data?.code;
       setError(AI_ERRORS[code] ? Object.assign(new Error(t(AI_ERRORS[code])), { data: err.data }) : err);
     } finally {
       setBusy(false);

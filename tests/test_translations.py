@@ -30,7 +30,7 @@ async def test_ai_translation(client, user, monkeypatch):
 
     async def fake_gemini(prompt, text, data, mime):
         calls.append((prompt, text, data, mime))
-        return "NO_TEXT" if text == "..." else "Здравствуйте"
+        return "NO_TEXT" if text.endswith("...") else "Здравствуйте"
 
     monkeypatch.setattr(providers.settings, "gemini_api_key", "test-key")
     monkeypatch.setattr(translate, "_gemini", fake_gemini)

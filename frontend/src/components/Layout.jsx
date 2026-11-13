@@ -217,7 +217,7 @@ function Sidebar({ items, counts, user, open }) {
     [t("Аз саҳифаи асосӣ"), items.filter((i) => i.group === "home")],
   ].filter(([, list]) => list.length);
   return (
-    <aside id="sidebar" inert={!open} className={`fixed bottom-0 left-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-r border-outline-variant bg-background transition-transform duration-300 ease-out lg:flex ${open ? "translate-x-0" : "-translate-x-full"}`} aria-label={t("Боз")}>
+    <aside id="sidebar" inert={!open} className={`fixed bottom-0 right-0 top-[calc(env(safe-area-inset-top)+67px)] z-30 hidden w-60 flex-col border-l border-outline-variant bg-background transition-transform duration-300 ease-out lg:flex ${open ? "translate-x-0" : "translate-x-full"}`} aria-label={t("Боз")}>
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-3 py-5">
         {groups.map(([title, list], index) => (
           <div key={title || "main"} className={`flex flex-col gap-1 ${index ? "border-t border-outline-variant/70 pt-5" : ""}`}>
@@ -325,14 +325,6 @@ export default function Layout() {
       <header className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3px)] z-40 transition-colors duration-300 ${scrolled ? "flag-border-b bg-background/80 backdrop-blur-xl" : "bg-background"}`}>
         <div className="relative mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 md:px-6 lg:max-w-none lg:justify-center lg:gap-6 xl:gap-10">
           <div className="flex shrink-0 items-center gap-3">
-          <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className={`-ml-1 hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors lg:flex ${side ? "bg-primary-fixed text-on-primary-fixed ring-primary/20" : "text-on-surface ring-outline-variant hover:bg-surface-container-high"}`}>
-            <AnimatePresence mode="wait" initial={false}>
-              <m.span key={side ? "x" : "menu"} className="block" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                {side ? <X className="h-[18px] w-[18px]" aria-hidden /> : <Menu className="h-[18px] w-[18px]" aria-hidden />}
-              </m.span>
-            </AnimatePresence>
-            <span className="hidden xl:inline">{t("Меню")}</span>
-          </button>
           <Logo />
           </div>
           <nav className="hidden min-w-0 shrink-0 items-center gap-0.5 lg:flex" aria-label={t("Менюи асосӣ")}>
@@ -389,13 +381,21 @@ export default function Layout() {
                 {t("Ворид шудан")}
               </Link>
             )}
+              <button type="button" onClick={toggleSide} aria-expanded={side} aria-controls="sidebar" title={side ? t("Пӯшидани панел") : t("Кушодани панел")} className={`hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-label-md ring-1 ring-inset transition-colors lg:flex ${side ? "bg-primary-fixed text-on-primary-fixed ring-primary/20" : "text-on-surface ring-outline-variant hover:bg-surface-container-high"}`}>
+                <AnimatePresence mode="wait" initial={false}>
+                  <m.span key={side ? "x" : "menu"} className="block" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                    {side ? <X className="h-[18px] w-[18px]" aria-hidden /> : <Menu className="h-[18px] w-[18px]" aria-hidden />}
+                  </m.span>
+                </AnimatePresence>
+                <span className="hidden xl:inline">{t("Меню")}</span>
+              </button>
           </div>
         </div>
       </header>
 
       <Sidebar items={items} counts={counts} user={user} open={side} />
 
-      <main className={`relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] transition-[padding] duration-300 ease-out ${side ? "lg:pl-60" : ""}`}>
+      <main className={`relative z-[1] flex min-h-screen flex-col pt-[calc(env(safe-area-inset-top)+67px)] transition-[padding] duration-300 ease-out ${side ? "lg:pr-60" : ""}`}>
         <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-16 pt-4 md:px-6 md:pt-6 lg:pb-24">
           {update.ready && (
             <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-primary-fixed px-4 py-3 text-label-md text-on-primary-fixed">
