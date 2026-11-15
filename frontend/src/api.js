@@ -81,12 +81,27 @@ const SERVER_MESSAGES = {
   "Cancel the order first.": "Аввал фармоишро бекор кунед.",
   "Certificate not found.": "Сертификат ёфт нашуд.",
   "Tickets are only between Tajikistan and Russia (either way).": "Чиптаҳо танҳо байни Тоҷикистон ва Русия (ба ҳар ду тараф).",
+  "Level not found.": "Сатҳ ёфт нашуд.",
+  "Lesson not found.": "Дарс ёфт нашуд.",
+  "File not found.": "Файл ёфт нашуд.",
+  "Not found.": "Ёфт нашуд.",
+  "Could not sign in with Google. Try again.": "Бо Google ворид шуда нашуд. Боз кӯшиш кунед.",
+  "Google login is not set up.": "Воридшавӣ бо Google ҳоло танзим нашудааст.",
+  "Wrong phone number or password.": "Рақами телефон ё парол нодуруст аст.",
+  "Telegram is not connected.": "Telegram пайваст нашудааст.",
+  "Address search is not available now. Tap the shop on the map.": "Ҷустуҷӯи суроға ҳоло кор намекунад. Ҷойи мағозаро дар харита пахш кунед.",
+  "The AI assistant is busy. Try again in a minute.": "Ёрдамчии AI банд аст. Баъд аз як дақиқа боз кӯшиш кунед.",
+  "The AI assistant is not available right now.": "Ёрдамчии AI ҳоло дастрас нест.",
   "Ticket prices are not available right now. Try again later.": "Нархи чиптаҳо ҳоло дастрас нест. Баъдтар боз кӯшиш кунед.",
 };
 
 export function errorText(data) {
   if (!data) return "";
-  if (typeof data === "string") return SERVER_MESSAGES[data] ? t(SERVER_MESSAGES[data]) : data;
+  if (typeof data === "string") {
+    if (SERVER_MESSAGES[data]) return t(SERVER_MESSAGES[data]);
+    if (/^No \w+ matches the given query\.$/.test(data)) return t("Ёфт нашуд.");
+    return data;
+  }
   if (Array.isArray(data)) return data.map(errorText).join(" ");
   if (data.detail) return errorText(data.detail);
   return Object.values(data).map(errorText).join(" ");
