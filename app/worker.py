@@ -22,50 +22,62 @@ celery.conf.update(
 app = celery
 
 
+def run(coro):
+    from app.db.session import engine
+
+    async def main():
+        try:
+            await coro
+        finally:
+            await engine.dispose()
+
+    asyncio.run(main())
+
+
 @celery.task(autoretry_for=(OSError,), retry_backoff=30, max_retries=3)
 def send_email(subject, body, to):
     from app.services.emails import send_plain
 
-    asyncio.run(send_plain(subject, body, to))
+    run(send_plain(subject, body, to))
 
 
 @celery.task
 def import_jobs():
     from app.tasks import run_import_jobs
 
-    asyncio.run(run_import_jobs())
+    run(run_import_jobs())
 
 
 @celery.task
 def send_reminders():
     from app.tasks import run_send_reminders
 
-    asyncio.run(run_send_reminders())
+    run(run_send_reminders())
 
 
 @celery.task
 def check_flight_watches():
     from app.tasks import run_check_flight_watches
 
-    asyncio.run(run_check_flight_watches())
+    run(run_check_flight_watches())
 
 
 @celery.task
 def import_places():
     from app.tasks import run_import_places
 
-    asyncio.run(run_import_places())
+    run(run_import_places())
 
 
 @celery.task(autoretry_for=(OSError,), retry_backoff=60, max_retries=3)
 def update_rates():
     from app.tasks import run_update_rates
 
-    asyncio.run(run_update_rates())
+    run(run_update_rates())
 
 
 @celery.task
 def import_housing():
     from app.tasks import run_import_housing
 
-    asyncio.run(run_import_housing())
+    run(run_import_housing())

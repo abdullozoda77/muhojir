@@ -3,7 +3,8 @@ import re
 from datetime import datetime, timedelta
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 
 from app.core import cache
 from app.core.config import TIME_ZONE
@@ -90,7 +91,14 @@ async def save_rate(db, source, day, value):
         db.add(rate)
     else:
         rate.value = value
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        await db.execute(update(ExchangeRate).where(ExchangeRate.source == source, ExchangeRate.day == day)
+                         .values(value=value))
+        await db.commit()
+        rate = await db.scalar(select(ExchangeRate).where(ExchangeRate.source == source, ExchangeRate.day == day))
     return rate
 
 

@@ -8,6 +8,7 @@ os.environ.update({
     "SECRET_KEY": "tests-secret-key-that-is-long-enough-for-hs256",
     "DEBUG": "False",
     "GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "REDIS_URL": "", "CELERY_BROKER_URL": "", "EMAIL_HOST": "",
+    "TELEGRAM_BOT_TOKEN": "", "TELEGRAM_BOT_NAME": "",
 })
 
 import pytest
