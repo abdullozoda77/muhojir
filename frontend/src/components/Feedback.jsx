@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { Angry, Bug, CheckCircle2, Frown, Heart, ImagePlus, Laugh, Lightbulb, LogIn, Meh, MessageSquareText, MessagesSquare, Smile, X } from "lucide-react";
+import { Bug, CheckCircle2, Heart, ImagePlus, Lightbulb, LogIn, MessageSquareText, MessagesSquare, X } from "lucide-react";
 import { api, openPrivateFile, errorText } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -19,12 +19,39 @@ const KINDS = [
 ];
 
 const FACES = [
-  { rating: 1, icon: Angry, get label() { return t("Тамоман не"); }, kind: "bug", hover: "group-hover:bg-error-container group-hover:text-on-error-container" },
-  { rating: 2, icon: Frown, get label() { return t("Бад"); }, kind: "idea", hover: "group-hover:bg-error-container group-hover:text-on-error-container" },
-  { rating: 3, icon: Meh, get label() { return t("Миёна"); }, kind: "idea", hover: "group-hover:bg-warning-fixed group-hover:text-on-warning-fixed" },
-  { rating: 4, icon: Smile, get label() { return t("Хуб"); }, kind: "idea", hover: "group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed" },
-  { rating: 5, icon: Laugh, get label() { return t("Аъло"); }, kind: "praise", hover: "group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed" },
+  { rating: 1, emoji: "😠", get label() { return t("Тамоман не"); }, kind: "bug", tone: "text-error", glow: "hover:bg-error-container focus-visible:bg-error-container" },
+  { rating: 2, emoji: "🙁", get label() { return t("Бад"); }, kind: "idea", tone: "text-error", glow: "hover:bg-error-container focus-visible:bg-error-container" },
+  { rating: 3, emoji: "😐", get label() { return t("Миёна"); }, kind: "idea", tone: "text-warning", glow: "hover:bg-warning-fixed focus-visible:bg-warning-fixed" },
+  { rating: 4, emoji: "🙂", get label() { return t("Хуб"); }, kind: "idea", tone: "text-primary", glow: "hover:bg-tertiary-fixed focus-visible:bg-tertiary-fixed" },
+  { rating: 5, emoji: "😍", get label() { return t("Аъло"); }, kind: "praise", tone: "text-primary", glow: "hover:bg-tertiary-fixed focus-visible:bg-tertiary-fixed" },
 ];
+
+function RatingFaces({ onPick, onBug }) {
+  const [hover, setHover] = useState(null);
+  return (
+    <div className="flex w-full flex-col gap-3 rounded-2xl bg-surface-container-lowest/80 p-4 ring-1 ring-outline-variant backdrop-blur md:w-[380px] md:p-5">
+      <p className="text-label-lg">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
+      <div className="grid grid-cols-5 gap-1 rounded-2xl bg-surface-container-low p-1.5" onMouseLeave={() => setHover(null)}>
+        {FACES.map((f) => (
+          <button key={f.rating} type="button" onClick={() => onPick(f)} onMouseEnter={() => setHover(f)} onFocus={() => setHover(f)} onBlur={() => setHover(null)} aria-label={f.label}
+            className={`flex h-14 items-center justify-center rounded-xl text-[28px] leading-none outline-none transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary md:h-16 md:text-[32px] ${f.glow} ${hover && hover !== f ? "opacity-50 grayscale-[60%]" : ""}`}>
+            <span className={`transition-transform duration-200 ${hover === f ? "scale-125" : ""}`} aria-hidden>{f.emoji}</span>
+          </button>
+        ))}
+      </div>
+      <div className="h-1 rounded-full bg-gradient-to-r from-error via-warning-container to-primary opacity-70" aria-hidden />
+      <div className="flex items-center justify-between gap-3">
+        <span className={`text-label-md transition-colors ${hover ? hover.tone : "text-on-surface-variant"}`} aria-live="polite">
+          {hover ? hover.label : t("Як чеҳраро интихоб кунед")}
+        </span>
+        <button type="button" onClick={onBug} className="inline-flex shrink-0 items-center gap-1.5 text-label-md text-primary hover:underline">
+          <Bug className="h-4 w-4" aria-hidden />
+          {t("Дар сайт хато ёфтам")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function MyFeedback({ tick }) {
   const { data } = useApi(`/feedback/mine/?t=${tick}`);
@@ -162,23 +189,7 @@ export default function FeedbackBanner() {
             <h2 className="font-display text-[24px] font-semibold leading-tight md:text-[28px]">{t("Чизе ба шумо писанд нест? Ба мо гӯед.")}</h2>
             <p className="text-body-md text-on-surface-variant">{t("Muhojir-ро барои шумо месозем. Хато, камбудӣ ё фикри нав — ҳар чӣ бошад, нависед. Ҳар фикрро мехонем ва ҷавоб медиҳем.")}</p>
           </div>
-          <div className="flex flex-col gap-3">
-            <p className="text-label-md text-on-surface-variant">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
-            <div className="flex gap-1.5 md:gap-2">
-              {FACES.map((f) => (
-                <button key={f.rating} type="button" onClick={() => setStart({ rating: f.rating, kind: f.kind })} className="group flex w-[60px] flex-col items-center gap-1.5 rounded-xl py-2 transition-all hover:-translate-y-0.5 md:w-[68px]" aria-label={f.label}>
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant transition-colors md:h-14 md:w-14 group-hover:ring-transparent ${f.hover}`}>
-                    <f.icon className="h-6 w-6 transition-transform group-hover:scale-110 md:h-7 md:w-7" aria-hidden />
-                  </span>
-                  <span className="text-label-sm text-on-surface-variant">{f.label}</span>
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={() => setStart({ kind: "bug" })} className="inline-flex items-center gap-1.5 self-start text-label-md text-primary hover:underline">
-              <Bug className="h-4 w-4" aria-hidden />
-              {t("Дар сайт хато ёфтам")}
-            </button>
-          </div>
+          <RatingFaces onPick={(f) => setStart({ rating: f.rating, kind: f.kind })} onBug={() => setStart({ kind: "bug" })} />
         </div>
       </section>
       {createPortal(
