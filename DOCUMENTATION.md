@@ -454,7 +454,8 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). |
+| `HelpContact` | class · table `help_contacts` | Where a migrant can get help: official sites to read about the patent, the embassy, a hotline, a lawyer, or the official MVD check page. Editors add them (with real, checked links). Checks (kind mvd_check) also have needs (what to have at hand, one per line), if_bad (what to do when the result is bad, one per line), documents (slugs of document types whose number the page offers to copy, e.g. patent) and repeat_days (how often to check again; empty = once), each with a Russian column. |
+| `CheckResult` | class · table `check_results` | A person's own result of one official check (ok or problem) and when they did it; one row per person per check, kept up to date. Nobody else sees it. |
 | `title_ru`, `description_ru` | — | help_contacts also has title_ru and description_ru (Russian text for a Russian site; empty = the Tajik one). |
 
 
@@ -908,7 +909,7 @@ A generic, single database configuration.
 
 ### `app/routers/support.py`
 
-**What it is for:** /api/help/: official places to get help (editors keep the list).
+**What it is for:** /api/help/: official places to get help (editors keep the list) and /api/help/checks/ — the self-checks on official Russian sites with each person's own result.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -917,6 +918,14 @@ A generic, single database configuration.
 | `contact_json(c)` | function | — |
 | `contacts_query(request, user)` | function | — |
 | `check_contact(db, contact, data)` | async function | — |
+| `ResultIn` | class | Body of a check result: ok or problem. |
+| `slugs(contact)` | function | The document type slugs of a check as a list. |
+| `result_json(contact, result)` | function | The person's last result with due_at (checked_at + repeat_days) and is_due. |
+| `my_papers(db, user, contacts)` | async function | The person's own documents of the types the checks ask for (number, issue date), grouped by slug. |
+| `checks_json(db, user, contacts)` | async function | Checks with my_result and my_documents of this person (empty for guests). |
+| `list_checks(db, user)` | async function · `GET /api/help/checks/` | Active checks in order. |
+| `save_result(check_id, data, db, user)` | async function · `PUT /api/help/checks/{id}/result/` | Saves ok/problem with today's time; returns the check. |
+| `delete_result(check_id, db, user)` | async function · `DELETE /api/help/checks/{id}/result/` | Forgets the result. |
 
 
 ### `app/routers/telegram.py`
@@ -1587,6 +1596,14 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade()` / `downgrade()` | function | Creates / drops the table. |
 
+### `alembic/versions/0024_checks.py`
+
+**What it is for:** Adds needs, if_bad (with _ru), documents and repeat_days to help_contacts, creates check_results and fills the 6 checks from app/seed/checks.json: patent, the register of controlled persons (РКЛ), entry ban, ФССП debts, INN and traffic fines. Existing rows are updated by id, new ones are added only if no check with the same site exists.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` / `downgrade()` | function | Adds / removes the columns and the table. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1628,6 +1645,14 @@ A generic, single database configuration.
 | `test_profile(client, user)` | async function | — |
 | `test_login_is_throttled(client)` | async function | — |
 | `test_avatar(client, user)` | async function | — |
+
+### `tests/test_checks.py`
+
+**What it is for:** Tests of the self-checks page.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_checks_list_results_and_papers` | async function | 6 checks in order with needs and if_bad, Russian titles; guests get 401 on saving; a wrong result is refused; ok/problem is saved and the patent number is offered; after repeat_days the check is due; other people see nothing; delete; unknown check → 404. |
 
 ### `tests/test_course.py`
 
@@ -2459,12 +2484,13 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Checks.jsx`
 
-**What it is for:** /checks — links and steps to check your own papers on official sites (entry ban, patent, debts).
+**What it is for:** /checks — 6 checks of your own papers on official Russian sites. Each card: what you need, your patent number and date from «My documents» with a copy button, the steps, the official site, what to do if the result is bad (opens by itself after «There is a problem») and two buttons to save the result. A summary on top counts the checks done; a check is «time to check again» after its repeat_days.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `stepsOf` | const | Official pages where people check their own papers (admins keep the list: help contacts of kind "mvd_check"). Each description holds the steps, one per line. |
-| `Checks` | export function | — |
+| `stateOf(check)` | function | new, ok, due or problem. |
+| `StatePill`, `CopyRow`, `MyPapers`, `IfBad`, `ResultButtons`, `CheckCard`, `Summary` | function | Parts of the page. |
+| `Checks` | export function | Loads /help/checks/ and reloads after a result is saved. |
 
 ### `frontend/src/pages/Documents.jsx`
 

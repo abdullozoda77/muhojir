@@ -290,7 +290,9 @@ class HelpContactAdmin(Base, model=HelpContact):
     column_searchable_list = [HelpContact.title, HelpContact.description]
     column_default_sort = [(HelpContact.order, False)]
     form_columns = [HelpContact.kind, HelpContact.title, HelpContact.website, HelpContact.phone, HelpContact.description,
-                    HelpContact.title_ru, HelpContact.description_ru, HelpContact.region, HelpContact.order, HelpContact.is_active]
+                    HelpContact.title_ru, HelpContact.description_ru, HelpContact.needs, HelpContact.needs_ru, HelpContact.if_bad,
+                    HelpContact.if_bad_ru, HelpContact.documents, HelpContact.repeat_days, HelpContact.region, HelpContact.order,
+                    HelpContact.is_active]
     form_choices = {"kind": [(k, k) for k in HelpContact.KINDS]}
 
 

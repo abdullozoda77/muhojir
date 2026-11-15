@@ -12,7 +12,7 @@ from app.models.market import (
 )
 from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
-from app.models.support import HelpContact
+from app.models.support import CheckResult, HelpContact
 from app.models.telegram import TelegramLink
 from app.models.travel import AIRLINES, Airport, FlightWatch
 from app.models.translations import DOC_TYPES, LANGUAGES, ORDER_STATUSES, TRANSLATION_KINDS, Translation
@@ -22,7 +22,7 @@ __all__ = [
     "DocumentType", "GuideStep", "Region", "UserDocument", "Payment", "MigrationCenter", "ReminderLog", "LawNews",
     "ExamQuestion", "law_news_document_types",
     "INDUSTRIES", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
-    "HelpContact",
+    "HelpContact", "CheckResult",
     "TelegramLink",
     "AIRLINES", "Airport", "FlightWatch",
     "PLACE_CATEGORIES", "Place", "PlaceReview",
