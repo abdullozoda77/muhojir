@@ -34,10 +34,10 @@ async def send_due_reminders(db, today=None):
         select(UserDocument).join(User, User.id == UserDocument.user_id)
         .where(UserDocument.expires_at >= today, User.is_active.is_(True))
     )).unique().all()
-    for document in documents:
-        days_left = (document.expires_at - today).days
-        if days_left not in (document.remind_days_before, 1, 0):
-            continue
+    due = [(d.id, (d.expires_at - today).days) for d in documents
+           if (d.expires_at - today).days in (d.remind_days_before, 1, 0)]
+    for document_id, days_left in due:
+        document = await db.get(UserDocument, document_id, populate_existing=True)
         db.add(ReminderLog(user_document_id=document.id, expires_at=document.expires_at, days_before=days_left))
         try:
             await db.commit()
