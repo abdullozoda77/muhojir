@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { Bug, CheckCircle2, Heart, ImagePlus, Lightbulb, LogIn, MessageSquareText, MessagesSquare, X } from "lucide-react";
+import { ArrowRight, Bug, CheckCircle2, Heart, ImagePlus, Lightbulb, LogIn, MessageSquareText, MessagesSquare, X } from "lucide-react";
 import { api, openPrivateFile, errorText } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -19,31 +19,27 @@ const KINDS = [
 ];
 
 const FACES = [
-  { rating: 1, emoji: "😠", get label() { return t("Тамоман не"); }, kind: "bug" },
-  { rating: 2, emoji: "🙁", get label() { return t("Бад"); }, kind: "idea" },
-  { rating: 3, emoji: "😐", get label() { return t("Миёна"); }, kind: "idea" },
-  { rating: 4, emoji: "🙂", get label() { return t("Хуб"); }, kind: "idea" },
-  { rating: 5, emoji: "😍", get label() { return t("Аъло"); }, kind: "praise" },
+  { rating: 1, get label() { return t("Бад"); }, kind: "idea" },
+  { rating: 3, get label() { return t("Миёна"); }, kind: "idea" },
+  { rating: 4, get label() { return t("Хуб"); }, kind: "idea" },
+  { rating: 5, get label() { return t("Аъло"); }, kind: "praise" },
 ];
 
 function RatingFaces({ onPick, onBug }) {
-  const [hover, setHover] = useState(null);
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-body-sm text-on-surface-variant">
-        {t("Сайт ба шумо чӣ қадар писанд аст?")}
-        <span className="ml-2 text-on-surface" aria-live="polite">{hover?.label}</span>
-      </p>
-      <div className="flex gap-1" onMouseLeave={() => setHover(null)}>
+    <div className="flex flex-col gap-3">
+      <p className="text-label-md text-on-surface-variant">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
+      <div className="flex flex-wrap gap-2">
         {FACES.map((f) => (
-          <button key={f.rating} type="button" onClick={() => onPick(f)} onMouseEnter={() => setHover(f)} onFocus={() => setHover(f)} onBlur={() => setHover(null)} aria-label={f.label}
-            className={`flex h-11 w-11 items-center justify-center rounded-full text-[24px] leading-none outline-none transition duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary ${hover === f ? "" : "opacity-60 grayscale"}`}>
-            <span aria-hidden>{f.emoji}</span>
+          <button key={f.rating} type="button" onClick={() => onPick(f)}
+            className="min-h-[40px] rounded-full px-4 text-label-md text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-ink hover:text-on-ink hover:ring-ink focus-visible:bg-ink focus-visible:text-on-ink focus-visible:outline-none">
+            {f.label}
           </button>
         ))}
       </div>
-      <button type="button" onClick={onBug} className="self-start text-body-sm text-on-surface-variant underline-offset-4 hover:text-on-surface hover:underline">
+      <button type="button" onClick={onBug} className="inline-flex items-center gap-1 self-start text-label-md text-primary hover:underline">
         {t("Дар сайт хато ёфтам")}
+        <ArrowRight className="h-4 w-4" aria-hidden />
       </button>
     </div>
   );
