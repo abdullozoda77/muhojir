@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Ban, ShieldAlert, Trash2 } from "lucide-react";
+import { Ban, ShieldAlert, Star, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago } from "../format.js";
 import { Button, Drawer, ErrorBox } from "./ui.jsx";
+import { PayBadge } from "./EmployerReview.jsx";
 
 const QUICK = [
   () => t("Маош надоданд"),
@@ -34,12 +35,21 @@ export function ReportItem({ report, onRemove }) {
   };
   return (
     <div className="flex flex-col gap-1.5 rounded-xl bg-surface-container-low p-3.5">
+      {report.from_review && (
+        <span className="inline-flex w-fit items-center gap-1 rounded-md bg-error-container px-2 py-0.5 text-label-sm text-on-error-container">
+          <Star className="h-3.5 w-3.5" aria-hidden />
+          {t("Аз шарҳ: маош надоданд")}
+        </span>
+      )}
       <p className="whitespace-pre-line text-body-md">{report.reason}</p>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-body-sm text-on-surface-variant">
           {[report.is_mine ? t("Шумо") : report.author_name, ago(report.created_at), report.job?.title].filter(Boolean).join(" · ")}
         </span>
-        {report.is_mine && onRemove && (
+        {report.is_mine && report.from_review && (
+          <Link to={`/employers/${report.employer}`} className="text-label-sm text-primary">{t("Шарҳи худро иваз кунед")}</Link>
+        )}
+        {report.is_mine && !report.from_review && onRemove && (
           <button type="button" onClick={remove} className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg px-2 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-error">
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
             {t("Нест кардан")}
@@ -166,6 +176,7 @@ export function BlacklistCompany({ e, onChange }) {
         )}
       </div>
       {(e.inn || e.city) && <span className="font-mono text-body-sm text-on-surface-variant">{[e.inn && `ИНН: ${e.inn}`, e.city].filter(Boolean).join(" • ")}</span>}
+      <PayBadge employer={e} className="self-start" />
       {e.is_blacklisted && e.blacklist_reason && (
         <p className="rounded-lg bg-surface-container-low p-2.5 text-body-sm"><strong>{t("Админ")}:</strong> {e.blacklist_reason}</p>
       )}

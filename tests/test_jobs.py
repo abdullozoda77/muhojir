@@ -94,3 +94,62 @@ async def test_blacklist_reports(client, user):
     assert (await client.get(f"/api/jobs/jobs/{job_id}/")).json()["employer"]["reports_count"] == 0
     r = await client.get("/api/jobs/blacklist/", params={"page_size": 100})
     assert employer_id not in [e["id"] for e in r.json()["results"]]
+
+
+async def test_reviews_salary_paid_feed_blacklist(client, user):
+    async with SessionLocal() as db:
+        employer = Employer(name="Склад Плюс", city="Казань", external_id="r-1")
+        other = Employer(name="Другая", city="Казань", external_id="r-2")
+        db.add_all([employer, other])
+        await db.flush()
+        job = Job(employer_id=employer.id, title="Кладовщик", description="", industry="warehouse", city="Казань", external_id="rj-1")
+        foreign = Job(employer_id=other.id, title="Чужая", description="", industry="other", city="Казань", external_id="rj-2")
+        db.add_all([job, foreign])
+        await db.commit()
+        job_id, foreign_id, employer_id = job.id, foreign.id, employer.id
+    headers, _ = user
+
+    r = await client.post("/api/jobs/reviews/", headers=headers, json={"employer": employer_id, "job": foreign_id, "rating": 2})
+    assert r.status_code == 400 and "job" in r.json()
+    r = await client.post("/api/jobs/reviews/", headers=headers,
+                          json={"employer": employer_id, "job": job_id, "rating": 1, "salary_paid": "not_paid"})
+    review = r.json()
+    assert r.status_code == 201 and review["salary_paid"] == "not_paid" and review["salary_not_paid"] is True
+    assert review["job"] == {"id": job_id, "title": "Кладовщик"}
+
+    company = (await client.get(f"/api/jobs/jobs/{job_id}/")).json()["employer"]
+    assert company["reports_count"] == 1 and company["not_paid"] == 1 and company["reviews_count"] == 1 and company["rating"] == 1
+    r = await client.get("/api/jobs/blacklist/reports/", params={"employer": employer_id})
+    report = r.json()["results"][0]
+    assert report["from_review"] is True and report["reason"] == "Маош надоданд." and report["job"]["id"] == job_id
+    r = await client.delete(f"/api/jobs/blacklist/reports/{report['id']}/", headers=headers)
+    assert r.status_code == 400
+
+    r = await client.patch(f"/api/jobs/reviews/{review['id']}/", headers=headers,
+                           json={"text": "Два месяца не платили зарплату"})
+    reports = (await client.get("/api/jobs/blacklist/reports/", params={"employer": employer_id})).json()["results"]
+    assert reports[0]["reason"] == "Два месяца не платили зарплату"
+
+    r = await client.patch(f"/api/jobs/reviews/{review['id']}/", headers=headers, json={"salary_paid": "late", "rating": 3})
+    assert r.json()["salary_paid"] == "late" and r.json()["salary_not_paid"] is False
+    company = (await client.get(f"/api/jobs/employers/{employer_id}/")).json()
+    assert company["reports_count"] == 0 and company["paid_late"] == 1 and company["not_paid"] == 0 and company["rating"] == 3
+
+    r = await client.patch(f"/api/jobs/reviews/{review['id']}/", headers=headers, json={"salary_not_paid": True})
+    assert r.json()["salary_paid"] == "not_paid"
+    r = await client.post(f"/api/jobs/jobs/{job_id}/blacklist/", headers=headers, json={"reason": "Забрали паспорт и не платили"})
+    assert r.json()["from_review"] is False
+    r = await client.patch(f"/api/jobs/reviews/{review['id']}/", headers=headers, json={"salary_paid": "on_time"})
+    company = (await client.get(f"/api/jobs/employers/{employer_id}/")).json()
+    assert company["reports_count"] == 1 and company["paid_on_time"] == 1
+
+    assert (await client.delete(f"/api/jobs/reviews/{review['id']}/", headers=headers)).status_code == 204
+    company = (await client.get(f"/api/jobs/employers/{employer_id}/")).json()
+    assert company["reviews_count"] == 0 and company["rating"] is None and company["reports_count"] == 1
+
+    r = await client.post("/api/jobs/reviews/", headers=headers, json={"employer": employer_id, "rating": 1, "salary_paid": "not_paid"})
+    assert r.status_code == 201
+    company = (await client.get(f"/api/jobs/employers/{employer_id}/")).json()
+    assert company["reports_count"] == 1 and company["not_paid"] == 1
+    assert (await client.delete(f"/api/jobs/reviews/{r.json()['id']}/", headers=headers)).status_code == 204
+    assert (await client.get(f"/api/jobs/employers/{employer_id}/")).json()["reports_count"] == 1

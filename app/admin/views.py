@@ -235,7 +235,8 @@ class EmployerAdmin(Base, model=Employer):
     column_list = [Employer.name, Employer.city, Employer.is_verified, Employer.is_blacklisted, Employer.reports_count, Employer.created_at]
     column_searchable_list = [Employer.name, Employer.inn]
     column_sortable_list = [Employer.name, Employer.created_at]
-    form_excluded_columns = [Employer.created_at, Employer.reports_count]
+    form_excluded_columns = [Employer.created_at, Employer.reports_count, Employer.reviews_count, Employer.rating,
+                             Employer.paid_on_time, Employer.paid_late, Employer.not_paid]
 
 
 class JobAdmin(Base, model=Job):
@@ -249,9 +250,20 @@ class JobAdmin(Base, model=Job):
 
 class EmployerReviewAdmin(Base, model=EmployerReview):
     name, name_plural, icon, category = "Шарҳ", "Шарҳҳо дар бораи корфармо", "fa-solid fa-star", "Кор"
-    column_list = [EmployerReview.employer, EmployerReview.author, EmployerReview.rating, EmployerReview.salary_not_paid, EmployerReview.created_at]
+    column_list = [EmployerReview.employer, EmployerReview.job, EmployerReview.author, EmployerReview.rating, EmployerReview.salary_paid, EmployerReview.created_at]
     column_default_sort = [(EmployerReview.created_at, True)]
-    form_excluded_columns = [EmployerReview.created_at]
+    can_create = can_edit = False
+
+    async def after_model_delete(self, model, request):
+        from sqlalchemy import delete
+
+        from app.db.session import SessionLocal
+        from app.routers.jobs import count_reports, count_reviews
+        async with SessionLocal() as db:
+            await db.execute(delete(BlacklistReport).where(BlacklistReport.review_id == model.id))
+            await count_reports(db, model.employer_id)
+            await count_reviews(db, model.employer_id)
+            await db.commit()
 
 
 class BlacklistReportAdmin(Base, model=BlacklistReport):

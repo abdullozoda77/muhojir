@@ -2,21 +2,28 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.models.jobs import INDUSTRIES
+from app.models.jobs import INDUSTRIES, SALARY_PAID
 from app.schemas.common import Form
 
 Industry = Literal[tuple(INDUSTRIES)]
+SalaryPaid = Literal[SALARY_PAID] | Literal[""]
+
+
+def pay_json(e):
+    return {"reviews_count": e.reviews_count, "rating": e.rating, "paid_on_time": e.paid_on_time,
+            "paid_late": e.paid_late, "not_paid": e.not_paid}
 
 
 def employer_short_json(e):
     return {"id": e.id, "name": e.name, "city": e.city, "website": e.website, "is_verified": e.is_verified,
-            "is_blacklisted": e.is_blacklisted, "reports_count": e.reports_count, "source": e.source}
+            "is_blacklisted": e.is_blacklisted, "reports_count": e.reports_count, "source": e.source, **pay_json(e)}
 
 
 def employer_json(e):
     return {"id": e.id, "name": e.name, "inn": e.inn, "city": e.city, "description": e.description, "website": e.website,
             "source": e.source, "is_verified": e.is_verified, "verified_at": e.verified_at,
-            "is_blacklisted": e.is_blacklisted, "blacklist_reason": e.blacklist_reason, "reports_count": e.reports_count, "created_at": e.created_at}
+            "is_blacklisted": e.is_blacklisted, "blacklist_reason": e.blacklist_reason, "reports_count": e.reports_count, "created_at": e.created_at,
+            **pay_json(e)}
 
 
 def job_json(job, is_saved=False):
@@ -36,7 +43,8 @@ def review_json(review, viewer=None):
     return {
         "id": review.id, "employer": review.employer_id, "author_name": name[0] if name else "Корбар",
         "is_mine": bool(viewer and review.author_id == viewer.id), "rating": review.rating, "text": review.text,
-        "salary_not_paid": review.salary_not_paid, "created_at": review.created_at,
+        "salary_not_paid": review.salary_not_paid, "salary_paid": review.salary_paid,
+        "job": {"id": review.job.id, "title": review.job.title} if review.job else None, "created_at": review.created_at,
     }
 
 
@@ -46,7 +54,7 @@ def report_json(report, viewer=None):
         "id": report.id, "employer": report.employer_id,
         "job": {"id": report.job.id, "title": report.job.title} if report.job else None,
         "author_name": name[0] if name else "Корбар", "is_mine": bool(viewer and report.author_id == viewer.id),
-        "reason": report.reason, "created_at": report.created_at,
+        "reason": report.reason, "from_review": report.review_id is not None, "created_at": report.created_at,
     }
 
 
@@ -56,15 +64,19 @@ class ReportIn(Form):
 
 class ReviewIn(Form):
     employer: int
+    job: int | None = None
     rating: int = Field(ge=1, le=5)
-    text: str = ""
+    text: str = Field("", max_length=2000)
+    salary_paid: SalaryPaid = ""
     salary_not_paid: bool = False
 
 
 class ReviewPatch(Form):
     employer: int | None = None
+    job: int | None = None
     rating: int | None = Field(None, ge=1, le=5)
-    text: str | None = None
+    text: str | None = Field(None, max_length=2000)
+    salary_paid: SalaryPaid | None = None
     salary_not_paid: bool | None = None
 
 

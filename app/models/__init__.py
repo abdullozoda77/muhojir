@@ -6,7 +6,7 @@ from app.models.documents import (
 )
 from app.models.feedback import FEEDBACK_KINDS, FEEDBACK_STATUSES, Feedback
 from app.models.housing import HOUSING_FOR, HOUSING_KINDS, HOUSING_PERIODS, HOUSING_STATUSES, Housing, HousingPhoto
-from app.models.jobs import INDUSTRIES, BlacklistReport, Employer, EmployerReview, Job, JobAlert, SavedJob
+from app.models.jobs import INDUSTRIES, SALARY_PAID, BlacklistReport, Employer, EmployerReview, Job, JobAlert, SavedJob
 from app.models.market import (
     PRODUCT_UNITS, PROOF_KINDS, REQUIRED_PROOFS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopProof, ShopReview,
 )
@@ -21,7 +21,7 @@ __all__ = [
     "User", "EmailCode", "Notification", "RevokedToken",
     "DocumentType", "GuideStep", "Region", "UserDocument", "Payment", "MigrationCenter", "ReminderLog", "LawNews",
     "ExamQuestion", "law_news_document_types",
-    "INDUSTRIES", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
+    "INDUSTRIES", "SALARY_PAID", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
     "HelpContact", "CheckResult",
     "TelegramLink",
     "AIRLINES", "Airport", "FlightWatch",

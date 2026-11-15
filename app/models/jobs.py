@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -20,6 +20,8 @@ INDUSTRIES = {
 }
 
 SOURCES = ("trudvsem",)
+
+SALARY_PAID = ("on_time", "late", "not_paid")
 
 
 def default_job_expiry():
@@ -43,6 +45,11 @@ class Employer(Base):
     is_blacklisted: Mapped[bool] = mapped_column(Boolean, default=False)
     blacklist_reason: Mapped[str] = mapped_column(Text, default="")
     reports_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    reviews_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    rating: Mapped[float | None] = mapped_column(Float)
+    paid_on_time: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    paid_late: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    not_paid: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     def __str__(self):
@@ -98,9 +105,12 @@ class EmployerReview(Base):
     rating: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text, default="")
     salary_not_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    salary_paid: Mapped[str] = mapped_column(String(10), default="", server_default="")
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     employer: Mapped[Employer] = relationship()
+    job: Mapped["Job | None"] = relationship(lazy="joined")
     author = relationship("User", lazy="joined")
 
 
@@ -112,6 +122,7 @@ class BlacklistReport(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     employer_id: Mapped[int] = mapped_column(ForeignKey("employers.id", ondelete="CASCADE"), index=True)
     job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
+    review_id: Mapped[int | None] = mapped_column(ForeignKey("employer_reviews.id", ondelete="CASCADE"))
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     reason: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)

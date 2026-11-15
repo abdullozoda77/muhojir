@@ -64,6 +64,8 @@ const SERVER_MESSAGES = {
   "This phone number is already used by another account.": "Ин рақами телефон аллакай дар ҳисоби дигар ҳаст.",
   "The end date must be after the issue date.": "Санаи анҷом бояд баъд аз санаи додан бошад.",
   "You already reviewed this employer. Edit that review instead.": "Шумо аллакай ба ин корфармо баҳо додаед.",
+  "This job belongs to another employer.": "Ин ҷойи кор аз корфармои дигар аст.",
+  "This complaint comes from your review. Change the review instead.": "Ин шикоят аз шарҳи шумост. Шарҳро иваз кунед.",
   "Wrong email or password.": "Почта ё парол нодуруст аст.",
   "This email is already registered. Log in or reset the password.": "Ин почта аллакай сабти ном шудааст. Ворид шавед ё паролро барқарор кунед.",
   "Confirm your email first. We sent you a code.": "Аввал почтаро тасдиқ кунед. Мо рамз фиристодем.",

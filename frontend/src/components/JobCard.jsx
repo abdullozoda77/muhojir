@@ -7,6 +7,7 @@ import { t } from "../i18n.js";
 import { salary } from "../format.js";
 import { Chip } from "./ui.jsx";
 import { ReportButton, ReportsBadge } from "./Blacklist.jsx";
+import { PayBadge } from "./EmployerReview.jsx";
 import { industry } from "../constants.js";
 
 export const SOURCE_NAME = "Работа России";
@@ -120,7 +121,12 @@ export function JobRow({ job, compact = false, onSaveChange }) {
           <SaveButton job={job} onChange={onSaveChange} />
         </span>
       </div>
-      {reports > 0 && <ReportsBadge count={reports} className="self-start" />}
+      {(reports > 0 || job.employer.reviews_count > 0) && (
+        <span className="flex flex-wrap gap-1.5">
+          {reports > 0 && <ReportsBadge count={reports} />}
+          <PayBadge employer={job.employer} />
+        </span>
+      )}
       <div className="flex flex-col gap-1.5">
         <Link to={`/jobs/${job.id}`} className="font-display text-[19px] font-semibold leading-snug hover:text-primary">{job.title}</Link>
         <span className="flex min-w-0 items-center gap-1.5 text-body-sm text-on-surface-variant">

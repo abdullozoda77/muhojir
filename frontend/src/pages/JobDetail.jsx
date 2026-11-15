@@ -5,7 +5,7 @@ import { t } from "../i18n.js";
 import { ago, date, salary } from "../format.js";
 import { industry } from "../constants.js";
 import { OfficialLink, Perks, SOURCE_NAME, SaveButton, SourceBadge, VerifiedBadge, placeOf } from "../components/JobCard.jsx";
-import { Stars, average } from "../components/Stars.jsx";
+import { PayStats, ReviewList, useReviews } from "../components/EmployerReview.jsx";
 import { BackLink, EmptyState, ErrorBox, Skeleton } from "../components/ui.jsx";
 import { ReportButton, ReportsList } from "../components/Blacklist.jsx";
 import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
@@ -13,12 +13,11 @@ import { Intro, IntroItem, Reveal } from "../components/motion.jsx";
 export default function JobDetail() {
   const { id } = useParams();
   const { data: job, error, loading, reload } = useApi(`/jobs/jobs/${id}/`);
-  const reviews = useApi(job ? `/jobs/reviews/?employer=${job.employer.id}&page_size=100` : null);
+  const reviews = useReviews(job?.employer.id);
 
-  if (loading) return <Skeleton className="h-96" />;
+  if (loading && !job) return <Skeleton className="h-96" />;
   if (error) return error.status === 404 ? <EmptyState title={t("Ин ҷойи кор ёфт нашуд ё пӯшида шудааст")} /> : <ErrorBox error={error} />;
 
-  const rating = average(reviews.data?.results);
   const Industry = industry(job.industry).icon;
   const closed = !job.is_active || new Date(job.expires_at) <= new Date();
 
@@ -41,7 +40,7 @@ export default function JobDetail() {
               <p className="text-body-sm text-on-surface-variant">{t("Сабабҳоро хонед ва пеш аз сафар шартҳоро санҷед.")}</p>
             </div>
           </div>
-          <ReportsList employerId={job.employer.id} tick={job.employer.reports_count} onChange={reload} />
+          <ReportsList employerId={job.employer.id} tick={`${job.employer.reports_count}-${job.employer.not_paid}`} onChange={reload} />
         </section>
       )}
 
@@ -83,6 +82,18 @@ export default function JobDetail() {
               {t("Эълон то {0} фаъол аст", date(job.expires_at))}
             </p>
           </Reveal>
+          <Reveal as="section" className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 className="text-[20px] font-semibold">{t("Ин корфармо маошро сари вақт медиҳад?")}</h2>
+                <p className="text-body-sm text-on-surface-variant">{t("Агар дар ин ҷо кор карда бошед, нависед — ба дигарон кӯмак мекунад.")}</p>
+              </div>
+              {job.employer.reviews_count > 3 && (
+                <Link to={`/employers/${job.employer.id}`} className="text-label-md text-primary">{t("Ҳамаи шарҳҳо ({0})", job.employer.reviews_count)}</Link>
+              )}
+            </div>
+            <ReviewList employerId={job.employer.id} jobId={job.id} reviews={reviews} limit={3} onChange={reload} />
+          </Reveal>
         </article>
 
         <aside className="flex flex-col gap-4 lg:col-span-4">
@@ -97,11 +108,7 @@ export default function JobDetail() {
               </div>
               <ChevronRight className="ml-auto h-5 w-5 text-outline transition-transform group-hover:translate-x-0.5" aria-hidden />
             </div>
-            <div className="flex items-center gap-2">
-              <Stars value={rating ?? 0} />
-              <span className="text-label-md">{rating ? rating.toFixed(1) : "—"}</span>
-              <span className="text-body-sm text-on-surface-variant">({t("{0} шарҳ", reviews.data?.count ?? 0)})</span>
-            </div>
+            <PayStats employer={job.employer} />
           </Link>
           {!closed && (
             <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] left-4 right-20 z-40 flex gap-2 lg:static">

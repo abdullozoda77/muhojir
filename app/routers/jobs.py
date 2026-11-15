@@ -139,7 +139,7 @@ async def report_job(job_id: int, data: s.ReportIn, db: DB, user: CurrentUser):
         await db.flush()
         await count_reports(db, job.employer_id)
     else:
-        report.reason, report.job_id, report.created_at = reason, job.id, utcnow()
+        report.reason, report.job_id, report.created_at, report.review_id = reason, job.id, utcnow(), None
     await db.commit()
     return s.report_json(await get_report(db, report.id), user)
 
@@ -181,6 +181,8 @@ async def delete_report(report_id: int, db: DB, user: CurrentUser):
     report = await get_report(db, report_id)
     if report.author_id != user.id and not user.is_admin:
         raise ApiError("У вас недостаточно прав для выполнения данного действия.", 403)
+    if report.review_id is not None and not user.is_admin:
+        raise ApiError({"detail": ["This complaint comes from your review. Change the review instead."]})
     employer_id = report.employer_id
     await db.delete(report)
     await db.flush()
@@ -237,6 +239,57 @@ async def get_review(db, review_id):
     return review
 
 
+REVIEW_REASON = "Маош надоданд."
+
+
+async def count_reviews(db, employer_id):
+    employer = await db.get(Employer, employer_id)
+    if employer is None:
+        return
+    rows = (await db.execute(select(EmployerReview.rating, EmployerReview.salary_paid)
+                             .where(EmployerReview.employer_id == employer_id))).all()
+    employer.reviews_count = len(rows)
+    employer.rating = round(sum(r for r, _ in rows) / len(rows), 2) if rows else None
+    employer.paid_on_time, employer.paid_late, employer.not_paid = (
+        sum(1 for _, paid in rows if paid == kind) for kind in ("on_time", "late", "not_paid"))
+
+
+async def sync_blacklist(db, review):
+    report = await db.scalar(select(BlacklistReport).where(BlacklistReport.employer_id == review.employer_id,
+                                                          BlacklistReport.author_id == review.author_id))
+    if review.salary_paid == "not_paid":
+        text = review.text.strip()
+        reason = text if len(text) >= 10 else REVIEW_REASON
+        if report is None:
+            db.add(BlacklistReport(employer_id=review.employer_id, author_id=review.author_id, review_id=review.id,
+                                   job_id=review.job_id, reason=reason))
+        elif report.review_id == review.id:
+            report.reason, report.job_id = reason, review.job_id
+    elif report is not None and report.review_id == review.id:
+        await db.delete(report)
+    await db.flush()
+    await count_reports(db, review.employer_id)
+    await count_reviews(db, review.employer_id)
+
+
+async def check_review_job(db, job_id, employer_id):
+    if job_id is None:
+        return
+    job = await db.get(Job, job_id)
+    if job is None or job.employer_id != employer_id:
+        raise FieldError("job", "This job belongs to another employer.")
+
+
+def paid_from(data, current=""):
+    if data.get("salary_paid") is not None:
+        return data["salary_paid"]
+    if data.get("salary_not_paid") is True:
+        return "not_paid"
+    if data.get("salary_not_paid") is False and current == "not_paid":
+        return ""
+    return current
+
+
 @router.post("/reviews/", status_code=201)
 async def create_review(data: s.ReviewIn, db: DB, user: CurrentUser):
     if await db.get(Employer, data.employer) is None:
@@ -244,9 +297,13 @@ async def create_review(data: s.ReviewIn, db: DB, user: CurrentUser):
     if await db.scalar(select(EmployerReview.id).where(EmployerReview.employer_id == data.employer,
                                                       EmployerReview.author_id == user.id)):
         raise FieldError("employer", "You already reviewed this employer. Edit that review instead.")
-    review = EmployerReview(employer_id=data.employer, author_id=user.id, rating=data.rating, text=data.text,
-                            salary_not_paid=data.salary_not_paid)
+    await check_review_job(db, data.job, data.employer)
+    paid = paid_from(data.model_dump())
+    review = EmployerReview(employer_id=data.employer, author_id=user.id, job_id=data.job, rating=data.rating,
+                            text=data.text, salary_paid=paid, salary_not_paid=paid == "not_paid")
     db.add(review)
+    await db.flush()
+    await sync_blacklist(db, review)
     await db.commit()
     return s.review_json(await get_review(db, review.id), user)
 
@@ -268,9 +325,15 @@ async def change_review(review_id, data, db, user, partial):
     changes = data.model_dump(exclude_unset=partial)
     if changes.get("employer") not in (None, review.employer_id):
         raise FieldError("employer", "A review cannot be moved to another employer.")
-    for field in ("rating", "text", "salary_not_paid"):
+    if changes.get("job") is not None:
+        await check_review_job(db, changes["job"], review.employer_id)
+        review.job_id = changes["job"]
+    for field in ("rating", "text"):
         if changes.get(field) is not None:
             setattr(review, field, changes[field])
+    review.salary_paid = paid_from(changes, review.salary_paid) if partial else paid_from(changes)
+    review.salary_not_paid = review.salary_paid == "not_paid"
+    await sync_blacklist(db, review)
     await db.commit()
     return s.review_json(await get_review(db, review_id), user)
 
@@ -287,7 +350,15 @@ async def patch_review(review_id: int, data: s.ReviewPatch, db: DB, user: Curren
 
 @router.delete("/reviews/{review_id}/", status_code=204)
 async def delete_review(review_id: int, db: DB, user: CurrentUser):
-    await db.delete(await own_review(db, user, review_id))
+    review = await own_review(db, user, review_id)
+    employer_id = review.employer_id
+    report = await db.scalar(select(BlacklistReport).where(BlacklistReport.review_id == review.id))
+    if report is not None:
+        await db.delete(report)
+    await db.delete(review)
+    await db.flush()
+    await count_reports(db, employer_id)
+    await count_reviews(db, employer_id)
     await db.commit()
     return Response(status_code=204)
 

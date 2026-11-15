@@ -393,11 +393,11 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `default_job_expiry()` | function | — |
-| `Employer` | class · table `employers` | The company of imported job ads, found again by its code on the source site (external_id). Admins verify real companies and put the ones that don't pay wages on the blacklist. |
+| `Employer` | class · table `employers` | The company of imported job ads, found again by its code on the source site (external_id). Admins verify real companies and put the ones that don't pay wages on the blacklist. `reviews_count`, `rating`, `paid_on_time`, `paid_late`, `not_paid` — saved totals of the workers' reviews, recounted after every review change. |
 | `Job` | class · table `jobs` | — |
 | &nbsp;&nbsp;↳ `industry_label()` | method | — |
-| `EmployerReview` | class · table `employer_reviews` | A worker's review of an employer. salary_not_paid marks complaints that feed the blacklist. |
-| `BlacklistReport` | class · table `blacklist_reports` | A worker puts a job's company on the blacklist, with the reason. Everyone sees the reports at once; the jobs stay visible with a warning. Admins check them and may blacklist the company for real (Employer.is_blacklisted hides its jobs) or delete a false report. |
+| `EmployerReview` | class · table `employer_reviews` | A worker's review of an employer: rating, text, salary_paid (on_time, late, not_paid or empty) and the job it was about (job_id). salary_not_paid is kept equal to salary_paid == not_paid for old clients. A not_paid review adds a blacklist report of the same author by itself. |
+| `BlacklistReport` | class · table `blacklist_reports` | A worker puts a job's company on the blacklist, with the reason. Everyone sees the reports at once; the jobs stay visible with a warning. Admins check them and may blacklist the company for real (Employer.is_blacklisted hides its jobs) or delete a false report. `review_id` links a report made by a not_paid review: it changes with the review and goes away when the review stops saying not_paid or is deleted; a report the worker wrote by hand is never touched. |
 | `SavedJob` | class · table `saved_jobs` | A job the user saved to look at later. |
 | `JobAlert` | class · table `job_alerts` | "Tell me about new jobs like these": the filters of the jobs page, kept. After each import the user gets one notification with the new jobs that match (see services/alerts.py). Empty fields mean "any". |
 | &nbsp;&nbsp;↳ `industry_label()` | method | — |
@@ -809,6 +809,10 @@ A generic, single database configuration.
 | `employer_detail(employer_id, db)` | async function · `GET /api/jobs/employers/{employer_id}/` | — |
 | `list_reviews(request, db, user, page)` | async function · `GET /api/jobs/reviews/` | — |
 | `get_review(db, review_id)` | async function | — |
+| `count_reviews(db, employer_id)` | async function | Recounts reviews_count, rating and the three salary_paid totals of an employer. |
+| `sync_blacklist(db, review)` | async function | A not_paid review adds (or updates) its blacklist report with the review text (or «Маош надоданд.»); otherwise its own report is removed. Then recounts reports and reviews. |
+| `check_review_job(db, job_id, employer_id)` | async function | The job of a review must belong to the same employer. |
+| `paid_from(data, current)` | function | salary_paid from the body; salary_not_paid true/false still works for old clients. |
 | `create_review(data, db, user)` | async function · `POST /api/jobs/reviews/` | — |
 | `review_detail(review_id, db, user)` | async function · `GET /api/jobs/reviews/{review_id}/` | — |
 | `own_review(db, user, review_id)` | async function | — |
@@ -1604,6 +1608,14 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade()` / `downgrade()` | function | Adds / removes the columns and the table. |
 
+### `alembic/versions/0025_salary_paid.py`
+
+**What it is for:** Adds employer_reviews.salary_paid and job_id, blacklist_reports.review_id and the review totals of employers. Old reviews with salary_not_paid become not_paid and get their linked blacklist report (if the author has none yet); then all totals are counted.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` / `downgrade()` | function | Adds / removes the columns (downgrade also removes the reports made by reviews). |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1720,6 +1732,7 @@ A generic, single database configuration.
 | `make_jobs()` | async function | — |
 | `test_jobs_filters_saved_reviews_alerts(client, user)` | async function | — |
 | `test_blacklist_reports(client, user)` | async function | — |
+| `test_reviews_salary_paid_feed_blacklist` | async function | A job of another employer is refused; a not_paid review adds a report with the default reason and counts; its report cannot be deleted by hand; the text moves into the report; late removes the report; a hand-written report is kept when the review changes or is deleted; totals after delete. |
 
 ### `tests/test_market.py`
 
@@ -2094,6 +2107,19 @@ A generic, single database configuration.
 |---|---|---|
 | `addDays` | function | Pure date math in UTC: local midnight in Moscow (UTC+3) would turn into the previous day in toISOString(). |
 | `DocForm` | export function | Add or edit one of the user's documents. doc = null: closed, {}: new, a document: edit it. |
+
+### `frontend/src/components/EmployerReview.jsx`
+
+**What it is for:** Reviews of employers, shared by the job page and the employer page.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `PAID` | const | on_time, late, not_paid: icon, label and colours. |
+| `PayBadge` | export function | Small badge on job cards and the blacklist: «not paid: N» in red or «paid on time: N%» in green. |
+| `PayStats` | export function | Rating, stars, number of reviews and a bar of on time / late / not paid. |
+| `ReviewForm` | export function | Stars, «Was the salary paid on time?» (3 buttons; not_paid warns that the company goes to the blacklist) and text; sends the job too. |
+| `ReviewItem` | export function | One review with its salary chip and job. |
+| `useReviews`, `ReviewList` | export function | Loads reviews and shows them with write / edit / delete; limit shows only the first few (own review always). |
 
 ### `frontend/src/components/Feedback.jsx`
 
