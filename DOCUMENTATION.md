@@ -2132,7 +2132,7 @@ A generic, single database configuration.
 | `FeedbackForm` | function | The form; sends the current page too, and an optional photo or screenshot (preview with a remove button, made smaller with fitPhoto before sending). |
 | `FACES` | const | Five ratings 1-5 with face icons, labels and the kind they start with (1 → bug, 5 → praise). |
 | `FeedbackBanner` | export function | The block and the panel (rendered into document.body so it is above the header). |
-| `RatingFaces` | function | «How much do you like the site?»: 5 coloured emoji in one rounded panel; the hovered one grows, the others fade, its name shows in one line under a red-to-green bar; a click opens the form with that rating. |
+| `RatingFaces` | function | «How much do you like the site?»: 5 small grey emoji in a row; the hovered one gets its colour and its name shows next to the question; a click opens the form with that rating. Below, a plain «I found a bug» link. |
 
 ### `frontend/src/components/Filters.jsx`
 

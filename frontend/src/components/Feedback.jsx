@@ -19,36 +19,32 @@ const KINDS = [
 ];
 
 const FACES = [
-  { rating: 1, emoji: "😠", get label() { return t("Тамоман не"); }, kind: "bug", tone: "text-error", glow: "hover:bg-error-container focus-visible:bg-error-container" },
-  { rating: 2, emoji: "🙁", get label() { return t("Бад"); }, kind: "idea", tone: "text-error", glow: "hover:bg-error-container focus-visible:bg-error-container" },
-  { rating: 3, emoji: "😐", get label() { return t("Миёна"); }, kind: "idea", tone: "text-warning", glow: "hover:bg-warning-fixed focus-visible:bg-warning-fixed" },
-  { rating: 4, emoji: "🙂", get label() { return t("Хуб"); }, kind: "idea", tone: "text-primary", glow: "hover:bg-tertiary-fixed focus-visible:bg-tertiary-fixed" },
-  { rating: 5, emoji: "😍", get label() { return t("Аъло"); }, kind: "praise", tone: "text-primary", glow: "hover:bg-tertiary-fixed focus-visible:bg-tertiary-fixed" },
+  { rating: 1, emoji: "😠", get label() { return t("Тамоман не"); }, kind: "bug" },
+  { rating: 2, emoji: "🙁", get label() { return t("Бад"); }, kind: "idea" },
+  { rating: 3, emoji: "😐", get label() { return t("Миёна"); }, kind: "idea" },
+  { rating: 4, emoji: "🙂", get label() { return t("Хуб"); }, kind: "idea" },
+  { rating: 5, emoji: "😍", get label() { return t("Аъло"); }, kind: "praise" },
 ];
 
 function RatingFaces({ onPick, onBug }) {
   const [hover, setHover] = useState(null);
   return (
-    <div className="flex w-full flex-col gap-3 rounded-2xl bg-surface-container-lowest/80 p-4 ring-1 ring-outline-variant backdrop-blur md:w-[380px] md:p-5">
-      <p className="text-label-lg">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
-      <div className="grid grid-cols-5 gap-1 rounded-2xl bg-surface-container-low p-1.5" onMouseLeave={() => setHover(null)}>
+    <div className="flex flex-col gap-2">
+      <p className="text-body-sm text-on-surface-variant">
+        {t("Сайт ба шумо чӣ қадар писанд аст?")}
+        <span className="ml-2 text-on-surface" aria-live="polite">{hover?.label}</span>
+      </p>
+      <div className="flex gap-1" onMouseLeave={() => setHover(null)}>
         {FACES.map((f) => (
           <button key={f.rating} type="button" onClick={() => onPick(f)} onMouseEnter={() => setHover(f)} onFocus={() => setHover(f)} onBlur={() => setHover(null)} aria-label={f.label}
-            className={`flex h-14 items-center justify-center rounded-xl text-[28px] leading-none outline-none transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary md:h-16 md:text-[32px] ${f.glow} ${hover && hover !== f ? "opacity-50 grayscale-[60%]" : ""}`}>
-            <span className={`transition-transform duration-200 ${hover === f ? "scale-125" : ""}`} aria-hidden>{f.emoji}</span>
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-[24px] leading-none outline-none transition duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary ${hover === f ? "" : "opacity-60 grayscale"}`}>
+            <span aria-hidden>{f.emoji}</span>
           </button>
         ))}
       </div>
-      <div className="h-1 rounded-full bg-gradient-to-r from-error via-warning-container to-primary opacity-70" aria-hidden />
-      <div className="flex items-center justify-between gap-3">
-        <span className={`text-label-md transition-colors ${hover ? hover.tone : "text-on-surface-variant"}`} aria-live="polite">
-          {hover ? hover.label : t("Як чеҳраро интихоб кунед")}
-        </span>
-        <button type="button" onClick={onBug} className="inline-flex shrink-0 items-center gap-1.5 text-label-md text-primary hover:underline">
-          <Bug className="h-4 w-4" aria-hidden />
-          {t("Дар сайт хато ёфтам")}
-        </button>
-      </div>
+      <button type="button" onClick={onBug} className="self-start text-body-sm text-on-surface-variant underline-offset-4 hover:text-on-surface hover:underline">
+        {t("Дар сайт хато ёфтам")}
+      </button>
     </div>
   );
 }
