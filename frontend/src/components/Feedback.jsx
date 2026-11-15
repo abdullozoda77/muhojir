@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { Angry, Bug, CheckCircle2, Frown, Heart, ImagePlus, Laugh, Lightbulb, LogIn, Meh, MessageSquareText, MessagesSquare, Smile, X } from "lucide-react";
-import { api, openPrivateFile } from "../api.js";
+import { api, openPrivateFile, errorText } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
@@ -129,7 +129,7 @@ function FeedbackForm({ start, onSent }) {
           </button>
         )}
         <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { setPhoto(e.target.files?.[0] || null); e.target.value = ""; }} />
-        {error?.data?.photo && <p className="mt-1 text-body-sm text-error">{[].concat(error.data.photo).join(" ")}</p>}
+        {error?.data?.photo && <p className="mt-1 text-body-sm text-error">{errorText(error.data.photo)}</p>}
       </div>
       <ErrorBox error={error && !error.data?.message && !error.data?.photo ? error : null} />
       <Button type="submit" loading={saving} disabled={message.trim().length < 5} icon={MessagesSquare}>

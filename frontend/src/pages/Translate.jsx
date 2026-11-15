@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, CheckCircle2, Copy, Download, FileText, FileType2, FileUp, Languages, Sparkles, Stamp, Trash2, X } from "lucide-react";
-import { api, fileProblem, openPrivateFile } from "../api.js";
+import { api, fileProblem, openPrivateFile, errorText } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { ago, rub } from "../format.js";
@@ -90,7 +90,7 @@ function FilePicker({ file, onChange, accept = "image/jpeg,image/png,image/webp,
         </button>
       )}
       <input ref={input} type="file" accept={accept} className="hidden" onChange={(e) => { pick(e.target.files?.[0] || null); e.target.value = ""; }} />
-      {(problem || error) && <p className="mt-1 text-body-sm text-error">{problem || [].concat(error).join(" ")}</p>}
+      {(problem || error) && <p className="mt-1 text-body-sm text-error">{problem || errorText(error)}</p>}
     </div>
   );
 }

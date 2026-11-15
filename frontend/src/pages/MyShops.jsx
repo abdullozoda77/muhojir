@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Camera, ExternalLink, FileUp, ImagePlus, MapPinned, Package, PackageCheck, PackageOpen, Pencil, Plus, Send, ShieldCheck, Store, Trash2, Truck, X } from "lucide-react";
-import { api, apiAll } from "../api.js";
+import { api, apiAll, errorText } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { CITIES, SHOP_CATEGORIES, UNITS } from "../constants.js";
@@ -349,7 +349,7 @@ function ProductForm({ open, shopId, product, onClose, onSaved }) {
           <textarea className="input h-20 py-3" value={form.description} onChange={set("description")} maxLength={1000} />
         </Field>
         <Switch checked={form.in_stock} onChange={(in_stock) => setForm((f) => ({ ...f, in_stock }))} icon={PackageCheck} title={t("Ҳозир ҳаст")} text={t("Агар хомӯш бошад, мол бо нишони «Ҳоло нест» намоён мешавад.")} />
-        <ErrorBox error={error?.data?.photo ? { message: error.data.photo[0] } : error} />
+        <ErrorBox error={error?.data?.photo ? { message: errorText(error.data.photo) } : error} />
         <Button type="submit" loading={busy} icon={product ? Pencil : Plus}>{product ? t("Сабт кардан") : t("Илова кардан")}</Button>
       </form>
     </Drawer>

@@ -8,6 +8,7 @@ import { daysText } from "../format.js";
 import { useScrollLock } from "../hooks.js";
 import { Emblem } from "./Pattern.jsx";
 import { Intro, IntroItem, startShown } from "./motion.jsx";
+import { errorText } from "../api.js";
 
 const BUTTON = {
   primary: "bg-ink text-on-ink hover:bg-ink/90",
@@ -103,7 +104,7 @@ export function Field({ label, required, error, children, hint }) {
       </span>
       {children}
       {hint && !error && <span className="mt-1 block text-body-sm text-on-surface-variant">{hint}</span>}
-      {error && <span className="mt-1 block text-body-sm text-error">{[].concat(error).join(" ")}</span>}
+      {error && <span className="mt-1 block text-body-sm text-error">{errorText(error)}</span>}
     </label>
   );
 }

@@ -4,7 +4,7 @@ import {
   Banknote, BedDouble, Building2, Camera, Car, Clock, ExternalLink, Flag, Footprints, Globe, HeartPulse, Languages, List, LocateFixed, MapPin,
   Check, ImagePlus, MapPinned, Moon, PanelLeftClose, Phone, Plus, Route, Search, ShieldCheck, ShoppingBag, ShoppingBasket, Stamp, Store, Trash2, Truck, Utensils, X,
 } from "lucide-react";
-import { api } from "../api.js";
+import { api, errorText } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
@@ -545,7 +545,7 @@ function SuggestPlace({ open, onClose, regions, onSaved }) {
             </span>
             <span className="text-body-sm text-on-surface-variant">{t("Суроғаро ҷустуҷӯ кунед ё ба харита пахш кунед. Муҳаррир ҷойро дар харита ва панорамаи кӯча месанҷад.")}</span>
             <LocationPicker value={location} onChange={setLocation} subject="place" query={[form.city || form.region, form.address].filter(Boolean).join(", ")} />
-            {error?.data?.location && <span className="text-body-sm text-error">{error.data.location[0]}</span>}
+            {error?.data?.location && <span className="text-body-sm text-error">{errorText(error.data.location)}</span>}
           </div>
           <div className="flex flex-col gap-2 rounded-xl bg-surface-container-lowest p-3 ring-1 ring-inset ring-outline-variant">
             <span className="text-body-md font-medium">
@@ -561,7 +561,7 @@ function SuggestPlace({ open, onClose, regions, onSaved }) {
               <span className="text-label-md text-primary">{photo ? t("Акси дигар") : t("Акс интихоб кунед")}</span>
               <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={(e) => pickPhoto(e.target.files?.[0])} />
             </label>
-            {error?.data?.photo && <span className="text-body-sm text-error">{error.data.photo[0]}</span>}
+            {error?.data?.photo && <span className="text-body-sm text-error">{errorText(error.data.photo)}</span>}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t("Телефон")}><input className="input" value={form.phone} onChange={set("phone")} /></Field>

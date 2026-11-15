@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Camera, Eye, FilePlus2, Save, Trash2 } from "lucide-react";
-import { api, fileProblem, openPrivateFile } from "../api.js";
+import { api, fileProblem, openPrivateFile, errorText } from "../api.js";
 import { t } from "../i18n.js";
 import { Button, Drawer, ErrorBox, Field } from "./ui.jsx";
 
@@ -168,7 +168,7 @@ export default function DocForm({ doc, types, regions, onClose, onSaved }) {
             <span className="text-body-sm text-on-surface-variant">{t("JPG, PNG ё PDF, то 10 МБ. Сурат пӯшида нигоҳ дошта мешавад — танҳо шумо мебинед.")}</span>
             <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={choosePhoto} />
           </label>
-          {errors.photo && <span className="mt-1 block text-body-sm text-error">{[].concat(errors.photo).join(" ")}</span>}
+          {errors.photo && <span className="mt-1 block text-body-sm text-error">{errorText(errors.photo)}</span>}
         </div>
 
         <Field label={t("Ёддошти шахсӣ")} error={errors.note}>

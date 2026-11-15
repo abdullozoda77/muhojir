@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, ReceiptText, Save, Wallet } from "lucide-react";
-import { api, fileProblem } from "../api.js";
+import { api, fileProblem, errorText } from "../api.js";
 import { t } from "../i18n.js";
 import { date, rub } from "../format.js";
 import { Button, Drawer, ErrorBox, Field } from "./ui.jsx";
@@ -115,12 +115,12 @@ export default function PaymentDrawer({ doc, monthlyPrice, onClose, onSaved }) {
               <span className="text-body-sm text-on-surface-variant">{t("Чек дар «Архиви чекҳо» нигоҳ дошта мешавад.")}</span>
               <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={chooseReceipt} />
             </label>
-            {errors.receipt && <span className="mt-1 block text-body-sm text-error">{[].concat(errors.receipt).join(" ")}</span>}
+            {errors.receipt && <span className="mt-1 block text-body-sm text-error">{errorText(errors.receipt)}</span>}
           </div>
           <Field label={t("Ёддошт")} error={errors.note}>
             <input className="input" maxLength={255} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("Масалан: Сбербанк, терминал")} />
           </Field>
-          <ErrorBox error={error || (errors.document && { message: [].concat(errors.document).join(" ") })} />
+          <ErrorBox error={error || (errors.document && { message: errorText(errors.document) })} />
           <div className="flex gap-2">
             <Button variant="plain" onClick={onClose} className="w-1/3">{t("Бекор кардан")}</Button>
             <Button type="submit" icon={Save} loading={busy} className="flex-1">{t("Сабт кардан")}</Button>

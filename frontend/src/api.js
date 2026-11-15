@@ -92,14 +92,75 @@ const SERVER_MESSAGES = {
   "Address search is not available now. Tap the shop on the map.": "Ҷустуҷӯи суроға ҳоло кор намекунад. Ҷойи мағозаро дар харита пахш кунед.",
   "The AI assistant is busy. Try again in a minute.": "Ёрдамчии AI банд аст. Баъд аз як дақиқа боз кӯшиш кунед.",
   "The AI assistant is not available right now.": "Ёрдамчии AI ҳоло дастрас нест.",
+  "Add a photo of the place and a photo of the goods first.": "Аввал сурати ҷой ва сурати молҳоро илова кунед.",
+  "Add a photo of the place.": "Сурати ҷойро илова кунед.",
+  "Confirm that the place is real and the information is true.": "Тасдиқ кунед, ки ҷой воқеӣ аст ва маълумот дуруст аст.",
+  "Confirm that the place really exists.": "Тасдиқ кунед, ки ин ҷой воқеан ҳаст.",
+  "Enter the phone number with the country code, e.g. +79991234567.": "Рақамро бо рамзи кишвар нависед, масалан +79991234567.",
+  "Finish all lessons of this level first.": "Аввал ҳамаи дарсҳои ин сатҳро хатм кунед.",
+  "Finish the previous lesson first.": "Аввал дарси пешинаро хатм кунед.",
+  "Give at least one contact: phone, WhatsApp or Telegram.": "Ақаллан як роҳи тамос нависед: телефон, WhatsApp ё Telegram.",
+  "Mark where the place is on the map.": "Ҷойро дар харита нишон диҳед.",
+  "Mark where the shop is on the map.": "Ҷойи мағозаро дар харита нишон диҳед.",
+  "Send a photo: jpg, png or webp.": "Сурат фиристед: jpg, png ё webp.",
+  "Telegram is not set up on this site yet.": "Telegram дар ин сайт ҳоло танзим нашудааст.",
+  "The question is too long (1000 characters at most).": "Савол хеле дароз аст (ҳадди аксар 1000 аломат).",
+  "This day is already over.": "Ин рӯз аллакай гузашт.",
+  "This exam is already finished.": "Ин имтиҳон аллакай тамом шуд.",
+  "This is not your document.": "Ин ҳуҷҷати шумо нест.",
+  "This month is already over.": "Ин моҳ аллакай гузашт.",
+  "This phone number is already registered. Log in.": "Ин рақам аллакай сабт шудааст. Ворид шавед.",
+  "Use a 3-letter IATA code, e.g. DYU or MOW.": "Рамзи 3-ҳарфаи IATA нависед, масалан DYU ё MOW.",
+  "Use the month as YYYY-MM, e.g. 2026-11.": "Моҳро чун YYYY-MM нависед, масалан 2026-11.",
+  "Write the Telegram username, e.g. @dukoni_mo.": "Номи корбари Telegram-ро нависед, масалан @dukoni_mo.",
+  "Write the address: city, street and house.": "Суроғаро нависед: шаҳр, кӯча ва хона.",
+  "Write the answer.": "Ҷавобро нависед.",
+  "Write the reason in a few words (at least 10 letters).": "Сабабро бо чанд калима нависед (ақаллан 10 ҳарф).",
+  "You already passed this level.": "Шумо ин сатҳро аллакай супоридаед.",
+  "You can try the exam again later.": "Имтиҳонро баъдтар боз супорида метавонед.",
+  "You log in with this phone number, so it cannot be removed.": "Шумо бо ин рақам ворид мешавед, бинобар ин онро нест кардан мумкин нест.",
+  "A review cannot be moved to another employer.": "Шарҳро ба корфармои дигар гузарондан мумкин нест.",
+  "Введите правильное число.": "Рақами дурустро нависед.",
+  "Должно быть булево значение.": "Ҷавоби «ҳа» ё «не» лозим аст.",
+  "Загруженный файл пуст.": "Файли боршуда холӣ аст.",
+  "Значения нет среди допустимых вариантов.": "Ин қимат дар байни вариантҳо нест.",
+  "Неправильный формат date. Используйте формат YYYY-MM-DD.": "Санаи нодуруст. Санаро чун YYYY-MM-DD нависед.",
+  "Обязательное поле.": "Ин майдонро пур кунед.",
+  "Слишком длинное значение.": "Хеле дароз аст.",
+  "У вас недостаточно прав для выполнения данного действия.": "Барои ин амал иҷозат надоред.",
+  "Choose at least one filter for the alert.": "Барои огоҳӣ ақаллан як филтр интихоб кунед.",
+  "The owner has not sent this shop for checking yet.": "Соҳиб ин мағозаро ҳоло ба санҷиш нафиристодааст.",
+  "The shop is already sent for checking.": "Мағоза аллакай ба санҷиш фиристода шудааст.",
+  "You can have at most 10 job alerts.": "Ҳадди аксар 10 огоҳии кор доштан мумкин аст.",
+  "You cannot review your own shop.": "Ба мағозаи худ баҳо додан мумкин нест.",
+  "Неправильное значение.": "Қимати нодуруст.",
   "Ticket prices are not available right now. Try again later.": "Нархи чиптаҳо ҳоло дастрас нест. Баъдтар боз кӯшиш кунед.",
 };
+
+const SERVER_PATTERNS = [
+  [/^Убедитесь, что это значение содержит не менее (\d+) символов\.$/, "Ақаллан {0} аломат нависед."],
+  [/^Убедитесь, что это значение больше либо равно (\S+)\.$/, "Қимат набояд аз {0} кам бошад."],
+  [/^Убедитесь, что это значение меньше либо равно (\S+)\.$/, "Қимат набояд аз {0} зиёд бошад."],
+  [/^Убедитесь, что это значение больше (\S+)\.$/, "Қимат бояд аз {0} зиёд бошад."],
+  [/^Убедитесь, что это значение меньше (\S+)\.$/, "Қимат бояд аз {0} кам бошад."],
+  [/^A shop can have at most (\d+) products\.$/, "Дар мағоза ҳадди аксар {0} мол."],
+  [/^At most (\d+) photos\.$/, "Ҳадди аксар {0} сурат."],
+  [/^At most (\d+) files\.$/, "Ҳадди аксар {0} файл."],
+  [/^You already have (\d+) listings waiting for checking\.$/, "Шумо аллакай {0} эълон дар навбати санҷиш доред."],
+  [/^You already have (\d+) places waiting for checking\.$/, "Шумо аллакай {0} ҷой дар навбати санҷиш доред."],
+  [/^You can have at most (\d+) shops\.$/, "Ҳадди аксар {0} мағоза доштан мумкин аст."],
+  [/^You can have at most (\d+) price alerts\.$/, "Ҳадди аксар {0} огоҳии нарх доштан мумкин аст."],
+];
 
 export function errorText(data) {
   if (!data) return "";
   if (typeof data === "string") {
     if (SERVER_MESSAGES[data]) return t(SERVER_MESSAGES[data]);
     if (/^No \w+ matches the given query\.$/.test(data)) return t("Ёфт нашуд.");
+    for (const [pattern, text] of SERVER_PATTERNS) {
+      const found = data.match(pattern);
+      if (found) return t(text, found[1]);
+    }
     return data;
   }
   if (Array.isArray(data)) return data.map(errorText).join(" ");

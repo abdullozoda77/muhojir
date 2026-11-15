@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import {
   Ban, BedDouble, BedSingle, Building2, Camera, DoorOpen, FileCheck2, Hourglass, ImagePlus, MapPin, PiggyBank, Receipt, Save, Send, Train, Trash2, Users, X,
 } from "lucide-react";
-import { api } from "../api.js";
+import { api, errorText } from "../api.js";
 import { t } from "../i18n.js";
 import { num } from "../format.js";
 import { CITIES } from "../constants.js";
@@ -299,7 +299,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
             <span className="flex flex-col gap-0.5">
               <span className="text-body-md font-medium">{t("Тасдиқ мекунам")}</span>
               <span className="text-body-sm text-on-surface-variant">{t("Ин манзил воқеан ҳаст, ман соҳиб ё сокини он ҳастам ва нарху маълумот дуруст аст. Барои эълони дурӯғ ҳисоб баста мешавад.")}</span>
-              {error?.data?.confirmed && <span className="text-body-sm text-error">{[].concat(error.data.confirmed).join(" ")}</span>}
+              {error?.data?.confirmed && <span className="text-body-sm text-error">{errorText(error.data.confirmed)}</span>}
             </span>
           </label>
         )}

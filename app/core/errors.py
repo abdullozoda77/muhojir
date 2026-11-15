@@ -31,11 +31,23 @@ DRF_MESSAGES = {
     "value_error": None,
 }
 
+LIMIT_MESSAGES = {
+    "string_too_short": "Убедитесь, что это значение содержит не менее {min_length} символов.",
+    "greater_than_equal": "Убедитесь, что это значение больше либо равно {ge}.",
+    "greater_than": "Убедитесь, что это значение больше {gt}.",
+    "less_than_equal": "Убедитесь, что это значение меньше либо равно {le}.",
+    "less_than": "Убедитесь, что это значение меньше {lt}.",
+}
+
 
 def _message(error):
     text = DRF_MESSAGES.get(error["type"], "")
     if text:
         return text
+    if error["type"] in LIMIT_MESSAGES:
+        return LIMIT_MESSAGES[error["type"]].format(**error.get("ctx", {}))
+    if error["type"] != "value_error":
+        return "Неправильное значение."
     message = error.get("msg", "")
     return message.removeprefix("Value error, ")
 
