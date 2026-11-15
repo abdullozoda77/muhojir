@@ -150,6 +150,9 @@ const SERVER_PATTERNS = [
   [/^You already have (\d+) places waiting for checking\.$/, "Шумо аллакай {0} ҷой дар навбати санҷиш доред."],
   [/^You can have at most (\d+) shops\.$/, "Ҳадди аксар {0} мағоза доштан мумкин аст."],
   [/^You can have at most (\d+) price alerts\.$/, "Ҳадди аксар {0} огоҳии нарх доштан мумкин аст."],
+  [/^At least (\d+)% is needed to finish the lesson\.$/, "Барои хатми дарс ақаллан {0}% лозим аст."],
+  [/^Unknown airport or city: (\S+)\.$/, "Фурудгоҳ ё шаҳри номаълум: {0}."],
+  [/^The file is too big\. The limit is (\d+) MB\.$/, "Файл хеле калон аст. Ҳадди аксар {0} МБ."],
 ];
 
 export function errorText(data) {
