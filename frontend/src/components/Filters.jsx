@@ -36,7 +36,7 @@ export function SortSelect({ value, options, onChange }) {
   return (
     <label className="relative flex min-h-[44px] min-w-0 items-center gap-2 rounded-xl bg-surface-container-lowest pl-3.5 pr-9 text-label-md text-on-surface ring-1 ring-inset ring-outline-variant transition-colors focus-within:ring-2 focus-within:ring-primary/40 hover:bg-surface-container-low">
       <ArrowUpDown className="h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden />
-      <select aria-label={t("Тартиб")} value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent p-0 pr-1 text-label-md text-on-surface focus:ring-0">
+      <select aria-label={t("Тартиб")} value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent bg-none p-0 pr-1 text-label-md text-on-surface focus:ring-0">
         {options.map(([v, label]) => <option key={v || "default"} value={v}>{label}</option>)}
       </select>
       <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-on-surface-variant" aria-hidden />
