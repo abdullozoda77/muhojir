@@ -79,6 +79,9 @@ const SERVER_MESSAGES = {
   "Write a phone number so the translator can reach you.": "Рақами телефонро нависед, то тарҷумон бо шумо тамос гирад.",
   "The translator is already working on it; this order cannot be cancelled.": "Тарҷумон аллакай кор мекунад — фармоишро бекор карда намешавад.",
   "Cancel the order first.": "Аввал фармоишро бекор кунед.",
+  "Certificate not found.": "Сертификат ёфт нашуд.",
+  "Tickets are only between Tajikistan and Russia (either way).": "Чиптаҳо танҳо байни Тоҷикистон ва Русия (ба ҳар ду тараф).",
+  "Ticket prices are not available right now. Try again later.": "Нархи чиптаҳо ҳоло дастрас нест. Баъдтар боз кӯшиш кунед.",
 };
 
 export function errorText(data) {
