@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Car, FilePlus2, FileType2, GraduationCap, Languages,
-  MapPinned, LifeBuoy, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
+  MapPinned, LifeBuoy, MoonStar, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { useApi, useDocuments } from "../hooks.js";
 import { t } from "../i18n.js";
+import { PRAYER_CITIES, PRAYER_NAMES, clock, nextPrayer, savedPrayerCity } from "../prayer.js";
 import { date, num, todayTitle } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
 import RubleRate from "../components/RubleRate.jsx";
@@ -287,8 +288,11 @@ function GuestHome() {
   );
 }
 
-function QuickActions({ next }) {
+function QuickActions({ next, city }) {
   const { data: rates } = useApi("/rates/");
+  const prayerCity = savedPrayerCity(city);
+  const place = PRAYER_CITIES[prayerCity];
+  const prayer = nextPrayer(place);
   const rate = rates?.latest?.nbt || rates?.latest?.cbr;
   const actions = [
     {
@@ -306,6 +310,12 @@ function QuickActions({ next }) {
       icon: Banknote,
       title: t("Қурби рубл"),
       text: rate ? t("1 000 ₽ = {0} сомонӣ", (rate.value * 1000).toFixed(2)) : t("Қурби расмӣ"),
+    },
+    {
+      to: "/prayer",
+      icon: MoonStar,
+      title: t("Вақти намоз"),
+      text: prayer ? `${PRAYER_NAMES[prayer.key]()} · ${clock(prayer.time, place[2])} · ${prayerCity}` : t("Вақти намоз"),
     },
   ];
   return (
@@ -348,7 +358,7 @@ function MigrantHome({ user }) {
         ? t("Ҳамаи ҳуҷҷатҳо тартиб аст. Мо пеш аз мӯҳлат хабар медиҳем.")
         : t("Ҳуҷҷатҳои худро илова кунед — мо мӯҳлатҳоро назорат мекунем.");
 
-  const aside = <QuickActions next={next} />;
+  const aside = <QuickActions next={next} city={user.city} />;
 
   return (
     <div className="flex flex-col gap-14 md:gap-20">

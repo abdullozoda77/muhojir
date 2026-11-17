@@ -35,6 +35,7 @@ const Shops = lazy(() => import("./pages/Shops.jsx"));
 const ShopPage = lazy(() => import("./pages/ShopPage.jsx"));
 const MyShops = lazy(() => import("./pages/MyShops.jsx"));
 const Rate = lazy(() => import("./pages/Rate.jsx"));
+const Prayer = lazy(() => import("./pages/Prayer.jsx"));
 const Housing = lazy(() => import("./pages/Housing.jsx"));
 const HousingDetail = lazy(() => import("./pages/HousingDetail.jsx"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage.jsx"));
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="driving/:level/exam" element={<Private><CourseExam key="drive" kind="drive" /></Private>} />
         <Route path="driving/:level/:number" element={<Private><Lesson key="drive" kind="drive" /></Private>} />
         <Route path="rate" element={<Rate />} />
+        <Route path="prayer" element={<Prayer />} />
         <Route path="feedback" element={<FeedbackPage />} />
         <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />

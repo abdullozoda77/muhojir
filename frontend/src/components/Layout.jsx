@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
-  ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon,
+  ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon, MoonStar,
   Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -43,6 +43,7 @@ function sections(user) {
     user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
     { to: "/rate", icon: Banknote, label: t("Қурби расмӣ"), group: "home" },
     { to: "/news", icon: Newspaper, label: t("Хабарҳо"), group: "home" },
+    { to: "/prayer", icon: MoonStar, label: t("Вақти намоз"), group: "home" },
     { to: "/feedback", icon: MessagesSquare, label: t("Фикру мулоҳиза"), group: "home" },
     user && { to: "/notifications", icon: Bell, label: t("Огоҳиҳо"), badge: "unread", group: "account" },
     user && { to: "/profile", icon: Settings, label: t("Профил ва танзимот"), group: "account" },
@@ -175,6 +176,7 @@ const TONES = {
   "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
   "/rate": "bg-lime-500/15 text-lime-700 dark:text-lime-400",
   "/news": "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  "/prayer": "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   "/feedback": "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400",
 };
 

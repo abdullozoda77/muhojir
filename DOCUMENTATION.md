@@ -2005,6 +2005,20 @@ A generic, single database configuration.
 | `setLang` | export function | — |
 | `useLang` | export function | The current language; the component re-renders when it changes. |
 
+### `frontend/src/prayer.js`
+
+**What it is for:** Prayer times without an outside API — the sun is computed in the browser.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `PRAYER_CITIES` | const | About 70 cities of Russia and 4 of Tajikistan: latitude, longitude and IANA time zone. |
+| `PRAYER_NAMES` | const | Names of the six times (Bomdod, sunrise, Peshin, Asr, Shom, Khuftan), translated. |
+| `prayerTimes(day, lat, lng)` | function | Prayer times of one day computed from the position of the sun: Fajr 16°, Isha 15°, Hanafi Asr (shadow ×2), Dhuhr 2 min after noon; in the north Fajr and Isha are limited by the angle-based rule; polar day/night gives null. |
+| `localDay(timeZone, offsetDays)` | function | Today (plus N days) in the city's time zone as a UTC date. |
+| `clock(time, timeZone)` | function | HH:MM in the city's time zone, «—» if null. |
+| `nextPrayer(place, now)` | function | The next prayer (sunrise skipped), today or tomorrow. |
+| `savedPrayerCity(fallback) / savePrayerCity(city)` | function | The chosen city in localStorage; otherwise the profile city or Moscow. |
+
 ### `frontend/src/index.css`
 
 **What it is for:** Muhojir's design: minimal and calm. Warm milky paper by day, deep blue for the main actions and dark blocks, one blue accent, hairline borders instead of shadows; the red, white and green of the flag only as a thin line on top. Colors are RGB channels, so Tailwind can add opacity; html.dark switches to the night set (deep blue, not black). On phones every field is at least 16px. Scrollbars are hidden everywhere (scrolling still works). Page dividers are flag stripes: .flag-border-t / .flag-border-b draw a 3px red-white-green line instead of a border (--flag-pad adds space under it).
@@ -2785,6 +2799,14 @@ A generic, single database configuration.
 | `PlaceDetails` | function | — |
 | `SuggestPlace` | function | Form to suggest a place: kind, name, region, address, a required pin on the map, a required photo (shrunk to 1600 px WEBP) and the «I confirm the place really exists» box; the button works only when all three are given. Editors see «added» at once. |
 | `Places` | export function | — |
+
+### `frontend/src/pages/Prayer.jsx`
+
+**What it is for:** /prayer — prayer times for the chosen city.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Prayer` | export function | /prayer (open to guests): city choice, the next prayer with a countdown (updates every 30 s), six times of today, a table for 7 days, the method note and a link to mosques on /places. |
 
 ### `frontend/src/pages/Profile.jsx`
 
