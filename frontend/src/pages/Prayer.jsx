@@ -128,7 +128,7 @@ export default function Prayer() {
       <Reveal>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <p className="max-w-2xl text-body-sm text-on-surface-variant">
-            {t("Ҳисоб: Бомдод 16°, Хуфтан 15°, Аср аз рӯи мазҳаби ҳанафӣ — мисли Идораи рӯҳонии мусулмонони Русия. Вақт метавонад аз ҷадвали масҷиди шумо 1–3 дақиқа фарқ кунад.")}
+            {t("Ҳисоб: усули Лигаи ҷаҳонии исломӣ (Бомдод 18°, Хуфтан 17°), Аср аз рӯи мазҳаби ҳанафӣ. Вақт метавонад аз ҷадвали масҷиди шумо 1–2 дақиқа фарқ кунад.")}
           </p>
           <Link to="/places?category=mosque" className="inline-flex min-h-[44px] shrink-0 items-center gap-2 self-start rounded-xl px-4 text-label-md ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
             <Moon className="h-4 w-4" aria-hidden />

@@ -2013,7 +2013,7 @@ A generic, single database configuration.
 |---|---|---|
 | `PRAYER_CITIES` | const | About 70 cities of Russia and 4 of Tajikistan: latitude, longitude and IANA time zone. |
 | `PRAYER_NAMES` | const | Names of the six times (Bomdod, sunrise, Peshin, Asr, Shom, Khuftan), translated. |
-| `prayerTimes(day, lat, lng)` | function | Prayer times of one day computed from the position of the sun: Fajr 16°, Isha 15°, Hanafi Asr (shadow ×2), Dhuhr 2 min after noon; in the north Fajr and Isha are limited by the angle-based rule; polar day/night gives null. |
+| `prayerTimes(day, lat, lng)` | function | Prayer times of one day computed from the position of the sun: Muslim World League (Fajr 18°, Isha 17°), Hanafi Asr (shadow ×2), small minute offsets so the times match the usual Russian timetables (islam.global); in the north Fajr and Isha are limited by the angle-based rule; polar day/night gives null. |
 | `localDay(timeZone, offsetDays)` | function | Today (plus N days) in the city's time zone as a UTC date. |
 | `clock(time, timeZone)` | function | HH:MM in the city's time zone, «—» if null. |
 | `nextPrayer(place, now)` | function | The next prayer (sunrise skipped), today or tomorrow. |

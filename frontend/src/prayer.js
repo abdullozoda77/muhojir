@@ -92,9 +92,10 @@ export const PRAYER_NAMES = {
   isha: () => t("Хуфтан"),
 };
 
-const FAJR_ANGLE = 16;
-const ISHA_ANGLE = 15;
+const FAJR_ANGLE = 18;
+const ISHA_ANGLE = 17;
 const ASR_SHADOW = 2;
+const OFFSET_MINUTES = { fajr: -1, sunrise: -1, dhuhr: 0, asr: 1.5, maghrib: 1, isha: 1.5 };
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -156,9 +157,11 @@ export function prayerTimes(day, lat, lng) {
   }
 
   const midnight = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
-  return Object.fromEntries(
-    PRAYERS.map((k) => [k, Number.isFinite(h[k]) ? new Date(midnight + (h[k] - lng / 15) * 3600000) : null]),
-  );
+  const at = (k) => {
+    const minutes = (h[k] - lng / 15) * 60 + OFFSET_MINUTES[k];
+    return new Date(midnight + Math.round(minutes) * 60000);
+  };
+  return Object.fromEntries(PRAYERS.map((k) => [k, Number.isFinite(h[k]) ? at(k) : null]));
 }
 
 export function localDay(timeZone, offsetDays = 0) {
