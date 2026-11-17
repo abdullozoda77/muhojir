@@ -1,13 +1,13 @@
-from typing import Literal
-
 import os
+from datetime import timedelta
+from typing import Literal
 
 import anyio
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from pydantic import Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from starlette.datastructures import UploadFile
 
 from app.core.deps import DB, CurrentUser, EditorUser
@@ -15,6 +15,7 @@ from app.core.errors import ApiError, FieldError
 from app.core.files import delete_private, private_path, save_private
 from app.core.pagination import Paginate
 from app.core.throttle import throttle
+from app.db.types import utcnow
 from app.models import FEEDBACK_KINDS, FEEDBACK_STATUSES, Feedback
 from app.routers.documents import param
 from app.schemas.common import Form
@@ -28,6 +29,7 @@ Kind = Literal[tuple(FEEDBACK_KINDS)]
 Status = Literal[FEEDBACK_STATUSES]
 PHOTOS = "feedback"
 PHOTO_TYPES = {".jpg", ".jpeg", ".png", ".webp"}
+REVIEW_EVERY = timedelta(days=1)
 
 
 class FeedbackIn(Form):
@@ -70,6 +72,11 @@ async def send_feedback(request: Request, db: DB, user: CurrentUser):
         data = FeedbackIn(**fields)
     except ValidationError as error:
         raise RequestValidationError(error.errors(include_url=False))
+    if data.kind != "bug":
+        recent = await db.scalar(select(func.count()).select_from(Feedback).where(
+            Feedback.user_id == user.id, Feedback.kind != "bug", Feedback.created_at > utcnow() - REVIEW_EVERY))
+        if recent:
+            raise ApiError("You can leave one review a day. Bug reports can be sent any time.", 429)
     saved = ""
     if photo is not None:
         if os.path.splitext(photo.filename)[1].lower() not in PHOTO_TYPES:

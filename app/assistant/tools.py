@@ -19,7 +19,7 @@ PAGES = {
     "saved_jobs": "/saved-jobs",
     "calculator": "/calculator",
     "guides": "/guides",
-    "news": "/guides#news",
+    "news": "/news",
     "checks": "/checks",
     "exam": "/exam",
     "help": "/help",
@@ -46,7 +46,7 @@ PAGES = {
     "housing_ad": "/housing",
     "shop": "/shops",
     "employer": "/blacklist",
-    "news_item": "/guides#news",
+    "news_item": "/news",
 }
 ITEM_PAGES = {
     "job": "/jobs/{}",

@@ -57,3 +57,14 @@ async def test_feedback_with_a_photo_is_seen_only_by_the_sender_and_editors(clie
     assert (await client.get(feedback["photo"], headers=stranger)).status_code == 404
     r = await client.post("/api/feedback/", headers=sender, json={"message": "Бе акс ҳам кор мекунад"})
     assert r.status_code == 201 and r.json()["photo"] is None
+
+
+async def test_one_review_a_day_but_bug_reports_any_time(client):
+    sender = await register(client, "daily@example.com", "Фарҳод Алиев")
+    r = await client.post("/api/feedback/", headers=sender, json={"kind": "praise", "rating": 5, "message": "Сайти хеле хуб"})
+    assert r.status_code == 201, r.text
+    r = await client.post("/api/feedback/", headers=sender, json={"kind": "idea", "rating": 4, "message": "Боз як фикри дигар"})
+    assert r.status_code == 429 and "one review a day" in r.json()["detail"]
+    for i in range(3):
+        r = await client.post("/api/feedback/", headers=sender, json={"kind": "bug", "message": f"Тугма кор намекунад {i}"})
+        assert r.status_code == 201, r.text

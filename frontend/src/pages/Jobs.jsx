@@ -5,7 +5,7 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
-import { INDUSTRIES } from "../constants.js";
+import { CITIES, INDUSTRIES } from "../constants.js";
 import { JobRow } from "../components/JobCard.jsx";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
@@ -223,7 +223,7 @@ export default function Jobs() {
               <input className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} list="cities" />
             </span>
             <datalist id="cities">
-              {["Москва", "Санкт-Петербург", "Екатеринбург", "Новосибирск", "Казань", "Краснодар", "Самара"].map((c) => (
+              {CITIES.map((c) => (
                 <option key={c} value={c} />
               ))}
             </datalist>

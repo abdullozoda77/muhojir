@@ -76,7 +76,7 @@ export default function SocialLogin({ onGoogle }) {
         <span className="h-px flex-1 bg-gradient-to-l from-transparent to-outline-variant" />
       </div>
       <div ref={wrap} className="group relative">
-        <div className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-surface-container-lowest px-5 text-label-lg text-on-surface ring-1 ring-inset ring-outline-variant transition-all duration-200 group-hover:-translate-y-px group-hover:shadow-[0_10px_24px_-14px_rgba(15,30,80,0.55)] group-hover:ring-outline/60 group-focus-within:ring-2 group-focus-within:ring-primary">
+        <div className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-surface-container-lowest px-5 text-label-lg text-on-surface ring-1 ring-inset ring-blue-500/40 transition-all duration-200 group-hover:-translate-y-px group-hover:shadow-[0_10px_24px_-14px_rgba(59,130,246,0.6)] group-hover:ring-blue-500 group-focus-within:ring-2 group-focus-within:ring-blue-500">
           <GoogleLogo />
           {t("Бо Google идома диҳед")}
         </div>

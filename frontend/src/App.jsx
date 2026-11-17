@@ -24,6 +24,7 @@ const Guides = lazy(() => import("./pages/Guides.jsx"));
 const Help = lazy(() => import("./pages/Help.jsx"));
 const JobDetail = lazy(() => import("./pages/JobDetail.jsx"));
 const Jobs = lazy(() => import("./pages/Jobs.jsx"));
+const News = lazy(() => import("./pages/News.jsx"));
 const NewsDetail = lazy(() => import("./pages/NewsDetail.jsx"));
 const Notifications = lazy(() => import("./pages/Notifications.jsx"));
 const Payments = lazy(() => import("./pages/Payments.jsx"));
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="blacklist" element={<Private><BlacklistPage /></Private>} />
         <Route path="calculator" element={<Private><Calculator /></Private>} />
         <Route path="guides" element={<Private><Guides /></Private>} />
+        <Route path="news" element={<Private><News /></Private>} />
         <Route path="news/:id" element={<Private><NewsDetail /></Private>} />
         <Route path="help" element={<Private><Help /></Private>} />
         <Route path="checks" element={<Private><Checks /></Private>} />

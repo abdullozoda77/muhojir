@@ -197,7 +197,7 @@ function NewsPanel() {
   const news = useApi("/documents/news/?page_size=3");
   return (
     <Reveal as="section" delay={0.1} className="flex min-w-0 flex-col gap-5">
-      <SectionTitle kicker={t("Қонун")} title={t("Хабарҳо")} to="/guides#news" linkText={t("Ҳама")} />
+      <SectionTitle kicker={t("Қонун")} title={t("Хабарҳо")} to="/news" linkText={t("Ҳама")} />
       <div className="card px-5">
         {news.loading && <Skeleton className="my-4 h-52" />}
         {news.data?.results && (

@@ -735,7 +735,7 @@ A generic, single database configuration.
 | `FeedbackIn` | class | kind, rating (1-5 or empty), message (5-3000 characters), page. |
 | `FeedbackPatch` | class | status and/or reply (editors). |
 | `feedback_json(f, viewer)` | function | JSON of feedback; editors also see the name, email and page of the author; photo is the address of the photo or null. |
-| `send_feedback(request, db, user)` | async function · `POST /api/feedback/` | Takes JSON or a form (multipart) with an optional photo (jpg, png, webp; up to 10 MB). Saves the feedback and notifies editors. 10 per hour per user. |
+| `send_feedback(request, db, user)` | async function · `POST /api/feedback/` | Takes JSON or a form (multipart) with an optional photo (jpg, png, webp; up to 10 MB). Saves the feedback and notifies editors. Reviews (idea, praise, other): one per user a day, otherwise 429; bug reports any time (30 per hour as spam guard). |
 | `feedback_photo(feedback_id, db, user)` | async function · `GET /api/feedback/{feedback_id}/photo/` | The photo of feedback: only its author and editors, others get 404. |
 | `my_feedback(db, user)` | async function · `GET /api/feedback/mine/` | The user's own feedback with the replies. |
 | `list_feedback(request, db, user, page)` | async function · `GET /api/feedback/` | Editors: all feedback, newest first; ?status= and ?kind=. |
@@ -2607,12 +2607,11 @@ A generic, single database configuration.
 
 ### `frontend/src/pages/Guides.jsx`
 
-**What it is for:** /guides — guides for every document type and the law news.
+**What it is for:** /guides — guides for every document type.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `News` | function | — |
-| `Guides` | export function | Document types and their steps load again when the language changes (the text comes from the server in the chosen language); the «more news» pages are reset. |
+| `Guides` | export function | Document types and their steps load again when the language changes (the text comes from the server in the chosen language) |
 
 ### `frontend/src/pages/Help.jsx`
 
@@ -2720,6 +2719,14 @@ A generic, single database configuration.
 | `ShopManager` | function | One shop: status, logo, buttons and the product list. |
 | `MyShops` | export function | The list of my shops and the chosen one. |
 
+
+### `frontend/src/pages/News.jsx`
+
+**What it is for:** /news — all law news (the «News» item of the menu, the footer and the home page).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `News` | export function | Cards of law news with «show more»; the extra pages are reset when the language changes. |
 
 ### `frontend/src/pages/NewsDetail.jsx`
 

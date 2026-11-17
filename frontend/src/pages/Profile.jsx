@@ -16,6 +16,7 @@ import TelegramConnect from "../components/TelegramConnect.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
 import { ago, date, rub } from "../format.js";
+import { CITIES } from "../constants.js";
 
 const ROLE_NAMES = { editor: () => t("Муҳаррир"), admin: () => t("Админ") };
 
@@ -354,7 +355,8 @@ export default function Profile() {
               <IconInput icon={Phone} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+7 999 123-45-67" autoComplete="tel" />
             </Field>
             <Field label={t("Шаҳр дар Русия")} error={errors.city}>
-              <IconInput icon={Building2} value={form.city} onChange={(e) => set("city", e.target.value)} placeholder={t("Масалан: Москва")} />
+              <IconInput icon={Building2} value={form.city} onChange={(e) => set("city", e.target.value)} placeholder={t("Масалан: Москва")} list="profile-cities" autoComplete="off" />
+              <datalist id="profile-cities">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
             </Field>
           </div>
         </Section>

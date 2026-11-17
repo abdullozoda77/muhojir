@@ -13,7 +13,7 @@ export default function NewsDetail() {
   if (error) return error.status === 404 ? <EmptyState title={t("Хабар ёфт нашуд")} /> : <ErrorBox error={error} />;
   return (
     <article className="mx-auto flex max-w-2xl flex-col gap-8 pt-2 md:pt-6">
-      <BackLink to="/guides#news">{t("Ҳамаи хабарҳо")}</BackLink>
+      <BackLink to="/news">{t("Ҳамаи хабарҳо")}</BackLink>
       <Intro as="header" className="flex flex-col gap-4">
         <IntroItem as="span" className="inline-flex items-center gap-2 text-label-md text-on-surface-variant">
           <CalendarDays className="h-4 w-4" aria-hidden />

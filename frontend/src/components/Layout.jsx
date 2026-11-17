@@ -42,7 +42,7 @@ function sections(user) {
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
     user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
     { to: "/rate", icon: Banknote, label: t("Қурби расмӣ"), group: "home" },
-    { to: "/guides#news", icon: Newspaper, label: t("Хабарҳо"), group: "home", hash: true },
+    { to: "/news", icon: Newspaper, label: t("Хабарҳо"), group: "home" },
     { to: "/feedback", icon: MessagesSquare, label: t("Фикру мулоҳиза"), group: "home" },
     user && { to: "/notifications", icon: Bell, label: t("Огоҳиҳо"), badge: "unread", group: "account" },
     user && { to: "/profile", icon: Settings, label: t("Профил ва танзимот"), group: "account" },
@@ -174,7 +174,7 @@ const TONES = {
   "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
   "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
   "/rate": "bg-lime-500/15 text-lime-700 dark:text-lime-400",
-  "/guides#news": "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  "/news": "bg-orange-500/15 text-orange-600 dark:text-orange-400",
   "/feedback": "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400",
 };
 
@@ -183,10 +183,10 @@ function AppsMenu({ items, counts, user }) {
   const box = useRef(null);
   const sheet = useRef(null);
   const [spot, setSpot] = useState({ top: 0, right: 0 });
-  const { pathname, hash } = useLocation();
+  const { pathname } = useLocation();
   const list = items.filter((i) => i.group === "more" || i.group === "home");
 
-  useEffect(() => setOpen(false), [pathname, hash]);
+  useEffect(() => setOpen(false), [pathname]);
   useScrollLock(open);
   useEffect(() => {
     if (!open) return undefined;
@@ -237,7 +237,7 @@ function AppsMenu({ items, counts, user }) {
             >
               <div className="grid grid-cols-4 gap-1">
                 {list.map((i) => (
-                  <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors ${isActive && !i.hash ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
+                  <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors ${isActive ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
                     <span className={`flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary-fixed text-primary"}`}>
                       <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
                     </span>
@@ -290,7 +290,7 @@ function MenuSheet({ open, onClose, items, counts, user }) {
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {items.map((i) => (
-                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive && !i.hash ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
+                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
                   <i.icon className="h-6 w-6" aria-hidden />
                   <span className="leading-tight">{i.label}</span>
                   {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-3"><Count n={counts[i.badge]} /></span>}

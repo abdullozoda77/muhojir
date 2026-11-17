@@ -87,6 +87,7 @@ const SERVER_MESSAGES = {
   "Lesson not found.": "Дарс ёфт нашуд.",
   "File not found.": "Файл ёфт нашуд.",
   "Not found.": "Ёфт нашуд.",
+  "You can leave one review a day. Bug reports can be sent any time.": "Дар як рӯз як фикр навиштан мумкин. Хатои сайтро ҳар вақт фиристода метавонед.",
   "Could not sign in with Google. Try again.": "Бо Google ворид шуда нашуд. Боз кӯшиш кунед.",
   "Google login is not set up.": "Воридшавӣ бо Google ҳоло танзим нашудааст.",
   "Wrong phone number or password.": "Рақами телефон ё парол нодуруст аст.",
