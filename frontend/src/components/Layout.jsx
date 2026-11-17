@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon, MoonStar,
-  Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldAlert, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -39,6 +39,7 @@ function sections(user) {
     { to: "/driving", icon: Car, label: t("Курси ронандагӣ"), group: "more" },
     { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон"), group: "more" },
     { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ"), group: "more" },
+    { to: "/scams", icon: ShieldAlert, label: t("Огоҳӣ аз қаллобон"), group: "more" },
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
     user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
     { to: "/rate", icon: Banknote, label: t("Қурби расмӣ"), group: "home" },
@@ -172,6 +173,7 @@ const TONES = {
   "/driving": "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
   "/exam": "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   "/help": "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+  "/scams": "bg-red-500/15 text-red-600 dark:text-red-400",
   "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
   "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
   "/rate": "bg-lime-500/15 text-lime-700 dark:text-lime-400",
@@ -239,7 +241,7 @@ function AppsMenu({ items, counts, user }) {
             >
               <div className="grid grid-cols-4 gap-1">
                 {list.map((i) => (
-                  <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors ${isActive ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
+                  <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-start gap-1.5 rounded-xl px-1.5 pb-1.5 pt-3 text-center transition-colors ${isActive ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
                     <span className={`flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary-fixed text-primary"}`}>
                       <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
                     </span>
@@ -247,7 +249,7 @@ function AppsMenu({ items, counts, user }) {
                     {i.badge && counts[i.badge] > 0 && <span className="absolute right-2 top-2"><Count n={counts[i.badge]} /></span>}
                   </NavLink>
                 ))}
-                <button type="button" onClick={() => setOpen(false)} className="group flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 text-center transition-colors hover:bg-surface-container-low">
+                <button type="button" onClick={() => setOpen(false)} className="group flex min-h-[84px] flex-col items-center justify-start gap-1.5 rounded-xl px-1.5 pb-1.5 pt-3 text-center transition-colors hover:bg-surface-container-low">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant ring-1 ring-inset ring-outline-variant transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-on-surface">
                     <ArrowLeft className="h-5 w-5" strokeWidth={2.2} aria-hidden />
                   </span>
@@ -292,7 +294,7 @@ function MenuSheet({ open, onClose, items, counts, user }) {
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {items.map((i) => (
-                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-xl p-2 text-center text-label-md ring-1 ${isActive ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
+                <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `relative flex min-h-[88px] flex-col items-center justify-start gap-2 rounded-xl px-2 pb-2 pt-4 text-center text-label-md ring-1 ${isActive ? "bg-ink text-on-ink ring-ink" : "bg-surface-container-lowest text-on-surface ring-outline-variant"}`}>
                   <i.icon className="h-6 w-6" aria-hidden />
                   <span className="leading-tight">{i.label}</span>
                   {i.badge && counts[i.badge] > 0 && <span className="absolute right-3 top-3"><Count n={counts[i.badge]} /></span>}

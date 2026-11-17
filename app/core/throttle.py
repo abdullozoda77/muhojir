@@ -13,6 +13,8 @@ RATES = {
     "geocode": (60, 3600),
     "feedback": (30, 3600),
     "housing": (10, 3600),
+    "scam": (10, 3600),
+    "scam_check": (60, 3600),
     "translate": (30, 3600),
     "translation_order": (10, 3600),
 }

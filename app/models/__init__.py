@@ -12,6 +12,7 @@ from app.models.market import (
 )
 from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
+from app.models.scams import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key, search_keys
 from app.models.support import CheckResult, HelpContact
 from app.models.telegram import TelegramLink
 from app.models.travel import AIRLINES, Airport, FlightWatch
@@ -32,5 +33,6 @@ __all__ = [
     "RATE_SOURCES", "ExchangeRate",
     "FEEDBACK_KINDS", "FEEDBACK_STATUSES", "Feedback",
     "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
+    "SCAM_KINDS", "SCAM_SCHEMES", "SCAM_STATUSES", "ScamReport", "scam_key", "search_keys",
     "LANGUAGES", "DOC_TYPES", "TRANSLATION_KINDS", "ORDER_STATUSES", "Translation",
 ]

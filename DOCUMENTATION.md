@@ -448,6 +448,19 @@ A generic, single database configuration.
 | `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
 | `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
 
+### `app/models/scams.py`
+
+**What it is for:** Warnings about scammers that users send; an editor approves them before anyone sees them.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `SCAM_KINDS` | const | What is reported: phone, telegram, website, card, office (office or person), other. |
+| `SCAM_SCHEMES` | const | How they cheated: patent, job, housing, tickets, money, ban («removing an entry ban»), other. |
+| `SCAM_STATUSES` | const | pending, approved, rejected. |
+| `scam_key(kind, value)` | function | The same value written differently gives one key: a phone becomes digits (8… → 7…), a card digits, Telegram the username without @ and t.me/, a website the host without www. |
+| `search_keys(query)` | function | All keys the text can mean (as any kind), at least 4 characters, for the check. |
+| `ScamReport` | class · table `scam_reports` | Author, kind, value, key, scheme, description, city, money lost (₽), status, editor's note, created and reviewed time. |
+
 ### `app/models/support.py`
 
 **What it is for:** Database tables of help: help sites and contacts (embassy, hotline, lawyers).
@@ -911,6 +924,23 @@ A generic, single database configuration.
 |---|---|---|
 | `rates(db)` | async function · `GET /api/rates/` | The latest rate of each source and a 30-day history [{day, nbt, cbr}]. Fetches today's rate first if it is missing. |
 
+### `app/routers/scams.py`
+
+**What it is for:** /api/scams/: the public list and check of scammers, reports from users and moderation by editors.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `ScamIn` | class | kind, value (3-200), scheme, description (20-2000), city, lost_amount. |
+| `ScamPatch` | class | status and/or note (editors). |
+| `scam_json(s, viewer, reports)` | function | JSON of a warning; the author and editors also see status and note, editors the author's name. The name is never public. |
+| `list_scams(request, db, page)` | async function · `GET /api/scams/` | Approved warnings, newest first; ?kind=, ?scheme=, ?search= (text or the same number written any way); reports = how many approved warnings have the same key. |
+| `check_scam(request, db)` | async function · `GET /api/scams/check/` | ?q= — finds approved warnings with the same key; {found, count, results}. 60 per hour. |
+| `report_scam(data, db, user)` | async function · `POST /api/scams/` | Logged in: saves the warning as pending and notifies editors; the same key twice from one user → 400. 10 per hour. |
+| `my_scams(db, user)` | async function · `GET /api/scams/mine/` | The user's own warnings with status. |
+| `review_scams(request, db, user, page)` | async function · `GET /api/scams/review/` | Editors: all warnings, ?status=. |
+| `update_scam(scam_id, data, db, user)` | async function · `PATCH /api/scams/{scam_id}/` | Editors: status and note; a new status notifies the author. |
+| `delete_scam(scam_id, db, user)` | async function · `DELETE /api/scams/{scam_id}/` | Editors, or the author while the warning is pending. |
+
 ### `app/routers/support.py`
 
 **What it is for:** /api/help/: official places to get help (editors keep the list) and /api/help/checks/ — the self-checks on official Russian sites with each person's own result.
@@ -1168,6 +1198,14 @@ A generic, single database configuration.
 | `reminder_title(document, language)` | function | The document's name in the user's language (title_ru for Russian when filled). |
 | `reminder_text(document, days, language)` | function | The reminder text in the user's language (user.language): in N days, tomorrow, or «expired today» (days = 0). |
 | `send_due_reminders(db, today)` | async function | Sends today's reminders: on the day the owner chose (remind_days_before) and the day before the end. Safe to run many times a day: ReminderLog remembers what was already sent. Returns how many were sent. Also on the expiry day itself («expired today»). |
+
+### `app/services/scams.py`
+
+**What it is for:** Telling the author what the editor decided, shared by the API and the admin panel.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `send_decision(db, report)` | async function | Approved or rejected → notification to the author (site, email, Telegram) with the editor's note. |
 
 ### `app/services/stats.py`
 
@@ -1616,6 +1654,14 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade()` / `downgrade()` | function | Adds / removes the columns (downgrade also removes the reports made by reviews). |
 
+### `alembic/versions/0026_scams.py`
+
+**What it is for:** Table scam_reports.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade() / downgrade()` | function | Creates / drops the table and its indexes. |
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1757,6 +1803,16 @@ A generic, single database configuration.
 | `test_password_change_is_reported(client, user)` | async function | Reset password -> «Your password was changed». |
 | `test_document_expired_today(client, user)` | async function | A document ending today gets the «expired today» reminder. |
 | `test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(client, user)` | async function | Editors hear about a submitted shop, a suggested place and a moved shop; the owner hears about the first review only. |
+
+### `tests/test_scams.py`
+
+**What it is for:** Scam warnings.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `test_keys_ignore_how_the_value_is_written()` | function | Phone, Telegram, website and card written differently give one key. |
+| `test_report_is_hidden_until_an_editor_approves_it(client, user)` | async function | Guests 401, short text 400, duplicate 400; not in the list or check until approved; after approval found by another spelling, author notified. |
+| `test_check_needs_something_to_search(client)` | async function | Too short ?q= → 400. |
 
 ### `tests/test_stats.py`
 
@@ -2842,6 +2898,19 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `Rate` | export function | The page header and the RubleRate card. |
+
+### `frontend/src/pages/Scams.jsx`
+
+**What it is for:** /scams (open to guests) — «Beware of scammers».
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Checker` | function | «Check before paying»: one field, the result is a red warning with the cards or a green «not in our list — still be careful». |
+| `ScamCard` | function | One warning: value, kind and scheme, text, city, money lost, how many warnings. |
+| `ReportForm` | function | Kind buttons, value, scheme, what happened, city, money lost. |
+| `ReportDrawer` | function | The form in a drawer (guests are asked to log in) and «My warnings» with their status. |
+| `ScamList` | function | Approved warnings: scheme chips, search (400 ms delay), «show more». |
+| `Scams` | export function | The page: header with «Report a scammer», the check, six common tricks, the list. |
 
 ### `frontend/src/pages/ShopPage.jsx`
 

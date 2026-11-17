@@ -14,6 +14,7 @@ from app.models import RATE_SOURCES, ExchangeRate
 from app.models import FEEDBACK_STATUSES, Feedback
 from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
 from app.models import ORDER_STATUSES, Translation
+from app.models import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
 EDITOR_VIEWS = {
@@ -34,6 +35,7 @@ EDITOR_VIEWS = {
     "exam-attempt": ("list", "details"),
     "exchange-rate": ("list", "details"),
     "feedback": ("list", "details", "edit", "delete"),
+    "scam-report": ("list", "details", "edit", "delete"),
     "housing": ("list", "details", "edit", "delete"),
     "translation": ("list", "details", "edit"),
 }
@@ -466,6 +468,37 @@ class ExchangeRateAdmin(Base, model=ExchangeRate):
     can_create = can_edit = False
 
 
+class ScamReportAdmin(Base, model=ScamReport):
+    name, name_plural, icon, category = "Огоҳӣ аз қаллоб", "Огоҳӣ аз қаллобон", "fa-solid fa-user-secret", "Корбарон"
+    column_list = [ScamReport.kind, ScamReport.value, ScamReport.scheme, ScamReport.city, ScamReport.user, ScamReport.status, ScamReport.created_at]
+    column_searchable_list = [ScamReport.value, ScamReport.description, ScamReport.city]
+    column_sortable_list = [ScamReport.created_at, ScamReport.status]
+    column_default_sort = [(ScamReport.created_at, True)]
+    column_formatters = {"kind": lambda m, a: m.kind_label, "scheme": lambda m, a: m.scheme_label}
+    form_columns = [ScamReport.status, ScamReport.kind, ScamReport.value, ScamReport.scheme, ScamReport.description,
+                    ScamReport.city, ScamReport.lost_amount, ScamReport.note]
+    form_choices = {"status": [(st, st) for st in SCAM_STATUSES], "kind": list(SCAM_KINDS.items()),
+                    "scheme": list(SCAM_SCHEMES.items())}
+    can_create = False
+
+    async def on_model_change(self, data, model, is_created, request):
+        request.state.status_changed = data.get("status") != model.status
+
+    async def after_model_change(self, data, model, is_created, request):
+        from app.db.session import SessionLocal
+        from app.db.types import utcnow
+        from app.services.scams import send_decision
+
+        async with SessionLocal() as db:
+            report = await db.get(ScamReport, model.id)
+            report.key = scam_key(report.kind, report.value)
+            if getattr(request.state, "status_changed", False):
+                report.reviewed_at = utcnow()
+            await db.commit()
+            if getattr(request.state, "status_changed", False):
+                await send_decision(db, report)
+
+
 class FeedbackAdmin(Base, model=Feedback):
     name, name_plural, icon, category = "Фикр", "Фикру мулоҳизаҳо", "fa-solid fa-comments", "Корбарон"
     column_list = [Feedback.kind, Feedback.rating, Feedback.message, Feedback.user, Feedback.status, Feedback.created_at]
@@ -595,5 +628,5 @@ VIEWS = [
     PlaceAdmin, PlaceReviewAdmin, AirportAdmin, FlightWatchAdmin,
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
-    ExchangeRateAdmin, FeedbackAdmin, HousingAdmin, TranslationAdmin,
+    ExchangeRateAdmin, FeedbackAdmin, ScamReportAdmin, HousingAdmin, TranslationAdmin,
 ]
