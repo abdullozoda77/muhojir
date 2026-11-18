@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Building2, Camera, MapPin, Pencil, Plus, Search, ShieldAlert, Users } from "lucide-react";
+import { Building2, Camera, Handshake, ListFilter, MapPin, Pencil, Plus, Search, ShieldAlert, Users } from "lucide-react";
 import { api } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
@@ -90,6 +90,7 @@ export default function Housing() {
   const [city, setCity] = useState(params.get("city") || "");
   const [maxPrice, setMaxPrice] = useState(params.get("max_price") || "");
   const [editing, setEditing] = useState(undefined);
+  const [newKind, setNewKind] = useState("bed");
   const [sheet, setSheet] = useState(false);
   const { data: summary, reload: reloadSummary } = useApi("/housing/summary/");
   const mine = params.get("tab") === "mine";
@@ -178,6 +179,29 @@ export default function Housing() {
           <Button icon={Plus} onClick={() => setEditing(null)}>{t("Эълон додан")}</Button>
         </div>
       </PageHeader>
+
+      {!mine && (
+        <section className="relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1447a8] to-[#0d2f73] p-5 text-white shadow-[0_18px_40px_-24px_rgb(16_36_84/0.6)] sm:flex-row sm:items-center sm:p-6">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
+            <Handshake className="h-7 w-7" aria-hidden />
+          </span>
+          <span className="flex flex-1 flex-col gap-1">
+            <span className="text-headline-sm">{t("Ҳамхона мечӯед?")}</span>
+            <span className="text-body-sm text-white/80">{t("Иҷораро якҷоя супоред ва камтар пул диҳед. Эълони ҳамхона гузоред ё эълонҳои дигаронро бинед.")}</span>
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setNewKind("roommate"); setEditing(null); }} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-white px-4 text-label-lg text-[#0d2f73] transition-transform hover:-translate-y-0.5">
+              <Plus className="h-4 w-4" aria-hidden />
+              {t("Ҳамхона ҷустан")}
+            </button>
+            <button type="button" onClick={() => update("kind", kind === "roommate" ? "" : "roommate")} aria-pressed={kind === "roommate"} className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-label-lg ring-1 ring-inset ring-white/40 transition-colors ${kind === "roommate" ? "bg-white/25" : "hover:bg-white/10"}`}>
+              <ListFilter className="h-4 w-4" aria-hidden />
+              {kind === "roommate" ? t("Ҳамаи эълонҳо") : t("Эълонҳои ҳамхона")}
+              {summary?.kinds?.roommate > 0 && kind !== "roommate" && <span className="tabular-nums opacity-70">{summary.kinds.roommate}</span>}
+            </button>
+          </span>
+        </section>
+      )}
 
       <div className="flex flex-col gap-5">
         <div className="inline-flex self-start rounded-xl bg-surface-container-low p-1 ring-1 ring-outline-variant">
@@ -330,7 +354,7 @@ export default function Housing() {
         </aside>
       </div>
 
-      <HousingForm open={editing !== undefined} item={editing} onClose={() => setEditing(undefined)} onSaved={saved} />
+      <HousingForm open={editing !== undefined} item={editing} kind={newKind} onClose={() => { setEditing(undefined); setNewKind("bed"); }} onSaved={saved} />
     </div>
   );
 }

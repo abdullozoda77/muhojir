@@ -10,6 +10,7 @@ from app.models.jobs import INDUSTRIES, SALARY_PAID, BlacklistReport, Employer, 
 from app.models.market import (
     PRODUCT_UNITS, PROOF_KINDS, REQUIRED_PROOFS, SHOP_CATEGORIES, SHOP_STATUSES, Product, Shop, ShopProof, ShopReview,
 )
+from app.models.questions import QUESTION_TOPICS, Answer, AnswerLike, Question
 from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.scams import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key, search_keys
@@ -34,5 +35,6 @@ __all__ = [
     "FEEDBACK_KINDS", "FEEDBACK_STATUSES", "Feedback",
     "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
     "SCAM_KINDS", "SCAM_SCHEMES", "SCAM_STATUSES", "ScamReport", "scam_key", "search_keys",
+    "QUESTION_TOPICS", "Question", "Answer", "AnswerLike",
     "LANGUAGES", "DOC_TYPES", "TRANSLATION_KINDS", "ORDER_STATUSES", "Translation",
 ]

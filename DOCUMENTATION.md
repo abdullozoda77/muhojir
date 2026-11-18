@@ -448,6 +448,17 @@ A generic, single database configuration.
 | `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
 | `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
 
+### `app/models/questions.py`
+
+**What it is for:** Questions and answers between people (/questions): a migrant asks, others who went through it answer.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `QUESTION_TOPICS` | const | documents, work, housing, health, money, travel, life, other with Tajik labels. |
+| `Question` | model | user, topic, title (≤150), body, city, answers_count (visible answers), best_answer_id, is_hidden (editors), created_at, active_at (last answer, for sorting). Shown at once, no pre-moderation. |
+| `Answer` | model | question, user, body, likes, is_hidden. |
+| `AnswerLike` | model | One like per person per answer (unique answer_id + user_id). |
+
 ### `app/models/scams.py`
 
 **What it is for:** Warnings about scammers that users send; an editor approves them before anyone sees them.
@@ -923,6 +934,10 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `rates(db)` | async function · `GET /api/rates/` | The latest rate of each source and a 30-day history [{day, nbt, cbr}]. Fetches today's rate first if it is missing. |
+
+### `app/routers/questions.py`
+
+**What it is for:** /api/questions/: list (topic, search in questions and answers, show=unanswered/solved/mine, ordering=new or by last activity), summary (counts by topic, unanswered), ask (logged in, 10 a day), detail with answers (best first, then most liked), answer (30 an hour; the asker gets a notification), like (toggle, not your own), best (asker or editor, toggle; the author of the answer gets a notification), delete (author or editor), hide (PATCH, editors). The author's name is only the first name.
 
 ### `app/routers/scams.py`
 
@@ -2719,6 +2734,10 @@ A generic, single database configuration.
 | `MigrantHome` | function | — |
 | `Home` | export function | — |
 
+### `frontend/src/pages/Questions.jsx` and `QuestionDetail.jsx`
+
+**What it is for:** «Саволу ҷавоб» page (in «Боз»): search, chips Ҳама / Бе ҷавоб / Ҳалшуда / Саволҳои ман and topics, cards with answer count, «Савол додан» side sheet. Detail page: the question, answers with ♥ like, «Беҳтарин» for the asker, hide for editors, delete for the author, and the answer form. Only for logged-in users.
+
 ### `frontend/src/pages/Housing.jsx`
 
 **What it is for:** /housing — the «Housing» page (main tab in the header): search by metro/area/word, city and «price up to» with quick buttons, kind chips with counts, for whom, registration / utilities / no deposit / with photos, source (all, users of the site, Telegram), ordering (newest, cheaper, more expensive), cards with «show more». The «My listings» tab shows the user's own listings with status, the reject reason, edit and delete. On the side: «Have a free place?» and a warning about fraud. Filters live in the address (?kind=, ?max_price= …).
@@ -2730,6 +2749,8 @@ A generic, single database configuration.
 | `PostCard` | function | «Have a free place?» with the post button. |
 | `Housing` | export function | The page. |
 
+
+Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «Ҳамхона ҷустан» opens the form with the roommate kind chosen, «Эълонҳои ҳамхона» filters the list to roommate ads.
 ### `frontend/src/pages/HousingDetail.jsx`
 
 **What it is for:** /housing/:id — one listing: photo gallery, title, city/address/metro, facts (kind, rooms, free places, for whom), description, the three flags (shown dimmed when absent), price with contact buttons (phone, WhatsApp, Telegram), «Original listing and contacts» link, for imported ones the channel name and a note to see the place before paying, edit for the owner, the editor's approve/reject box for listings not yet approved, and the fraud warning.

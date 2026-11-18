@@ -184,7 +184,7 @@ function Photos({ item, onChange }) {
   );
 }
 
-export function HousingForm({ open, item, onClose, onSaved }) {
+export function HousingForm({ open, item, kind = "bed", onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY);
   const [saved, setSaved] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -196,8 +196,8 @@ export function HousingForm({ open, item, onClose, onSaved }) {
     setSaved(item || null);
     setConfirmed(false);
     setError(null);
-    setForm(item ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, item[k] ?? ""])) : EMPTY);
-  }, [open, item]);
+    setForm(item ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, item[k] ?? ""])) : { ...EMPTY, kind });
+  }, [open, item, kind]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e?.target ? e.target.value : e }));
   const roommate = form.kind === "roommate";

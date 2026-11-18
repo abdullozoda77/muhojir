@@ -14,6 +14,7 @@ from app.models import RATE_SOURCES, ExchangeRate
 from app.models import FEEDBACK_STATUSES, Feedback
 from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
 from app.models import ORDER_STATUSES, Translation
+from app.models import QUESTION_TOPICS, Answer, Question
 from app.models import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
@@ -619,6 +620,29 @@ class TranslationAdmin(Base, model=Translation):
                 await tell_owner(db, await db.get(Translation, model.id))
 
 
+class QuestionAdmin(Base, model=Question):
+    name, name_plural, icon, category = "Савол", "Саволу ҷавоб", "fa-solid fa-circle-question", "Корбарон"
+    column_list = [Question.title, Question.topic, Question.city, Question.user, Question.answers_count, Question.is_hidden, Question.created_at]
+    column_searchable_list = [Question.title, Question.body, Question.city]
+    column_sortable_list = [Question.created_at, Question.answers_count]
+    column_default_sort = [(Question.created_at, True)]
+    column_formatters = {"topic": lambda m, a: m.topic_label}
+    form_columns = [Question.is_hidden, Question.topic, Question.title, Question.body, Question.city]
+    form_choices = {"topic": list(QUESTION_TOPICS.items())}
+    can_create = False
+
+
+class AnswerAdmin(Base, model=Answer):
+    name, name_plural, icon, category = "Ҷавоб", "Ҷавобҳо", "fa-solid fa-comments", "Корбарон"
+    column_list = [Answer.body, Answer.question, Answer.user, Answer.likes, Answer.is_hidden, Answer.created_at]
+    column_searchable_list = [Answer.body]
+    column_sortable_list = [Answer.created_at, Answer.likes]
+    column_default_sort = [(Answer.created_at, True)]
+    column_formatters = {"body": lambda m, a: m.body[:120]}
+    form_columns = [Answer.is_hidden, Answer.body]
+    can_create = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -629,4 +653,5 @@ VIEWS = [
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
     ExchangeRateAdmin, FeedbackAdmin, ScamReportAdmin, HousingAdmin, TranslationAdmin,
+    QuestionAdmin, AnswerAdmin,
 ]
