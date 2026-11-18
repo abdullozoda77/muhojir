@@ -53,6 +53,7 @@ LONG = re.compile(r"длительн|долгосрочн|на\s+месяц|от
 
 BED = re.compile(r"койко|койка", re.I)
 HOSTEL = re.compile(r"хостел", re.I)
+ROOMMATE = re.compile(r"ищу\s+(соседа|соседку|соседей|сожител|напарника\s+на\s+квартиру)|ищем\s+(соседа|соседку|соседей)", re.I)
 FLAT = re.compile(r"квартир|студи|апартамент|\b\d\s*[-–]?\s*(к|х)\b|\b\d\s*[-–]?\s*(к|х)?\s*комн|однокомнат|двухкомнат|двушк|трехкомнат|трёхкомнат|однушк|\bдом\b", re.I)
 ROOM = re.compile(r"\bкомнат[ауы]\b|\bкомнату\b|подселени", re.I)
 ROOMS = re.compile(r"\b(\d)\s*[-–]?\s*(?:х\s*)?(?:к\b|к\.|комн)", re.I)
@@ -145,6 +146,8 @@ def find_price(text, daily):
 
 def find_kind(text):
     head = "\n".join(text.splitlines()[:2])
+    if ROOMMATE.search(head):
+        return "roommate"
     if BED.search(text):
         return "bed"
     if HOSTEL.search(head):
@@ -196,7 +199,7 @@ def title_of(text, kind, city):
         if len(line) >= 5:
             line = line[0].upper() + line[1:]
             return line if len(line) <= 120 else line[:117].rstrip() + "…"
-    names = {"bed": "Койко-место", "room": "Комната", "flat": "Квартира", "hostel": "Хостел"}
+    names = {"bed": "Койко-место", "room": "Комната", "flat": "Квартира", "hostel": "Хостел", "roommate": "Ищу соседа"}
     return f"{names[kind]}, {city}"
 
 

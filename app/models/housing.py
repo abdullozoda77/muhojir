@@ -11,6 +11,7 @@ HOUSING_KINDS = {
     "room": "Ҳуҷра",
     "flat": "Хонаи пурра",
     "hostel": "Хостел",
+    "roommate": "Ҳамхона",
 }
 
 HOUSING_FOR = {

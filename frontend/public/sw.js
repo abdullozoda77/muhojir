@@ -1,4 +1,4 @@
-const VERSION = "muhojir-v7";
+const VERSION = "muhojir-v8";
 const SHELL = ["/", "/manifest.webmanifest", "/logo.png", "/icon-192.png"];
 
 const OFFLINE_API = [
@@ -31,6 +31,7 @@ async function networkFirst(request, fallbackUrl) {
   const cache = await caches.open(VERSION);
   try {
     const response = await fetch(fallbackUrl ? new Request(request.url, { cache: "no-cache", credentials: "same-origin" }) : request);
+    if (response.redirected) return Response.redirect(response.url, 302);
     if (response.ok) cache.put(fallbackUrl || request, response.clone());
     return response;
   } catch (error) {

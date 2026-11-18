@@ -85,7 +85,7 @@ TOOLS = [
                 "tickets_to": {"type": "string", "description": "tickets only: IATA code, e.g. LBD, LED."},
                 "housing_search": {"type": "string", "description": "housing only: metro, district or words, e.g. Люблино."},
                 "housing_city": {"type": "string", "description": "housing only: city in Russian, e.g. Москва."},
-                "housing_kind": {"type": "string", "enum": list(HOUSING_KINDS), "description": "housing only: bed, room, flat or hostel."},
+                "housing_kind": {"type": "string", "enum": list(HOUSING_KINDS), "description": "housing only: bed, room, flat, hostel or roommate (someone looking for a flatmate to share the rent)."},
                 "housing_max_price": {"type": "integer", "description": "housing only: highest price in rubles."},
                 "housing_registration": {"type": "boolean", "description": "housing only: only places that give registration."},
                 "shops_search": {"type": "string", "description": "shops only: shop or product name."},
@@ -180,7 +180,7 @@ TOOLS = [
     {
         "name": "find_housing",
         "description": (
-            "Searches approved housing ads (beds, rooms, flats, hostels for migrants). Returns up to 5 cheapest-first or "
+            "Searches approved housing ads (beds, rooms, flats, hostels and roommate ads for migrants). Returns up to 5 cheapest-first or "
             "newest with price, period, city, metro, for whom, registration, utilities, deposit and contacts."
         ),
         "input_schema": {

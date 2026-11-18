@@ -74,7 +74,7 @@ export default function HousingDetail() {
   const facts = [
     [kind.icon, kind.label],
     current.rooms && [DoorOpen, t("{0} ҳуҷра", current.rooms)],
-    current.places && [BedDouble, t("{0} ҷойи холӣ", current.places)],
+    current.places && [BedDouble, current.kind === "roommate" ? t("{0} ҳамхона лозим", current.places) : t("{0} ҷойи холӣ", current.places)],
     [Users, t(current.for_whom_label)],
   ].filter(Boolean);
 

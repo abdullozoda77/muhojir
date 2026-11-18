@@ -78,7 +78,7 @@ salary. Recruitment agencies are not shown. Never pay anyone before starting wor
 - [saved_jobs] Saved jobs and alerts: saved vacancies and alerts about new ones.
 - [blacklist] Blacklist of employers: companies that did not pay or cheated workers, with workers' reports. In a job ad the \
 button ⊘ sends a report.
-- [housing] Housing: beds (койко-место), rooms, flats and hostels for migrants in Russian cities, posted by visitors and \
+- [housing] Housing: beds (койко-место), rooms, flats, hostels and roommate ads (ҳамхона: share a flat and split the rent) for migrants in Russian cities, posted by visitors and \
 taken from open Telegram rental channels; price, metro, for whom (men, women, family), registration, utilities included, \
 no deposit, photos, contacts. Filters and sort by price. Anyone can post a free ad («Эълон додан»); an editor checks it \
 first. Never pay a deposit before seeing the place.

@@ -167,7 +167,7 @@ export default function Housing() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow={t("Аз ҳамватанон барои ҳамватанон")} title={t("Манзил")} text={t("Ҷойи хоб, ҳуҷра ва хона барои муҳоҷирон дар шаҳрҳои Русия: бо нарх, метро ва бақайдгирӣ. Бо соҳибхона бевосита гап занед.")} icon={Building2}>
+      <PageHeader eyebrow={t("Аз ҳамватанон барои ҳамватанон")} title={t("Манзил")} text={t("Ҷойи хоб, ҳуҷра, хона ва ҳамхона барои муҳоҷирон дар шаҳрҳои Русия: бо нарх, метро ва бақайдгирӣ. Бо соҳибхона бевосита гап занед.")} icon={Building2}>
         <div className="flex flex-wrap gap-2">
           {summary && (
             <span className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-label-md tabular-nums ring-1 ring-inset ring-outline-variant">

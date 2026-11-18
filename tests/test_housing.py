@@ -161,3 +161,18 @@ async def test_telegram_import_keeps_only_real_offers(client):
     r = await client.get("/api/housing/?search=Балтийская")
     flat = next(h for h in r.json()["results"] if h["source"] == "telegram")
     assert flat["kind"] == "flat" and flat["rooms"] == 3 and flat["price"] == 75000 and flat["telegram"] == "good_owner"
+
+
+async def test_roommate_ads_have_their_own_kind(client, user):
+    from app.services.housing_import import find_kind
+
+    editor, data = user
+    await set_role(data["user"]["id"], "editor")
+    row = {**LISTING, "kind": "roommate", "title": "Ҳамхона мечӯям, Люблино", "price": 12000, "places": 1}
+    r = await client.post("/api/housing/", headers=editor, json=row)
+    assert r.status_code == 201, r.text
+    assert r.json()["kind_label"] == "Ҳамхона"
+    assert [h["title"] for h in (await client.get("/api/housing/?kind=roommate")).json()["results"]] == [row["title"]]
+    assert (await client.get("/api/housing/summary/")).json()["kinds"]["roommate"] == 1
+    assert find_kind("Ищу соседа в 2-комнатную квартиру, Люблино\n15000 в месяц") == "roommate"
+    assert find_kind("Сдам квартиру, ищу семью\n40000") == "flat"

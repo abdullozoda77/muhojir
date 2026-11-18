@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
-  Ban, BedDouble, BedSingle, Building2, Camera, DoorOpen, FileCheck2, Hourglass, ImagePlus, MapPin, PiggyBank, Receipt, Save, Send, Train, Trash2, Users, X,
+  Ban, BedDouble, BedSingle, Building2, Camera, DoorOpen, FileCheck2, Handshake, Hourglass, ImagePlus, MapPin, PiggyBank, Receipt, Save, Send, Train, Trash2, Users, X,
 } from "lucide-react";
 import { api, errorText } from "../api.js";
 import { t } from "../i18n.js";
 import { num } from "../format.js";
-import { CITIES } from "../constants.js";
+import CityInput from "./CityInput.jsx";
 import { fitPhoto } from "./Shop.jsx";
 import { Button, Drawer, ErrorBox, Field, Switch } from "./ui.jsx";
 
@@ -16,6 +16,7 @@ export const HOUSING_KINDS = [
   { value: "room", icon: DoorOpen, get label() { return t("Ҳуҷра"); } },
   { value: "flat", icon: Building2, get label() { return t("Хонаи пурра"); } },
   { value: "hostel", icon: BedSingle, get label() { return t("Хостел"); } },
+  { value: "roommate", icon: Handshake, get label() { return t("Ҳамхона"); } },
 ];
 
 export const FOR_WHOM = [
@@ -37,7 +38,7 @@ export function HousingPrice({ item, className = "" }) {
   return (
     <span className={`tabular-nums ${className}`}>
       <span className="font-semibold">{num(item.price)} ₽</span>
-      <span className="text-on-surface-variant"> / {item.period === "day" ? t("шабонарӯз") : t("моҳ")}</span>
+      <span className="text-on-surface-variant"> / {item.kind === "roommate" ? `${t("нафар")} · ` : ""}{item.period === "day" ? t("шабонарӯз") : t("моҳ")}</span>
     </span>
   );
 }
@@ -199,6 +200,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
   }, [open, item]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e?.target ? e.target.value : e }));
+  const roommate = form.kind === "roommate";
   const err = (key) => error?.data?.[key];
 
   const save = async (e) => {
@@ -235,11 +237,17 @@ export function HousingForm({ open, item, onClose, onSaved }) {
             </button>
           ))}
         </div>
+        {roommate && (
+          <p className="flex items-start gap-2.5 rounded-xl bg-tertiary-fixed p-3.5 text-body-sm text-on-tertiary-fixed">
+            <Handshake className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            {t("Ҳамхона ёбед, то иҷораро якҷоя супоред: ҳиссаи як нафарро нависед, чанд нафар лозим аст ва кӣ будани ҳамхонаро.")}
+          </p>
+        )}
         <Field label={t("Сарлавҳа")} required error={err("title")}>
-          <input className="input" maxLength={120} value={form.title} onChange={set("title")} placeholder={t("Масалан: Ҷойи хоб дар ҳуҷраи 3-нафара, назди метро")} />
+          <input className="input" maxLength={120} value={form.title} onChange={set("title")} placeholder={roommate ? t("Масалан: Ҳамхона мечӯям, хонаи 2-ҳуҷра дар Люблино") : t("Масалан: Ҷойи хоб дар ҳуҷраи 3-нафара, назди метро")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t("Нарх, ₽")} required error={err("price")}>
+          <Field label={roommate ? t("Ҳиссаи як нафар, ₽") : t("Нарх, ₽")} required error={err("price")}>
             <input className="input tabular-nums" inputMode="numeric" value={form.price} onChange={(e) => set("price")(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="9000" />
           </Field>
           <Field label={t("Барои")} error={err("period")}>
@@ -251,8 +259,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Шаҳр")} required error={err("city")}>
-            <input className="input" value={form.city} onChange={set("city")} list="housing-form-cities" placeholder="Москва" />
-            <datalist id="housing-form-cities">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+            <CityInput className="input" value={form.city} onChange={set("city")} placeholder="Москва" />
           </Field>
           <Field label={t("Метро")} error={err("metro")}>
             <input className="input" maxLength={100} value={form.metro} onChange={set("metro")} placeholder="Люблино" />
@@ -265,7 +272,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
           <Field label={t("Ҳуҷраҳо")} error={err("rooms")}>
             <input className="input tabular-nums" inputMode="numeric" value={form.rooms ?? ""} onChange={(e) => set("rooms")(e.target.value.replace(/\D/g, "").slice(0, 2))} />
           </Field>
-          <Field label={t("Ҷойҳои холӣ")} error={err("places")}>
+          <Field label={roommate ? t("Чанд ҳамхона") : t("Ҷойҳои холӣ")} error={err("places")}>
             <input className="input tabular-nums" inputMode="numeric" value={form.places ?? ""} onChange={(e) => set("places")(e.target.value.replace(/\D/g, "").slice(0, 2))} />
           </Field>
           <Field label={t("Барои кӣ")} error={err("for_whom")}>
@@ -280,7 +287,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
           ))}
         </div>
         <Field label={t("Тавсиф")} error={err("description")}>
-          <textarea className="input min-h-[120px] resize-y" rows={4} maxLength={3000} value={form.description} onChange={set("description")} placeholder={t("Чӣ ҳаст: Wi-Fi, мошини ҷомашӯӣ, ошхона. Чанд нафар зиндагӣ мекунанд. Шартҳо.")} />
+          <textarea className="input min-h-[120px] resize-y" rows={4} maxLength={3000} value={form.description} onChange={set("description")} placeholder={roommate ? t("Дар бораи худ: кор, ҷадвал, одатҳо. Чӣ гуна ҳамхона мехоҳед. Хона аллакай ҳаст ё якҷоя меҷӯем.") : t("Чӣ ҳаст: Wi-Fi, мошини ҷомашӯӣ, ошхона. Чанд нафар зиндагӣ мекунанд. Шартҳо.")} />
         </Field>
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label={t("Телефон")} error={err("phone")}>
@@ -298,7 +305,7 @@ export function HousingForm({ open, item, onClose, onSaved }) {
             <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-primary,#1447a8)]" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
             <span className="flex flex-col gap-0.5">
               <span className="text-body-md font-medium">{t("Тасдиқ мекунам")}</span>
-              <span className="text-body-sm text-on-surface-variant">{t("Ин манзил воқеан ҳаст, ман соҳиб ё сокини он ҳастам ва нарху маълумот дуруст аст. Барои эълони дурӯғ ҳисоб баста мешавад.")}</span>
+              <span className="text-body-sm text-on-surface-variant">{roommate ? t("Ман воқеан ҳамхона меҷӯям ва маълумот дуруст аст. Барои эълони дурӯғ ҳисоб баста мешавад.") : t("Ин манзил воқеан ҳаст, ман соҳиб ё сокини он ҳастам ва нарху маълумот дуруст аст. Барои эълони дурӯғ ҳисоб баста мешавад.")}</span>
               {error?.data?.confirmed && <span className="text-body-sm text-error">{errorText(error.data.confirmed)}</span>}
             </span>
           </label>

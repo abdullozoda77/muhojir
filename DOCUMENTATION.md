@@ -375,11 +375,11 @@ A generic, single database configuration.
 
 ### `app/models/housing.py`
 
-**What it is for:** Tables of housing listings (beds, rooms, flats, hostels) that people post for migrants, and their photos.
+**What it is for:** Tables of housing listings (beds, rooms, flats, hostels, roommate ads) that people post for migrants, and their photos.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `HOUSING_KINDS` | const | bed (a bed in a shared room), room, flat (the whole flat), hostel. |
+| `HOUSING_KINDS` | const | bed (a bed in a shared room), room, flat (the whole flat), hostel, roommate (someone looking for a flatmate to split the rent; the price is one person's share and `places` is how many flatmates are needed). |
 | `HOUSING_FOR` | const | Who may live there: any, men, women, family. |
 | `HOUSING_PERIODS` | const | The price is per month or per day. |
 | `HOUSING_STATUSES` | const | pending (waits for an editor), approved, rejected. |
@@ -1102,7 +1102,7 @@ A generic, single database configuration.
 | `parse_page(page, channel)` | function | The posts of one channel page: number, time, text, photo addresses. |
 | `body(text)` | function | Cuts the channel's footer (links to its site and groups). |
 | `find_price(text, daily)` | function | The price: after «Цена/Стоимость/Аренда…», before ₽/руб, or a number like «23 000»; «57.000», «24 тыс» are understood; only believable prices are kept. |
-| `find_kind(text)` / `find_rooms(text, kind)` | function | Bed, hostel, flat or room, and the number of rooms. |
+| `find_kind(text)` / `find_rooms(text, kind)` | function | Roommate ("ищу соседа" in the first lines), bed, hostel, flat or room, and the number of rooms. |
 | `find_city(address, default)` | function | The city from «Адрес: …» (skips district and street parts); otherwise the channel's city. |
 | `parse_post(post, default_city)` | function | A post → listing fields, or None if it is not a real offer: needs a price and a kind. Also metro, phone, WhatsApp, Telegram, registration, utilities included, no deposit, for whom, day or month, title, and the link to the original (the owner's page on bezposrednikov.ru or the Telegram post). |
 | `fingerprint(data)` | function | City, price and the start of the text: the same listing posted twice is saved once. |
@@ -1949,7 +1949,7 @@ A generic, single database configuration.
 
 ### `frontend/public/sw.js`
 
-**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v6.
+**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v8. If a page answers with a redirect, the worker passes the redirect on instead of the redirected page (a phone app otherwise shows an empty screen).
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2203,6 +2203,10 @@ A generic, single database configuration.
 | `FACES` | const | Five ratings 1-5 with face icons, labels and the kind they start with (1 → bug, 5 → praise). |
 | `FeedbackBanner` | export function | The block and the panel (rendered into document.body so it is above the header). |
 | `RatingFaces` | function | «How much do you like the site?»: 4 round text buttons (Bad = 1, Average = 3, Good = 4, Excellent = 5) that turn dark on hover; a click opens the form with that rating. Below, the «I found a bug →» link. |
+
+### `frontend/src/components/CityInput.jsx`
+
+**What it is for:** City field with its own drop-down list of Russian cities (CITIES or the cities given in `options`), filtered while typing, chosen by tap or arrows + Enter. Replaces `<datalist>`, which shows nothing on many phones. Used in Profile, Jobs, Housing (search and form), Shops, My shops and Scams.
 
 ### `frontend/src/components/Filters.jsx`
 
