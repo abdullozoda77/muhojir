@@ -15,6 +15,7 @@ RATES = {
     "housing": (10, 3600),
     "scam": (10, 3600),
     "question": (10, 86400),
+    "parcel": (10, 86400),
     "answer": (30, 3600),
     "scam_check": (60, 3600),
     "translate": (30, 3600),

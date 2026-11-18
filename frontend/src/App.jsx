@@ -39,6 +39,7 @@ const Prayer = lazy(() => import("./pages/Prayer.jsx"));
 const Scams = lazy(() => import("./pages/Scams.jsx"));
 const Questions = lazy(() => import("./pages/Questions.jsx"));
 const QuestionDetail = lazy(() => import("./pages/QuestionDetail.jsx"));
+const Parcels = lazy(() => import("./pages/Parcels.jsx"));
 const Housing = lazy(() => import("./pages/Housing.jsx"));
 const HousingDetail = lazy(() => import("./pages/HousingDetail.jsx"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage.jsx"));
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="scams" element={<Scams />} />
         <Route path="questions" element={<Private><Questions /></Private>} />
         <Route path="questions/:id" element={<Private><QuestionDetail /></Private>} />
+        <Route path="parcels" element={<Private><Parcels /></Private>} />
         <Route path="feedback" element={<FeedbackPage />} />
         <Route path="certificates/sample" element={<Certificate sample />} />
         <Route path="certificates/:code" element={<Certificate />} />

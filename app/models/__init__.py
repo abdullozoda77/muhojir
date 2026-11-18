@@ -12,6 +12,7 @@ from app.models.market import (
 )
 from app.models.questions import QUESTION_TOPICS, Answer, AnswerLike, Question
 from app.models.rates import RATE_SOURCES, ExchangeRate
+from app.models.parcels import PARCEL_KINDS, TJ_CITIES, Parcel
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.scams import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key, search_keys
 from app.models.support import CheckResult, HelpContact
@@ -35,6 +36,7 @@ __all__ = [
     "FEEDBACK_KINDS", "FEEDBACK_STATUSES", "Feedback",
     "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
     "SCAM_KINDS", "SCAM_SCHEMES", "SCAM_STATUSES", "ScamReport", "scam_key", "search_keys",
+    "PARCEL_KINDS", "TJ_CITIES", "Parcel",
     "QUESTION_TOPICS", "Question", "Answer", "AnswerLike",
     "LANGUAGES", "DOC_TYPES", "TRANSLATION_KINDS", "ORDER_STATUSES", "Translation",
 ]

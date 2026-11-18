@@ -14,7 +14,7 @@ from app.models import RATE_SOURCES, ExchangeRate
 from app.models import FEEDBACK_STATUSES, Feedback
 from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
 from app.models import ORDER_STATUSES, Translation
-from app.models import QUESTION_TOPICS, Answer, Question
+from app.models import PARCEL_KINDS, QUESTION_TOPICS, Answer, Parcel, Question
 from app.models import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
@@ -643,6 +643,19 @@ class AnswerAdmin(Base, model=Answer):
     can_create = False
 
 
+class ParcelAdmin(Base, model=Parcel):
+    name, name_plural, icon, category = "Посылка", "Посылка ба Ватан", "fa-solid fa-box", "Корбарон"
+    column_list = [Parcel.kind, Parcel.from_city, Parcel.to_city, Parcel.travel_date, Parcel.weight_kg, Parcel.user, Parcel.is_hidden, Parcel.created_at]
+    column_searchable_list = [Parcel.from_city, Parcel.to_city, Parcel.description]
+    column_sortable_list = [Parcel.travel_date, Parcel.created_at]
+    column_default_sort = [(Parcel.created_at, True)]
+    column_formatters = {"kind": lambda m, a: m.kind_label}
+    form_columns = [Parcel.is_hidden, Parcel.kind, Parcel.from_city, Parcel.to_city, Parcel.travel_date, Parcel.weight_kg,
+                    Parcel.price_per_kg, Parcel.description, Parcel.phone, Parcel.whatsapp, Parcel.telegram]
+    form_choices = {"kind": list(PARCEL_KINDS.items())}
+    can_create = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -653,5 +666,5 @@ VIEWS = [
     ShopAdmin, ProductAdmin, ShopReviewAdmin,
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
     ExchangeRateAdmin, FeedbackAdmin, ScamReportAdmin, HousingAdmin, TranslationAdmin,
-    QuestionAdmin, AnswerAdmin,
+    QuestionAdmin, AnswerAdmin, ParcelAdmin,
 ]

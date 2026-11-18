@@ -448,6 +448,16 @@ A generic, single database configuration.
 | `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
 | `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
 
+### `app/models/parcels.py`
+
+**What it is for:** «Посылка ба Ватан» (/parcels): people going to Tajikistan offer to carry parcels, people with a parcel look for someone going.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `PARCEL_KINDS` | const | carry (I am going and can take a parcel), send (I have a parcel). |
+| `TJ_CITIES` | const | 20 cities of Tajikistan for the «Ба» field suggestions. |
+| `Parcel` | model | user, kind, from_city (Russia), to_city (Tajikistan), travel_date, weight_kg, price_per_kg (₽), description, phone/whatsapp/telegram, is_hidden (editors). |
+
 ### `app/models/questions.py`
 
 **What it is for:** Questions and answers between people (/questions): a migrant asks, others who went through it answer.
@@ -934,6 +944,10 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `rates(db)` | async function · `GET /api/rates/` | The latest rate of each source and a 30-day history [{day, nbt, cbr}]. Fetches today's rate first if it is missing. |
+
+### `app/routers/parcels.py`
+
+**What it is for:** /api/parcels/: list (only dates from today on, Moscow time, nearest first; kind, from_city, to_city, search; mine=true shows the user's own, past ones too), summary (counts and TJ_CITIES), add (logged in, 10 a day, a contact is required, the date from today up to 6 months), hide (PATCH, editors), delete (author or editor). Ads are shown at once, without pre-moderation.
 
 ### `app/routers/questions.py`
 
@@ -2733,6 +2747,10 @@ A generic, single database configuration.
 | `QuickActions` | function | The card beside the greeting: «Add document» (opens the form via /documents?add=1, shows the nearest deadline with a status dot), «Check patent» (/checks) and «Rouble rate» (/rate, today's 1 000 ₽ in somoni). The nearest deadline is the first tile in «Documents status». |
 | `MigrantHome` | function | — |
 | `Home` | export function | — |
+
+### `frontend/src/pages/Parcels.jsx`
+
+**What it is for:** «Посылка ба Ватан» page (in «Боз» and on the home tiles): two big buttons «Ба Ватан меравам — посылка мебарам» and «Посылка дорам — касеро меҷӯям» open the form with that kind; chips Ҳама / Мебарам / Мефиристам / Эълонҳои ман; From/To city filters (CityInput, Tajik cities from the summary); cards with route, date, kg, price per kg and contacts; safety tips. Only for logged-in users.
 
 ### `frontend/src/pages/Questions.jsx` and `QuestionDetail.jsx`
 

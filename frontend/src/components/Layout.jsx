@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon, MoonStar,
-  MessageCircleQuestion, Newspaper, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldAlert, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
+  MessageCircleQuestion, Newspaper, Package, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldAlert, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import { api, apiAll } from "../api.js";
@@ -40,6 +40,7 @@ function sections(user) {
     { to: "/exam", icon: GraduationCap, label: t("Машқ барои имтиҳон"), group: "more" },
     { to: "/help", icon: LifeBuoy, label: t("Маркази ёрии ҳуқуқӣ"), group: "more" },
     { to: "/questions", icon: MessageCircleQuestion, label: t("Саволу ҷавоб"), group: "more" },
+    { to: "/parcels", icon: Package, label: t("Посылка ба Ватан"), group: "more" },
     { to: "/scams", icon: ShieldAlert, label: t("Огоҳӣ аз қаллобон"), group: "more" },
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
     user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
@@ -175,6 +176,7 @@ const TONES = {
   "/exam": "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   "/help": "bg-rose-500/15 text-rose-600 dark:text-rose-400",
   "/questions": "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+  "/parcels": "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
   "/scams": "bg-red-500/15 text-red-600 dark:text-red-400",
   "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
   "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
