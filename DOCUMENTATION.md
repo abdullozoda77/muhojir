@@ -1010,7 +1010,7 @@ A generic, single database configuration.
 
 ### `app/routers/ws.py`
 
-**What it is for:** Live notifications. Browsers can not send an Authorization header with a WebSocket, so the page passes its access token in the address: /ws/notifications/?token=<access token>. Without a valid token the connection is closed with code 4401, which the page understands as "get a fresh token and connect again".
+**What it is for:** Live notifications. Browsers can not send an Authorization header with a WebSocket, so the page passes its access token in the address: /ws/notifications/?token=<access token>. Without a valid token the connection is first accepted and then closed with code 4401 (closing before accepting would reach the browser only as a failed connection, code 1006), which the page understands as "get a fresh token and connect again".
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2100,7 +2100,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `NOT_LOGGED_IN` | const | Live notifications: one WebSocket per tab while the user is logged in (server: accounts/consumers.py). It reconnects by itself (a little later each time) after the internet or the server was gone, and when the access token has expired (close code 4401) it first gets a fresh one. Pages that show notifications listen for the "muhojir:notification" window event to reload. |
+| `NOT_LOGGED_IN` | const | Live notifications: one WebSocket per tab while the user is logged in (server: accounts/consumers.py). It reconnects by itself (a little later each time) after the internet or the server was gone, and when the access token has expired (close code 4401, or 1006 when the connection failed) it first gets a fresh one through /auth/profile/. Pages that show notifications listen for the "muhojir:notification" window event to reload. |
 | `LIVE_EVENT` | export const | — |
 | `useLiveNotifications` | export function | — |
 

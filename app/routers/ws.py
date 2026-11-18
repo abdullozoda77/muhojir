@@ -16,10 +16,10 @@ async def notifications_socket(socket: WebSocket, token: str = ""):
     if payload:
         async with SessionLocal() as db:
             user = await db.get(User, payload["user_id"])
+    await socket.accept()
     if user is None or not user.is_active:
         await socket.close(code=NOT_LOGGED_IN)
         return
-    await socket.accept()
     hub.add(user.id, socket)
     try:
         while True:

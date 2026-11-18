@@ -66,3 +66,31 @@ async def test_editors_hear_about_new_shops_and_places_and_owners_about_reviews(
     r = await client.patch(f"/api/market/shops/{shop['id']}/", headers=owner, json={"lat": 55.69, "lon": 37.77})
     assert r.json()["status"] == "pending"
     assert "Мағоза ҷояшро иваз кард" in await titles(editor_id)
+
+
+async def _socket(token):
+    from app.main import app
+
+    sent = []
+    inbox = [{"type": "websocket.connect"}, {"type": "websocket.disconnect", "code": 1000}]
+
+    async def receive():
+        return inbox.pop(0) if inbox else {"type": "websocket.disconnect", "code": 1000}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {"type": "websocket", "path": "/ws/notifications/", "raw_path": b"/ws/notifications/",
+             "query_string": f"token={token}".encode(), "headers": [], "scheme": "ws", "server": ("test", 80),
+             "client": ("127.0.0.1", 1), "subprotocols": [], "root_path": "", "app": app}
+    await app(scope, receive, send)
+    return sent
+
+
+async def test_socket_tells_the_browser_that_the_token_is_old(user):
+    sent = await _socket("expired.or.wrong")
+    assert [m["type"] for m in sent] == ["websocket.accept", "websocket.close"]
+    assert sent[1]["code"] == 4401
+    headers, _ = user
+    sent = await _socket(headers["Authorization"].split()[1])
+    assert sent[0]["type"] == "websocket.accept" and all(m.get("code") != 4401 for m in sent)

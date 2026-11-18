@@ -38,9 +38,9 @@ export function useLiveNotifications(user, onMessage) {
       socket.onclose = async (e) => {
         clearInterval(ping);
         if (stopped) return;
-        if (e.code === NOT_LOGGED_IN) {
-          const still = await api("/auth/profile/").then(() => true).catch(() => false);
-          if (!still) return;
+        if (e.code === NOT_LOGGED_IN || e.code === 1006) {
+          const still = await api("/auth/profile/").then(() => true).catch((err) => err?.status !== 401);
+          if (!still || stopped) return;
         }
         retry = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 30000);
