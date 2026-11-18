@@ -102,17 +102,17 @@ function ServicesGrid() {
       </Reveal>
       <Stagger inView className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {SERVICES.map((s) => (
-          <StaggerItem key={s.to} className={s.big ? "col-span-2" : ""}>
+          <StaggerItem key={s.to} className={s.big ? "md:col-span-2" : ""}>
             <Link to={s.to} className={tile}>
               <span className="flex items-start justify-between">
                 <TileIcon icon={s.icon} />
                 <ArrowUpRight className="h-4 w-4 text-outline transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-on-surface" aria-hidden />
               </span>
               <span className="flex flex-col gap-1">
-                <span className={`font-semibold leading-tight tracking-tight ${s.big ? "text-[22px]" : "text-[17px]"}`}>{s.title()}</span>
+                <span className={`text-[17px] font-semibold leading-tight tracking-tight ${s.big ? "md:text-[22px]" : ""}`}>{s.title()}</span>
                 <span className="text-body-sm text-on-surface-variant">{s.text()}</span>
                 {s.big && (
-                  <span className="mt-3 inline-flex items-center gap-1.5 text-label-md text-primary">
+                  <span className="mt-3 hidden items-center md:inline-flex gap-1.5 text-label-md text-primary">
                     {s.cta ? s.cta() : t("Ҳисоб кардан")}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                   </span>
