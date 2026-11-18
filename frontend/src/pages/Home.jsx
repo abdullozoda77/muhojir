@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, Banknote, BellRing, BookOpen, Briefcase, Calculator, CalendarClock, Car, FilePlus2, FileType2, GraduationCap, Languages,
-  MapPinned, LifeBuoy, MoonStar, Plane, Plus, SearchCheck, ShieldCheck, Store, Wallet, Zap,
+  Building2, MapPinned, LifeBuoy, MessagesSquare, MoonStar, Newspaper, Plane, Plus, SearchCheck, ShieldAlert, ShieldCheck, Store, Wallet, Zap,
 } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { useApi, useDocuments } from "../hooks.js";
@@ -77,6 +77,13 @@ const SERVICES = [
   { to: "/documents", icon: ShieldCheck, title: () => t("Ҳуҷҷатҳои ман"), text: () => t("Мӯҳлатҳо ва ёдраскунӣ ба почта.") },
   { to: "/course", icon: Languages, title: () => t("Курси забони русӣ"), text: () => t("Аз алифбо то гуфтугӯи озод: 7 сатҳ, 70 дарс ва сертификат."), big: true, cta: () => t("Оғози курс") },
   { to: "/driving", icon: Car, title: () => t("Курси ронандагӣ"), text: () => t("Қоидаҳои ҳаракат (ПДД) барои шаҳодатномаи русӣ: 5 сатҳ, 25 дарс, имтиҳонҳо ва сертификат.") },
+  { to: "/questions", icon: MessagesSquare, title: () => t("Саволу ҷавоб"), text: () => t("Савол диҳед — муҳоҷироне, ки ин роҳро гузаштаанд, ҷавоб медиҳанд. Ҷавоби беҳтарин қайд карда мешавад."), big: true, cta: () => t("Савол додан") },
+  { to: "/housing", icon: Building2, title: () => t("Манзил ва ҳамхона"), text: () => t("Ҷойи хоб, ҳуҷра, хона ва ҳамхона барои иҷораи якҷоя.") },
+  { to: "/scams", icon: ShieldAlert, title: () => t("Огоҳӣ аз қаллобон"), text: () => t("Пеш аз пардохт рақам, Telegram ё кортро санҷед.") },
+  { to: "/prayer", icon: MoonStar, title: () => t("Вақти намоз"), text: () => t("Барои 70 шаҳри Русия, ҳар рӯз.") },
+  { to: "/news", icon: Newspaper, title: () => t("Хабарҳо"), text: () => t("Қонунҳо ва хабарҳои нав барои муҳоҷирон.") },
+  { to: "/rate", icon: Banknote, title: () => t("Қурби рубл"), text: () => t("Қурби расмии рубл ба сомонӣ ва баръакс.") },
+  { to: "/feedback", icon: MessagesSquare, title: () => t("Фикру мулоҳиза"), text: () => t("Пешниҳод ё хато? Ба мо нависед.") },
 ];
 
 function TileIcon({ icon: Icon }) {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Banknote, CheckCircle2, FileText, HeartPulse, HelpCircle, Home, MapPin, MessageCircle, MessagesSquare, Plane, Plus, Search, Send, Briefcase, Sparkles,
@@ -92,7 +93,7 @@ function AskForm({ open, onClose, onSaved }) {
     }
   };
 
-  return (
+  return createPortal(
     <Drawer open={open} onClose={onClose} title={t("Савол додан")} subtitle={t("Ҳамватанон ва муҳаррирон ҷавоб медиҳанд. Вақте ҷавоб омад, ба шумо хабар медиҳем.")} icon={MessagesSquare}>
       <form onSubmit={save} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-2">
@@ -115,7 +116,8 @@ function AskForm({ open, onClose, onSaved }) {
         <ErrorBox error={error && !["title", "body", "city"].some((k) => error.data?.[k]) ? error : null} />
         <Button type="submit" loading={busy} icon={Send} disabled={form.title.trim().length < 10}>{t("Фиристодан")}</Button>
       </form>
-    </Drawer>
+    </Drawer>,
+    document.body,
   );
 }
 
