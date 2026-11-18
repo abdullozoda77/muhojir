@@ -5,7 +5,8 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
-import { CITIES, INDUSTRIES } from "../constants.js";
+import { INDUSTRIES } from "../constants.js";
+import CityInput from "../components/CityInput.jsx";
 import { JobRow } from "../components/JobCard.jsx";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
@@ -220,13 +221,8 @@ export default function Jobs() {
             <MapPin className="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden />
             <span className="flex flex-1 flex-col">
               <span className="text-label-sm text-on-surface-variant">{t("Шаҳр")}</span>
-              <input className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} list="cities" />
+              <CityInput className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} />
             </span>
-            <datalist id="cities">
-              {CITIES.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
           </label>
           <span className="hidden h-12 items-center justify-center gap-2 rounded-xl bg-ink px-6 text-label-lg tabular-nums text-on-ink md:flex">
             <Search className="h-4 w-4" aria-hidden />

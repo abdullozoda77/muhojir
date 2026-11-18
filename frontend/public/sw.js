@@ -1,4 +1,4 @@
-const VERSION = "muhojir-v6";
+const VERSION = "muhojir-v7";
 const SHELL = ["/", "/manifest.webmanifest", "/logo.png", "/icon-192.png"];
 
 const OFFLINE_API = [

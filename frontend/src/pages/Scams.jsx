@@ -8,7 +8,7 @@ import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t, useLang } from "../i18n.js";
 import { ago, rub } from "../format.js";
-import { CITIES } from "../constants.js";
+import CityInput from "../components/CityInput.jsx";
 import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton } from "../components/ui.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 
@@ -170,8 +170,7 @@ function ReportForm({ onSent }) {
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("Шаҳр")} error={fieldError("city")}>
-          <input className="input" value={form.city} maxLength={100} onChange={(e) => set("city", e.target.value)} list="scam-cities" placeholder={t("Масалан: Москва")} />
-          <datalist id="scam-cities">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+          <CityInput className="input" value={form.city} maxLength={100} onChange={(e) => set("city", e.target.value)} placeholder={t("Масалан: Москва")} />
         </Field>
         <Field label={t("Чанд пул гирифтанд (₽)")} error={fieldError("lost_amount")}>
           <input className="input" type="number" min={0} inputMode="numeric" value={form.lost_amount} onChange={(e) => set("lost_amount", e.target.value)} placeholder="15000" />

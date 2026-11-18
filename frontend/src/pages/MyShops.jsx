@@ -4,7 +4,8 @@ import { Camera, ExternalLink, FileUp, ImagePlus, MapPinned, Package, PackageChe
 import { api, apiAll, errorText } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
-import { CITIES, SHOP_CATEGORIES, UNITS } from "../constants.js";
+import { SHOP_CATEGORIES, UNITS } from "../constants.js";
+import CityInput from "../components/CityInput.jsx";
 import { PROOF_KINDS, Price, ProductPhoto, ProofThumb, ShopLogo, ShopStatus, fitPhoto } from "../components/Shop.jsx";
 import LocationPicker from "../components/LocationPicker.jsx";
 import { Button, Drawer, EmptyState, ErrorBox, Field, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
@@ -241,8 +242,7 @@ function ShopForm({ open, shop, onClose, onSaved }) {
         </Field>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label={t("Шаҳр")} required error={fieldError("city")}>
-            <input className="input" value={form.city} onChange={set("city")} required minLength={2} list="my-shop-cities" />
-            <datalist id="my-shop-cities">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+            <CityInput className="input" value={form.city} onChange={set("city")} required minLength={2} />
           </Field>
           <Field label={t("Вақти корӣ")}>
             <input className="input" value={form.opening_hours} onChange={set("opening_hours")} maxLength={120} placeholder="Пн–Вс 08:00–22:00" />

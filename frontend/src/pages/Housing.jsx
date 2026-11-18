@@ -5,6 +5,7 @@ import { api } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { CITIES } from "../constants.js";
+import CityInput from "../components/CityInput.jsx";
 import { DeleteHousing, FLAGS, FOR_WHOM, HOUSING_KINDS, HousingCard, HousingForm } from "../components/Housing.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { ActiveFilters, ChipRow, FilterBar, FilterGroup, FilterSheet, OptionGrid, SortSelect, chipClass } from "../components/Filters.jsx";
@@ -204,9 +205,8 @@ export default function Housing() {
             <MapPin className="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden />
             <span className="flex flex-1 flex-col">
               <span className="text-label-sm text-on-surface-variant">{t("Шаҳр")}</span>
-              <input className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} list="housing-cities" />
+              <CityInput className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} options={cities} />
             </span>
-            <datalist id="housing-cities">{cities.map((c) => <option key={c} value={c} />)}</datalist>
           </label>
           <span className="hidden h-12 items-center justify-center gap-2 rounded-xl bg-ink px-6 text-label-lg tabular-nums text-on-ink md:flex">
             <Search className="h-4 w-4" aria-hidden />

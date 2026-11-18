@@ -6,6 +6,7 @@ import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
 import { CITIES, SHOP_CATEGORIES } from "../constants.js";
+import CityInput from "../components/CityInput.jsx";
 import { ProductCard, ShopCard } from "../components/Shop.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
@@ -170,9 +171,8 @@ export default function Shops() {
             <MapPin className="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden />
             <span className="flex flex-1 flex-col">
               <span className="text-label-sm text-on-surface-variant">{t("Шаҳр")}</span>
-              <input className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} list="shop-cities" />
+              <CityInput className="w-full border-0 bg-transparent p-0 text-body-lg text-on-surface placeholder:text-outline focus:ring-0" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Масалан: Москва")} options={cities} />
             </span>
-            <datalist id="shop-cities">{cities.map((c) => <option key={c} value={c} />)}</datalist>
           </label>
           <span className="flex h-12 items-center justify-center gap-2 rounded-xl bg-ink px-6 text-label-lg tabular-nums text-on-ink">
             <Search className="h-4 w-4" aria-hidden />
