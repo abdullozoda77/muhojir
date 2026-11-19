@@ -19,28 +19,27 @@ const KINDS = [
 ];
 
 const FACES = [
-  { rating: 1, get label() { return t("Бад"); }, kind: "idea" },
-  { rating: 3, get label() { return t("Миёна"); }, kind: "idea" },
-  { rating: 4, get label() { return t("Хуб"); }, kind: "idea" },
-  { rating: 5, get label() { return t("Аъло"); }, kind: "praise" },
+  { rating: 1, get label() { return t("Бад"); }, kind: "idea", color: "#ef4444" },
+  { rating: 3, get label() { return t("Миёна"); }, kind: "idea", color: "#f59e0b" },
+  { rating: 4, get label() { return t("Хуб"); }, kind: "idea", color: "#84cc16" },
+  { rating: 5, get label() { return t("Аъло"); }, kind: "praise", color: "#22c55e" },
 ];
 
-function RatingFaces({ onPick, onBug }) {
+const ACTIONS = KINDS.filter((k) => k.value !== "other");
+
+function RatingScale({ onPick }) {
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-label-md text-on-surface-variant">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-4">
+      <p className="text-label-lg text-on-surface">{t("Сайт ба шумо чӣ қадар писанд аст?")}</p>
+      <div className="grid grid-cols-4 gap-2">
         {FACES.map((f) => (
-          <button key={f.rating} type="button" onClick={() => onPick(f)}
-            className="min-h-[40px] rounded-full px-4 text-label-md text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-ink hover:text-on-ink hover:ring-ink focus-visible:bg-ink focus-visible:text-on-ink focus-visible:outline-none">
-            {f.label}
+          <button key={f.rating} type="button" onClick={() => onPick(f)} style={{ "--c": f.color }}
+            className="group flex flex-col items-center gap-2.5 rounded-xl bg-surface px-1 pb-3 pt-2 ring-1 ring-inset ring-outline-variant/70 transition-all hover:-translate-y-0.5 hover:ring-[color:var(--c)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--c)]">
+            <span className="h-1.5 w-full rounded-full bg-[color:var(--c)] opacity-75 transition-opacity group-hover:opacity-100" aria-hidden />
+            <span className="text-label-md text-on-surface">{f.label}</span>
           </button>
         ))}
       </div>
-      <button type="button" onClick={onBug} className="inline-flex items-center gap-1 self-start text-label-md text-primary hover:underline">
-        {t("Дар сайт хато ёфтам")}
-        <ArrowRight className="h-4 w-4" aria-hidden />
-      </button>
     </div>
   );
 }
@@ -171,17 +170,33 @@ export default function FeedbackBanner() {
 
   return (
     <>
-      <section className="relative overflow-hidden rounded-2xl bg-primary-fixed/50 p-5 ring-1 ring-primary/20 md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between md:gap-10">
-          <div className="flex max-w-xl flex-col gap-2">
-            <span className="inline-flex items-center gap-2 text-label-md text-primary">
-              <MessagesSquare className="h-4 w-4" aria-hidden />
-              {t("Фикру мулоҳиза")}
-            </span>
-            <h2 className="font-display text-[24px] font-semibold leading-tight md:text-[28px]">{t("Чизе ба шумо писанд нест? Ба мо гӯед.")}</h2>
-            <p className="text-body-md text-on-surface-variant">{t("Muhojir-ро барои шумо месозем. Хато, камбудӣ ё фикри нав — ҳар чӣ бошад, нависед. Ҳар фикрро мехонем ва ҷавоб медиҳем.")}</p>
+      <section className="overflow-hidden rounded-3xl bg-surface-container-low ring-1 ring-outline-variant/50">
+        <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+          <div className="flex flex-col gap-5 p-5 md:p-8">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-on-primary">
+                <MessagesSquare className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="text-label-lg text-primary">{t("Фикру мулоҳиза")}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="font-display text-[24px] font-semibold leading-tight md:text-[30px]">{t("Чизе ба шумо писанд нест? Ба мо гӯед.")}</h2>
+              <p className="max-w-xl text-body-md text-on-surface-variant">{t("Muhojir-ро барои шумо месозем. Хато, камбудӣ ё фикри нав — ҳар чӣ бошад, нависед. Ҳар фикрро мехонем ва ҷавоб медиҳем.")}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {ACTIONS.map((k) => (
+                <button key={k.value} type="button" onClick={() => setStart({ kind: k.value })}
+                  className="group flex min-h-[52px] items-center gap-3 rounded-xl bg-surface px-4 text-left text-label-md text-on-surface ring-1 ring-inset ring-outline-variant/70 transition-colors hover:bg-ink hover:text-on-ink hover:ring-ink">
+                  <k.icon className="h-4 w-4 shrink-0 text-primary transition-colors group-hover:text-on-ink" aria-hidden />
+                  <span className="flex-1">{k.label}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+                </button>
+              ))}
+            </div>
           </div>
-          <RatingFaces onPick={(f) => setStart({ rating: f.rating, kind: f.kind })} onBug={() => setStart({ kind: "bug" })} />
+          <div className="flex flex-col justify-center border-t border-outline-variant/50 bg-primary-fixed/30 p-5 md:border-l md:border-t-0 md:p-8">
+            <RatingScale onPick={(f) => setStart({ rating: f.rating, kind: f.kind })} />
+          </div>
         </div>
       </section>
       {createPortal(

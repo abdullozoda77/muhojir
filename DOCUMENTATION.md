@@ -2275,7 +2275,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/components/Feedback.jsx`
 
-**What it is for:** A large block at the end of the home page, before the footer: «Don't like something? Tell us.» with five faces (from angry to delighted) and a «I found a bug» link; a face opens the side panel with that rating already chosen: kind (idea, bug, praise, other), stars, the message; guests see a login button. After sending: thanks, and below the user's earlier feedback with Muhojir's replies.
+**What it is for:** A large block at the end of the home page, before the footer: «Don't like something? Tell us.» split in two: on the left an icon, the heading, the text and three buttons «Пешниҳод», «Хато дар сайт», «Ташаккур» (each opens the panel with that kind); on the right a tinted panel «Сайт ба шумо чӣ қадар писанд аст?» with four rating buttons Бад / Миёна / Хуб / Аъло, each with a colour bar from red to green; on phones the parts stack. A rating button opens the side panel with that rating already chosen: kind (idea, bug, praise, other), stars, the message; guests see a login button. After sending: thanks, and below the user's earlier feedback with Muhojir's replies.
 
 | Name | Kind | What it does |
 |---|---|---|

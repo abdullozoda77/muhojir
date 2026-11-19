@@ -63,6 +63,7 @@ const SERVER_MESSAGES = {
   "Choose a date within the next 6 months.": "Санаро дар 6 моҳи наздик интихоб кунед.",
   "No Parcel matches the given query.": "Эълон ёфт нашуд.",
   "You cannot like your own answer.": "Ба ҷавоби худ писанд гузошта намешавад.",
+  "You cannot answer your own question.": "Ба саволи худ ҷавоб дода намешавад.",
   "Only the person who asked can choose the best answer.": "Ҷавоби беҳтаринро танҳо савол-диҳанда интихоб мекунад.",
   "No Question matches the given query.": "Савол ёфт нашуд.",
   "No Answer matches the given query.": "Ҷавоб ёфт нашуд.",

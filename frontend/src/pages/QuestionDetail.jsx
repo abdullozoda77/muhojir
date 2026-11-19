@@ -195,16 +195,20 @@ export default function QuestionDetail() {
               onRemove={() => { setAnswers(null); reload(); }} />
           ))}
         </div>
+      ) : q.mine ? (
+        <EmptyState icon={MessageCircle} title={t("Ҳоло касе ҷавоб надодааст")} text={t("Вақте ҳамватанон ҷавоб диҳанд, ба шумо хабар медиҳем.")} />
       ) : (
         <EmptyState icon={MessageCircle} title={t("Аввалин шуда ҷавоб диҳед")} text={t("Агар медонед, ба ҳамватан ёрӣ диҳед.")} />
       )}
 
+      {!q.mine && (
       <form onSubmit={send} className="card flex flex-col gap-3 p-5">
-        <label className="text-label-lg" htmlFor="answer">{q.mine ? t("Илова ё ҷавоб ба шарҳҳо") : t("Ҷавоби шумо")}</label>
+        <label className="text-label-lg" htmlFor="answer">{t("Ҷавоби шумо")}</label>
         <textarea id="answer" className="input min-h-[110px] resize-y" rows={4} maxLength={3000} value={body} onChange={(e) => setBody(e.target.value)} placeholder={t("Аз таҷрибаи худ нависед: чӣ кор кардед, ба куҷо рафтед, чанд пул шуд.")} />
         <ErrorBox error={sendError} />
         <Button type="submit" loading={sending} icon={Send} disabled={body.trim().length < 5} className="self-end">{t("Ҷавоб додан")}</Button>
       </form>
+      )}
     </div>
   );
 }

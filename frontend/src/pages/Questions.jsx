@@ -37,28 +37,18 @@ const chip = (on) => `inline-flex min-h-[38px] shrink-0 items-center gap-2 round
 function QuestionCard({ q }) {
   const topic = topicOf(q.topic);
   return (
-    <Link to={`/questions/${q.id}`} className="card group flex h-full flex-col gap-3 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(16_36_84/0.35)]">
-      <span className="flex flex-wrap items-center gap-2 text-label-sm text-on-surface-variant">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-high px-2.5 py-1 text-on-surface">
-          <topic.icon className="h-3.5 w-3.5" aria-hidden />
-          {topic.label()}
-        </span>
-        {q.solved && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-tertiary-fixed px-2.5 py-1 text-on-tertiary-fixed">
-            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-            {t("Ҳалшуда")}
-          </span>
-        )}
+    <Link to={`/questions/${q.id}`} className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-container-low">
+      <span className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl text-label-md tabular-nums leading-none ${q.solved ? "bg-tertiary-fixed text-on-tertiary-fixed" : q.answers_count ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-high text-on-surface-variant"}`} title={q.answers_count ? t("{0} ҷавоб", q.answers_count) : t("Ҷавоб нест")}>
+        {q.solved ? <CheckCircle2 className="h-4 w-4" aria-hidden /> : <MessageCircle className="h-3.5 w-3.5" aria-hidden />}
+        <span className="mt-0.5 text-[11px]">{q.answers_count}</span>
       </span>
-      <span className="text-[17px] font-semibold leading-snug [overflow-wrap:anywhere] group-hover:text-primary">{q.title}</span>
-      {q.body && <span className="line-clamp-2 text-body-sm text-on-surface-variant [overflow-wrap:anywhere]">{q.body}</span>}
-      <span className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-label-md text-on-surface-variant">
-        <span className={`inline-flex items-center gap-1 ${q.answers_count ? "text-primary" : ""}`}>
-          <MessageCircle className="h-4 w-4" aria-hidden />
-          {q.answers_count ? t("{0} ҷавоб", q.answers_count) : t("Ҷавоб нест")}
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[15px] font-semibold group-hover:text-primary">{q.title}</span>
+        <span className="flex min-w-0 items-center gap-x-2 truncate text-label-sm text-on-surface-variant">
+          <span className="inline-flex shrink-0 items-center gap-1"><topic.icon className="h-3.5 w-3.5" aria-hidden />{topic.label()}</span>
+          {q.city && <span className="inline-flex shrink-0 items-center gap-1"><MapPin className="h-3 w-3" aria-hidden />{q.city}</span>}
+          <span className="truncate">{q.name} · {ago(q.created_at)}</span>
         </span>
-        {q.city && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{q.city}</span>}
-        <span>{q.name} · {ago(q.created_at)}</span>
       </span>
     </Link>
   );
@@ -201,13 +191,11 @@ export default function Questions() {
 
       <ErrorBox error={first.error} />
       {first.loading && !first.data ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
-        </div>
+        <Skeleton className="h-64" />
       ) : items.length ? (
-        <Stagger className="grid gap-4 md:grid-cols-2">
+        <Stagger className="card flex flex-col divide-y divide-outline-variant overflow-hidden">
           {items.map((q) => (
-            <StaggerItem key={q.id} className="h-full">
+            <StaggerItem key={q.id}>
               <QuestionCard q={q} />
             </StaggerItem>
           ))}
