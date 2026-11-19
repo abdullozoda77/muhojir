@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
-  ArrowLeft, Banknote, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon, MoonStar,
+  ArrowLeft, Banknote, BarChart3, Bell, Building2, BookOpen, Bookmark, Briefcase, Calculator, Car, ChevronDown, FileType2, GraduationCap, Home, Languages, LayoutGrid, LifeBuoy, LogIn, MapPinned, MessagesSquare, Moon, MoonStar,
   MessageCircleQuestion, Newspaper, Package, PenSquare, Plane, ReceiptText, RefreshCw, SearchCheck, Settings, ShieldAlert, ShieldCheck, Store, Sun, UserRound, WifiOff, X,
 } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
@@ -45,6 +45,7 @@ function sections(user) {
     { to: "/scams", icon: ShieldAlert, label: t("Огоҳӣ аз қаллобон"), group: "more" },
     user && { to: "/saved-jobs", icon: Bookmark, label: t("Захира ва огоҳиҳо"), group: "more" },
     user && { to: "/payments", icon: ReceiptText, label: t("Архиви чекҳо"), group: "more" },
+    user && { to: "/report", icon: BarChart3, label: t("Ҳисоботи моҳона"), group: "more" },
     { to: "/rate", icon: Banknote, label: t("Қурби расмӣ"), group: "home" },
     { to: "/news", icon: Newspaper, label: t("Хабарҳо"), group: "home" },
     { to: "/prayer", icon: MoonStar, label: t("Вақти намоз"), group: "home" },
@@ -181,6 +182,7 @@ const TONES = {
   "/scams": "bg-red-500/15 text-red-600 dark:text-red-400",
   "/saved-jobs": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
   "/payments": "bg-teal-500/15 text-teal-600 dark:text-teal-400",
+  "/report": "bg-violet-500/15 text-violet-600 dark:text-violet-400",
   "/rate": "bg-lime-500/15 text-lime-700 dark:text-lime-400",
   "/news": "bg-orange-500/15 text-orange-600 dark:text-orange-400",
   "/prayer": "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",

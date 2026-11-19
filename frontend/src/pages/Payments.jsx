@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Eye, ReceiptText, Trash2 } from "lucide-react";
+import { BarChart3, Eye, ReceiptText, Trash2 } from "lucide-react";
 import { api, openPrivateFile } from "../api.js";
 import { useApi } from "../hooks.js";
 import { t } from "../i18n.js";
@@ -19,7 +19,12 @@ export default function Payments() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <PageHeader eyebrow={t("Ҳуҷҷатҳо")} title={t("Архиви чекҳо")} text={t("Ҳамаи пардохтҳо ва сурати чекҳо дар як ҷо. Чекҳоро танҳо шумо мебинед.")} icon={ReceiptText} />
+      <PageHeader eyebrow={t("Ҳуҷҷатҳо")} title={t("Архиви чекҳо")} text={t("Ҳамаи пардохтҳо ва сурати чекҳо дар як ҷо. Чекҳоро танҳо шумо мебинед.")} icon={ReceiptText}>
+        <Link to="/report" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-label-lg text-on-surface ring-1 ring-inset ring-outline-variant transition-colors hover:bg-surface-container-low">
+          <BarChart3 className="h-5 w-5 text-primary" aria-hidden />
+          {t("Ҳисоботи моҳона")}
+        </Link>
+      </PageHeader>
       <ErrorBox error={error} />
       {loading ? (
         <Skeleton className="h-48" />

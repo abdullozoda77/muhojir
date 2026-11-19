@@ -28,6 +28,7 @@ const News = lazy(() => import("./pages/News.jsx"));
 const NewsDetail = lazy(() => import("./pages/NewsDetail.jsx"));
 const Notifications = lazy(() => import("./pages/Notifications.jsx"));
 const Payments = lazy(() => import("./pages/Payments.jsx"));
+const Report = lazy(() => import("./pages/Report.jsx"));
 const Profile = lazy(() => import("./pages/Profile.jsx"));
 const Tickets = lazy(() => import("./pages/Tickets.jsx"));
 const Places = lazy(() => import("./pages/Places.jsx"));
@@ -103,6 +104,7 @@ export default function App() {
 
         <Route path="documents" element={<Private><Documents /></Private>} />
         <Route path="payments" element={<Private><Payments /></Private>} />
+        <Route path="report" element={<Private><Report /></Private>} />
         <Route path="saved-jobs" element={<Private><SavedJobs /></Private>} />
         <Route path="shops/my" element={<Private><MyShops /></Private>} />
 

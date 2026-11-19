@@ -14,8 +14,9 @@ const OFFLINE_API = [
   "/api/course/",
   "/api/drive/",
   "/api/rates/",
+  "/api/money/",
 ];
-const USER_API = ["/api/auth/", "/api/documents/my-documents/", "/api/documents/payments/", "/api/course/", "/api/drive/"];
+const USER_API = ["/api/auth/", "/api/documents/my-documents/", "/api/documents/payments/", "/api/course/", "/api/drive/", "/api/money/"];
 
 async function precacheFiles(cache) {
   try {

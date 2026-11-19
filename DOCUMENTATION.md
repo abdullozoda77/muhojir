@@ -458,6 +458,16 @@ A generic, single database configuration.
 | `TJ_CITIES` | const | 20 cities of Tajikistan for the «Ба» field suggestions. |
 | `Parcel` | model | user, kind, from_city (Russia), to_city (Tajikistan), travel_date, weight_kg, price_per_kg (₽), description, phone/whatsapp/telegram, is_hidden (editors). |
 
+### `app/models/money.py`
+
+**What it is for:** Money the user sent home, for the monthly report. Private: only the user sees their rows.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `REMITTANCE_SERVICES` | const | Transfer services: korona, unistream, sber, alif, contact, card, hand (cash / through friends), other. |
+| `Remittance` | class · table `remittances` | user, amount and fee in roubles, service, recipient, sent_at, note, created_at; `service_label` is the service name. |
+
+
 ### `app/models/questions.py`
 
 **What it is for:** Questions and answers between people (/questions): a migrant asks, others who went through it answer.
@@ -958,6 +968,19 @@ A generic, single database configuration.
 ### `app/routers/parcels.py`
 
 **What it is for:** /api/parcels/: list (only dates from today on, Moscow time, nearest first; kind, from_city, to_city, search; mine=true shows the user's own, past ones too), summary (counts and TJ_CITIES), add (logged in, 10 a day, a contact is required, the date from today up to 6 months), hide (PATCH, editors), delete (author or editor). Ads are shown at once, without pre-moderation. Guests get the ads with empty phone, whatsapp and telegram, and contacts in the description are replaced with hide_contacts.
+
+### `app/routers/money.py`
+
+**What it is for:** /api/money/: the user's transfers home and the monthly report «how much I sent and how much I paid for the patent». Patent and document payments come from the receipts archive (Payment), so they are not entered twice.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `services` | GET /services/ | The transfer services for the form. |
+| `list_remittances` | GET /remittances/?year= | The user's transfers of that year (this year by default), newest first. |
+| `create_remittance` | POST /remittances/ | Adds a transfer: amount > 0, fee ≥ 0, known service, date not in the future (today in Moscow by default). |
+| `delete_remittance` | DELETE /remittances/{id}/ | Deletes one of the user's own transfers (404 for others). |
+| `report` | GET /report/?year= | 12 months with sent, fees, patent, transfers and payments counts; totals; sums per service (largest first); years that have data. |
+
 
 ### `app/routers/questions.py`
 
@@ -1739,6 +1762,16 @@ Every alert notification carries a link to the jobs list with the alert's filter
 | `downgrade()` | function | Drops it. |
 
 
+### `alembic/versions/0030_remittances.py`
+
+**What it is for:** Table remittances. Revision ID: 0030 Revises: 0029
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
+
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1911,6 +1944,11 @@ Every alert notification carries a link to the jobs list with the alert's filter
 ### `tests/test_push.py`
 
 **What it is for:** Push notifications: the encrypted message can be decrypted with the browser key and the VAPID token is valid; subscribing, the unknown-host check, the test push and unsubscribing; a job alert «Moscow · construction · from 80 000 ₽» reaches the push with the right job and link, and a device that answered 410 is deleted.
+
+
+### `tests/test_money.py`
+
+**What it is for:** Transfers and the monthly report: validation (amount, future date, unknown service), January totals with a patent payment from the receipts archive, the previous year, per-service sums, and that another user sees and deletes nothing.
 
 
 ### `tests/test_rates.py`
@@ -2943,11 +2981,23 @@ Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «
 
 ### `frontend/src/pages/Payments.jsx`
 
-**What it is for:** /payments — the receipts archive: payments with receipt photos.
+**What it is for:** /payments — the receipts archive: payments with receipt photos. A «Monthly report» link in the header opens /report.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `Payments` | export function | The receipts archive: every payment the user recorded, with the photo of its receipt. |
+
+### `frontend/src/pages/Report.jsx`
+
+**What it is for:** /report «Monthly report»: year switcher, four tiles (sent home with the monthly average, patent and documents, transfer fees, total), a grouped bar chart month by month (blue = sent home, orange = patent; colors checked for color-blind readers in both themes, legend, round axis steps, a tooltip per month with both sums and the fee), a table of the months with data, sums per service, the list of transfers with delete and the «I sent money» drawer.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `MonthChart` | function | The SVG bar chart with hover/tap tooltip. |
+| `niceScale(value)` | function | Round axis steps (1/2/5 × 10ⁿ) and the top value. |
+| `AddTransfer` | function | The form: amount, fee, service, recipient, date, note. |
+| `Report` | export default function | The page. |
+
 
 ### `frontend/src/pages/Places.jsx`
 
