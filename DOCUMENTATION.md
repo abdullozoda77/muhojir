@@ -2593,7 +2593,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/components/SocialLogin.jsx`
 
-**What it is for:** "Continue with Google" under the login and sign-up forms, with an "or" line above. Shown only when the server has GOOGLE_CLIENT_ID.
+**What it is for:** "Continue with Google" under the login and sign-up forms, with an "or" line above. Shown only when the server has GOOGLE_CLIENT_ID. The blue outline is a real 1px border (not an inset ring shadow, which looked uneven on a button with a fractional width); hover and keyboard focus only make it brighter, and focus left inside the Google frame after the popup no longer keeps a thick ring.
 
 | Name | Kind | What it does |
 |---|---|---|
