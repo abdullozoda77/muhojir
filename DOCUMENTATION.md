@@ -605,7 +605,7 @@ A generic, single database configuration.
 |---|---|---|
 | `HousingIn` | class | A new listing with confirmed; phones are normalized, Telegram checked (as for shops); at least one contact is required. |
 | `HousingPatch` | class | The same fields, all optional, plus is_active. |
-| `housing_json(h, viewer)` | function | A listing with photos, the owner's first name (for imported ones the channel) and is_mine, source, source_name, source_url; reject_reason only for the owner and editors; guests get empty phone, whatsapp and telegram. |
+| `housing_json(h, viewer)` | function | A listing with photos, the owner's first name (for imported ones the channel) and is_mine, source, source_name, source_url; reject_reason only for the owner and editors; guests get empty phone, whatsapp and telegram, and contacts in title, description and address are replaced with hide_contacts. |
 
 ### `app/schemas/jobs.py`
 
@@ -631,6 +631,7 @@ A generic, single database configuration.
 
 | Name | Kind | What it does |
 |---|---|---|
+| `hide_contacts(text)` | function | Replaces phone numbers (+7/8/9…, +992…), @usernames and t.me / wa.me links in a text with «•••»; prices, dates and ranges like 30000-35000 stay. |
 | `media(name)` | function | A stored file name -> its /media/ address (or None). |
 | `owner_name(user)` | function | Only the first name is shown to others. |
 | `shop_json(shop, avg, n, products, viewer)` | function | A shop with rating, number of reviews and products; reject_reason only for the owner and editors. |
@@ -956,7 +957,7 @@ A generic, single database configuration.
 
 ### `app/routers/parcels.py`
 
-**What it is for:** /api/parcels/: list (only dates from today on, Moscow time, nearest first; kind, from_city, to_city, search; mine=true shows the user's own, past ones too), summary (counts and TJ_CITIES), add (logged in, 10 a day, a contact is required, the date from today up to 6 months), hide (PATCH, editors), delete (author or editor). Ads are shown at once, without pre-moderation. Guests get the ads with empty phone, whatsapp and telegram.
+**What it is for:** /api/parcels/: list (only dates from today on, Moscow time, nearest first; kind, from_city, to_city, search; mine=true shows the user's own, past ones too), summary (counts and TJ_CITIES), add (logged in, 10 a day, a contact is required, the date from today up to 6 months), hide (PATCH, editors), delete (author or editor). Ads are shown at once, without pre-moderation. Guests get the ads with empty phone, whatsapp and telegram, and contacts in the description are replaced with hide_contacts.
 
 ### `app/routers/questions.py`
 

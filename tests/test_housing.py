@@ -153,6 +153,8 @@ async def test_telegram_import_keeps_only_real_offers(client, user):
 
     guest = await client.get("/api/housing/?city=Тестоград&source=telegram")
     assert all(h["phone"] == h["whatsapp"] == h["telegram"] == "" for h in guest.json()["results"])
+    assert any("Звоните •••" in h["description"] for h in guest.json()["results"])
+    assert not any("111-22-33" in h["description"] or "@good_owner" in h["description"] for h in guest.json()["results"])
     r = await client.get("/api/housing/?city=Тестоград&source=telegram", headers=user[0])
     assert r.json()["count"] == 2
     room = next(h for h in r.json()["results"] if h["kind"] == "room")
@@ -178,3 +180,12 @@ async def test_roommate_ads_have_their_own_kind(client, user):
     assert (await client.get("/api/housing/summary/")).json()["kinds"]["roommate"] == 1
     assert find_kind("Ищу соседа в 2-комнатную квартиру, Люблино\n15000 в месяц") == "roommate"
     assert find_kind("Сдам квартиру, ищу семью\n40000") == "flat"
+
+
+def test_hide_contacts_keeps_prices_and_dates():
+    from app.schemas.market import hide_contacts
+
+    text = ("Звоните +7 (999) 111-22-33, 8 999 111 22 33, +992 93 123 45 67. Пишите @good_owner, t.me/good_owner, "
+            "wa.me/79991112233. Цена 30000-35000 или 7 500 000 руб, 75.000₽, 2026-11-24, 12:00-18:00, этаж 5/9, a@mail.ru")
+    assert hide_contacts(text) == ("Звоните •••, •••, •••. Пишите •••, •••, •••. Цена 30000-35000 или 7 500 000 руб, "
+                                   "75.000₽, 2026-11-24, 12:00-18:00, этаж 5/9, a@mail.ru")

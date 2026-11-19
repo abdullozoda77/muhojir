@@ -12,7 +12,7 @@ from app.core.throttle import throttle
 from app.models import PARCEL_KINDS, TJ_CITIES, Parcel
 from app.routers.documents import param
 from app.schemas.common import Form
-from app.schemas.market import NO_CONTACT, ShopFields, owner_name
+from app.schemas.market import NO_CONTACT, ShopFields, hide_contacts, owner_name
 
 router = APIRouter(prefix="/api/parcels", tags=["parcels"])
 
@@ -58,7 +58,7 @@ def parcel_json(p, viewer=None):
         "can_delete": bool(viewer and (viewer.is_editor or viewer.id == p.user_id)),
     }
     if viewer is None:
-        data.update(phone="", whatsapp="", telegram="")
+        data.update(phone="", whatsapp="", telegram="", description=hide_contacts(p.description))
     if viewer and viewer.is_editor:
         data["is_hidden"] = p.is_hidden
     return data

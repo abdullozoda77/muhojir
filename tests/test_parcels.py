@@ -29,6 +29,9 @@ async def test_people_post_trips_and_parcels(client, user):
     assert (await client.get("/api/parcels/summary/")).json()["kinds"]["send"] >= 1
     seen = next(p for p in (await client.get("/api/parcels/")).json()["results"] if p["id"] == trip["id"])
     assert seen["phone"] == seen["whatsapp"] == seen["telegram"] == ""
+    note = (await client.post("/api/parcels/", headers=traveller, json={**TRIP, "to_city": "Ваҳдат", "description": "Занг занед 8 999 765-43-21"})).json()
+    seen = next(p for p in (await client.get("/api/parcels/")).json()["results"] if p["id"] == note["id"])
+    assert seen["description"] == "Занг занед •••" and note["description"] == "Занг занед 8 999 765-43-21"
     seen = next(p for p in (await client.get("/api/parcels/", headers=editor)).json()["results"] if p["id"] == trip["id"])
     assert seen["phone"] == "+79991234567"
 

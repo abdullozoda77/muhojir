@@ -12,6 +12,16 @@ ProofKind = Literal[tuple(PROOF_KINDS)]
 
 NO_CONTACT = "Give at least one contact: phone, WhatsApp or Telegram."
 BAD_TELEGRAM = "Write the Telegram username, e.g. @dukoni_mo."
+HIDDEN = "•••"
+CONTACT_IN_TEXT = re.compile(
+    r"(?:https?://)?(?:wa\.me|t\.me|telegram\.me)/[\w+/-]+"
+    r"|(?<![\w./@])@[A-Za-z][A-Za-z0-9_]{4,31}\b"
+    r"|(?<![\w/])(?:\+\d|[78](?=[\s\-(]*9)|9(?=\d{2}[\s\-)]*\d{3}))(?:[\s\-().]*\d){9,13}(?![\w/])"
+)
+
+
+def hide_contacts(text):
+    return CONTACT_IN_TEXT.sub(HIDDEN, text or "")
 
 
 def media(name):

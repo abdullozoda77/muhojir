@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from app.models.housing import HOUSING_FOR, HOUSING_KINDS, HOUSING_PERIODS
-from app.schemas.market import NO_CONTACT, ShopFields, media, owner_name
+from app.schemas.market import NO_CONTACT, ShopFields, hide_contacts, media, owner_name
 
 Kind = Literal[tuple(HOUSING_KINDS)]
 ForWhom = Literal[tuple(HOUSING_FOR)]
@@ -71,7 +71,8 @@ def housing_json(h, viewer=None):
         "created_at": h.created_at, "updated_at": h.updated_at,
     }
     if viewer is None:
-        data.update(phone="", whatsapp="", telegram="")
+        data.update(phone="", whatsapp="", telegram="", title=hide_contacts(h.title),
+                    description=hide_contacts(h.description), address=hide_contacts(h.address))
     if viewer and (viewer.id == h.owner_id or viewer.is_editor):
         data["reject_reason"] = h.reject_reason
     return data
