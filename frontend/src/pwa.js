@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 
 export function registerServiceWorker() {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
-  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  window.addEventListener("load", () =>
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(() => navigator.serviceWorker.ready)
+      .then((reg) => setTimeout(() => reg.active?.postMessage({ type: "precache" }), 5000))
+      .catch(() => {}),
+  );
 }
 
 const CHECK_EVERY = 10 * 60 * 1000;

@@ -11,6 +11,7 @@ import { useAuth } from "../auth.jsx";
 import { lang, setLang, t } from "../i18n.js";
 import { useTheme } from "../theme.js";
 import { useAppUpdate, useOnline } from "../pwa.js";
+import { flushLessons } from "../offline.js";
 import { useLiveNotifications } from "../live.js";
 import { useScrollLock } from "../hooks.js";
 import Footer from "./Footer.jsx";
@@ -333,6 +334,10 @@ export default function Layout() {
   const { pathname } = useLocation();
   const online = useOnline();
   const update = useAppUpdate();
+
+  useEffect(() => {
+    if (user && online) flushLessons();
+  }, [user, online]);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {

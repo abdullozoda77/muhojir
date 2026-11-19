@@ -2001,7 +2001,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/vite.config.js`
 
-**What it is for:** Vite setup: React plugin, dev server port 5175 and the /api, /media, /ws proxy to FastAPI on :8002.
+**What it is for:** Vite setup: React plugin, dev server port 5175 and the /api, /media, /ws proxy to FastAPI on :8002. The muhojir-precache plugin writes dist/precache.json at build time: the entry chunk and the chunks (with their imports and CSS) of the pages that must open without internet — Home, Documents, Payments, Course, Lesson, Prayer, Guides, Help, Calculator, Notifications, Profile (about 1 MB; the map, PDF and image libraries are left out).
 
 
 ---
@@ -2031,7 +2031,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/public/sw.js`
 
-**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v8. If a page answers with a redirect, the worker passes the redirect on instead of the redirected page (a phone app otherwise shows an empty screen). It also shows push notifications (`push` event) and opens their link when tapped (`notificationclick`), reusing an open tab of the site.
+**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v8. If a page answers with a redirect, the worker passes the redirect on instead of the redirected page (a phone app otherwise shows an empty screen). It also shows push notifications (`push` event) and opens their link when tapped (`notificationclick`), reusing an open tab of the site. Offline (cache muhojir-v9): on install, and 5 seconds after every page load (message «precache»), it downloads every file in precache.json and deletes /assets/ files of older builds; cached files are matched with ignoreVary (the server sends Vary: Origin, and a module script request carries Origin). The course API (/api/course/, /api/drive/) and the rouble rate are kept network-first too, and course data is removed on logout with the other personal data.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2077,7 +2077,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/auth.jsx`
 
-**What it is for:** Login state for the whole app (AuthProvider / useAuth): the current user, login, logout, reload.
+**What it is for:** Login state for the whole app (AuthProvider / useAuth): the current user, login, logout, reload. The last profile is kept in localStorage (user-cache): when the profile cannot be loaded because there is no internet (status 0) and a token exists, the saved profile is used, so private pages (documents, lessons) still open offline; it is cleared on logout and when the token is rejected.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2170,6 +2170,20 @@ Every alert notification carries a link to the jobs list with the alert's filter
 | `NOT_LOGGED_IN` | const | Live notifications: one WebSocket per tab while the user is logged in (server: accounts/consumers.py). It reconnects by itself (a little later each time) after the internet or the server was gone, and when the access token has expired (close code 4401, or 1006 when the connection failed) it first gets a fresh one through /auth/profile/. Pages that show notifications listen for the "muhojir:notification" window event to reload. |
 | `LIVE_EVENT` | export const | — |
 | `useLiveNotifications` | export function | — |
+
+### `frontend/src/offline.js`
+
+**What it is for:** Lessons without internet: saving the unlocked lessons on the phone and sending results that were finished offline.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `saveForOffline(course, levels, user, onProgress)` | export async function | Loads every unlocked lesson with the same URL the lesson page uses (…/lessons/N/?u=id), so the service worker keeps it; remembers when and how many. |
+| `savedForOffline(course)` | export function | {at, lessons} of the last save, or null. |
+| `queueLesson(course, level, number, score)` | export function | Keeps a lesson result that could not be sent (no internet) in localStorage (offline-lessons), the best score per lesson. |
+| `queuedLessons()` | export function | The waiting results. |
+| `flushLessons()` | export function | Sends the waiting results (Layout calls it when the user is logged in and online); stops at the first network error, drops results the server refused, fires the window event offline-synced after sending. |
+| `SYNCED` | export const | The name of that event; the course page reloads on it. |
+
 
 ### `frontend/src/main.jsx`
 
@@ -2704,7 +2718,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/pages/Course.jsx`
 
-**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the lesson where the user stopped (`place` from the server, with the exercise number) or else to the next lesson, the level of that place opened and a card with the user's certificate or a link to the sample. The same page is /driving for the driving course (kind="drive", settings from courses.js).
+**What it is for:** /course — the Russian course: 7 levels with progress, lessons (locked ones show a lock), the exam of each level, a «continue» button to the lesson where the user stopped (`place` from the server, with the exercise number) or else to the next lesson, the level of that place opened and a card with the user's certificate or a link to the sample. The same page is /driving for the driving course (kind="drive", settings from courses.js). For logged-in users the «Lessons without internet» card (OfflineCard) saves all unlocked lessons to the phone with progress «N of M», shows how many are saved and how many results wait for internet; the page reloads when offline results were sent.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2720,7 +2734,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/pages/Lesson.jsx`
 
-**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%. The exercises come in a new random order every time the practice starts (and on «Again»); the order is kept in the browser with the progress, so a resumed lesson continues in the same order. Also /driving/:level/:number; road signs are drawn with RoadSign. On the Russian site the lesson texts come in Russian from the server; for the driving course the term lists then show only the Russian terms.
+**What it is for:** /course/:level/:number — a lesson: theory with examples, words, then exercises (choose the answer, build the sentence from words). Progress inside the lesson is saved on the server (PUT /api/course/place/, `sendPlace`) and in the browser, so a reopened lesson continues from the next exercise on any device; the lesson response has `resume` with the saved exercise. The score is sent to the server when it is at least 60%. The exercises come in a new random order every time the practice starts (and on «Again»); the order is kept in the browser with the progress, so a resumed lesson continues in the same order. Also /driving/:level/:number; road signs are drawn with RoadSign. On the Russian site the lesson texts come in Russian from the server; for the driving course the term lists then show only the Russian terms. When the result cannot be sent because there is no internet, it is queued (offline.js) and the page says it was kept on the phone and will be sent by itself.
 
 | Name | Kind | What it does |
 |---|---|---|

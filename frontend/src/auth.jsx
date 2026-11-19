@@ -3,6 +3,18 @@ import { api, setLogoutHandler, tokens } from "./api.js";
 import { clearUserData } from "./pwa.js";
 
 const AuthContext = createContext(null);
+const SAVED_USER = "user-cache";
+
+function savedUser(value) {
+  try {
+    if (value === undefined) return JSON.parse(localStorage.getItem(SAVED_USER));
+    if (value === null) localStorage.removeItem(SAVED_USER);
+    else localStorage.setItem(SAVED_USER, JSON.stringify(value));
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -10,6 +22,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     clearUserData();
+    savedUser(null);
     const refresh = tokens.refresh;
     tokens.clear();
     setUser(null);
@@ -21,19 +34,25 @@ export function AuthProvider({ children }) {
   const reload = useCallback(async () => {
     if (!tokens.access) return setUser(null);
     try {
-      setUser(await api("/auth/profile/"));
-    } catch {
-      setUser(null);
+      const profile = await api("/auth/profile/");
+      savedUser(profile);
+      setUser(profile);
+    } catch (error) {
+      setUser(error.status === 0 && tokens.access ? savedUser() : null);
     }
   }, []);
 
   useEffect(() => {
-    setLogoutHandler(() => setUser(null));
+    setLogoutHandler(() => {
+      savedUser(null);
+      setUser(null);
+    });
     reload().finally(() => setLoading(false));
   }, [reload]);
 
   const login = useCallback((data) => {
     clearUserData();
+    savedUser(data.user || null);
     tokens.save(data);
     setUser(data.user);
   }, []);

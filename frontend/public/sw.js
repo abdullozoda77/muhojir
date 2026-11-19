@@ -1,5 +1,5 @@
-const VERSION = "muhojir-v8";
-const SHELL = ["/", "/manifest.webmanifest", "/logo.png", "/icon-192.png"];
+const VERSION = "muhojir-v9";
+const SHELL = ["/", "/manifest.webmanifest", "/logo.png", "/icon-192.png", "/flag-tj.svg"];
 
 const OFFLINE_API = [
   "/api/auth/profile/",
@@ -11,11 +11,38 @@ const OFFLINE_API = [
   "/api/documents/centers/",
   "/api/documents/news/",
   "/api/help/contacts/",
+  "/api/course/",
+  "/api/drive/",
+  "/api/rates/",
 ];
-const USER_API = ["/api/auth/", "/api/documents/my-documents/", "/api/documents/payments/"];
+const USER_API = ["/api/auth/", "/api/documents/my-documents/", "/api/documents/payments/", "/api/course/", "/api/drive/"];
+
+async function precacheFiles(cache) {
+  try {
+    const response = await fetch("/precache.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const files = await response.json();
+    const keep = new Set(files);
+    for (const request of await cache.keys()) {
+      const path = new URL(request.url).pathname;
+      if (path.startsWith("/assets/") && !keep.has(path)) await cache.delete(request);
+    }
+    await Promise.allSettled(files.map(async (file) => {
+      if (await cache.match(file, { ignoreVary: true })) return;
+      const asset = await fetch(file);
+      if (asset.ok) await cache.put(file, asset);
+    }));
+  } catch {
+  }
+}
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(VERSION).then(async (cache) => {
+      await cache.addAll(SHELL);
+      await precacheFiles(cache);
+    }).then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -35,7 +62,7 @@ async function networkFirst(request, fallbackUrl) {
     if (response.ok) cache.put(fallbackUrl || request, response.clone());
     return response;
   } catch (error) {
-    const saved = await cache.match(fallbackUrl || request);
+    const saved = await cache.match(fallbackUrl || request, { ignoreVary: true, ignoreSearch: Boolean(fallbackUrl) });
     if (saved) return saved;
     throw error;
   }
@@ -43,7 +70,7 @@ async function networkFirst(request, fallbackUrl) {
 
 async function cacheFirst(request) {
   const cache = await caches.open(VERSION);
-  const saved = await cache.match(request);
+  const saved = await cache.match(request, { ignoreVary: true });
   if (saved) return saved;
   const response = await fetch(request);
   if (response.ok) cache.put(request, response.clone());
@@ -57,7 +84,7 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin === self.location.origin) {
     if (/^\/(admin|static|swagger|redoc)(\/|$)/.test(url.pathname)) return;
-    if (/^\/[^/]+\.(txt|xml)$/.test(url.pathname)) return;
+    if (/^\/[^/]+\.(txt|xml|json)$/.test(url.pathname) && url.pathname !== "/manifest.webmanifest") return;
     if (request.mode === "navigate") {
       event.respondWith(networkFirst(request, "/"));
     } else if (url.pathname.startsWith("/assets/") || SHELL.includes(url.pathname) || url.pathname.startsWith("/icon")) {
@@ -71,6 +98,10 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("message", (event) => {
+  if (event.data?.type === "precache") {
+    event.waitUntil(caches.open(VERSION).then(precacheFiles));
+    return;
+  }
   if (event.data?.type !== "clear-user-data") return;
   event.waitUntil(
     caches.open(VERSION).then(async (cache) => {

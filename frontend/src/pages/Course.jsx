@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, BarChart3, Check, ChevronDown, Clock, Lock, LogIn, PenLine } from "lucide-react";
+import { ArrowRight, Award, BarChart3, Check, ChevronDown, Clock, CloudCheck, CloudDownload, Lock, LogIn, PenLine } from "lucide-react";
 import { lang, t } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
-import { ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { Button, ErrorBox, PageHeader, Skeleton } from "../components/ui.jsx";
+import { SYNCED, queuedLessons, saveForOffline, savedForOffline } from "../offline.js";
+import { useOnline } from "../pwa.js";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
 import { COURSES } from "../courses.js";
 
@@ -134,11 +136,62 @@ function Level({ course, level, open, onToggle, user, info }) {
   );
 }
 
+function OfflineCard({ course, levels, user }) {
+  const online = useOnline();
+  const [saved, setSaved] = useState(() => savedForOffline(course));
+  const [progress, setProgress] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const unlocked = levels.reduce((sum, l) => sum + l.lessons.filter((x) => x.unlocked).length, 0);
+  const waiting = queuedLessons().filter((i) => i.api === course.api).length;
+
+  const save = async () => {
+    setFailed(false);
+    setProgress([0, unlocked]);
+    try {
+      setSaved(await saveForOffline(course, levels, user, (done, total) => setProgress([done, total])));
+    } catch {
+      setFailed(true);
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  const fresh = saved && saved.lessons >= unlocked;
+  return (
+    <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${fresh ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-surface-container-high text-on-surface-variant"}`}>
+        {fresh ? <CloudCheck className="h-5 w-5" aria-hidden /> : <CloudDownload className="h-5 w-5" aria-hidden />}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-label-lg">{t("Дарсҳо бе интернет")}</span>
+        <span className="text-body-sm text-on-surface-variant">
+          {progress
+            ? t("Боргирӣ: {0} аз {1}…", progress[0], progress[1])
+            : failed
+              ? t("Ҳамаи дарсҳо боргирӣ нашуданд. Интернетро санҷед ва боз кӯшиш кунед.")
+              : fresh
+                ? t("{0} дарси кушода дар ин телефон нигоҳ дошта шуд — дар метро ва роҳ ҳам мехонед.", saved.lessons)
+                : t("Дарсҳои кушодаро ба телефон нигоҳ доред, то бе интернет хонед ва машқ кунед.")}
+          {waiting > 0 && " " + t("{0} натиҷа интизори интернет аст.", waiting)}
+        </span>
+      </span>
+      <Button variant={fresh ? "plain" : "primary"} icon={CloudDownload} loading={Boolean(progress)} disabled={!online} onClick={save} className="self-start sm:self-auto">
+        {fresh ? t("Навсозӣ") : t("Нигоҳ доштан")}
+      </Button>
+    </div>
+  );
+}
+
 export default function Course({ kind = "ru" }) {
   const course = COURSES[kind];
   const [openLevel, setOpenLevel] = useState(null);
   const { user } = useAuth();
-  const { data, error } = useApi(`${course.api}/?u=${user?.id ?? ""}`);
+  const { data, error, reload } = useApi(`${course.api}/?u=${user?.id ?? ""}`);
+
+  useEffect(() => {
+    window.addEventListener(SYNCED, reload);
+    return () => window.removeEventListener(SYNCED, reload);
+  }, [reload]);
 
   useEffect(() => {
     if (data && openLevel === null) setOpenLevel(data.place?.level ?? firstOpen(data.levels));
@@ -165,6 +218,7 @@ export default function Course({ kind = "ru" }) {
         )}
       </PageHeader>
       <ErrorBox error={error} />
+      {data && user && <OfflineCard course={course} levels={data.levels} user={user} />}
       {data && !user && (
         <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
           {[[lessonsDone, t("дарс хатм шуд")], [lessonsTotal - lessonsDone, t("дарс монд")], [passedLevels, t("сатҳ супорида шуд")]].map(([n, label]) => (

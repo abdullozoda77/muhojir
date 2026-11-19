@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, Lightbulb, Lock, RotateCcw, Undo2, X } from "lucide-react";
 import { api } from "../api.js";
+import { queueLesson } from "../offline.js";
 import { t, useLang } from "../i18n.js";
 import { useAuth } from "../auth.jsx";
 import { useApi } from "../hooks.js";
@@ -250,7 +251,7 @@ function Result({ course, percent, lesson, user, saved, saveError, onRetry }) {
       <h2 className="text-[24px] font-semibold">{passed ? t("Дарс хатм шуд!") : t("Боз як бор кӯшиш кунед")}</h2>
       <p className="max-w-md text-body-md text-on-surface-variant">
         {passed
-          ? saved ? t("Натиҷа нигоҳ дошта шуд.") : t("Барои нигоҳ доштани натиҷа ва гирифтани сертификат ворид шавед.")
+          ? saved === "offline" ? t("Интернет нест — натиҷа дар ин телефон нигоҳ дошта шуд ва вақте интернет ояд, худ ба худ фиристода мешавад.") : saved ? t("Натиҷа нигоҳ дошта шуд.") : t("Барои нигоҳ доштани натиҷа ва гирифтани сертификат ворид шавед.")
           : t("Барои хатми дарс ҳадди ақал {0}% лозим. Назарияро боз хонед ва машқро такрор кунед.", lesson.lesson_pass)}
       </p>
       <ErrorBox error={saveError} />
@@ -337,7 +338,12 @@ export default function Lesson({ kind = "ru" }) {
       await api(`${course.api}/levels/${level}/lessons/${number}/complete/`, { method: "POST", body: { score } });
       setSaved(true);
     } catch (err) {
-      setSaveError(err);
+      if (err.status === 0) {
+        queueLesson(course, Number(level), Number(number), score);
+        setSaved("offline");
+      } else {
+        setSaveError(err);
+      }
     }
   };
 
