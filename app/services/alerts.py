@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from sqlalchemy import func, select
 
 from app.models import Job, JobAlert, User
@@ -28,6 +30,7 @@ async def notify_alerts(db, since):
         titles = ", ".join((await db.scalars(matching.with_only_columns(Job.title).order_by(Job.created_at.desc()).limit(3))).all())
         user = await db.get(User, alert.user_id)
         await notify(db, user, "Ҷойи кори нав",
-                     f"{count} ҷойи нави кор аз рӯи ҷустуҷӯи шумо: {titles}{'…' if count > 3 else ''}", kind="job")
+                     f"{count} ҷойи нави кор аз рӯи ҷустуҷӯи шумо: {titles}{'…' if count > 3 else ''}", kind="job",
+                     url=f"/jobs?{urlencode(alert_filters(alert))}")
         told += 1
     return told

@@ -114,13 +114,13 @@ async def link_of(db, user):
     return await db.scalar(select(TelegramLink).where(TelegramLink.user_id == user.id))
 
 
-async def send_to_user(db, user, title, message):
+async def send_to_user(db, user, title, message, url=""):
     if not configured():
         return False
     link = await link_of(db, user)
     if not link or not link.enabled:
         return False
-    text = f"<b>{html.escape(title)}</b>\n\n{html.escape(message)}\n\n{settings.site_url}"
+    text = f"<b>{html.escape(title)}</b>\n\n{html.escape(message)}\n\n{settings.site_url}{html.escape(url)}"
     result = await send(link.chat_id, text, parse_mode="HTML")
     if result.get("error_code") == 403:
         await db.delete(link)

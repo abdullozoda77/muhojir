@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_bot_name: str = ""
     site_url: str = "https://muhojir.king.tj"
+    vapid_private_key: str = ""
+    vapid_subject: str = ""
     overpass_urls: str = "https://maps.mail.ru/osm/tools/overpass/api/interpreter,https://overpass-api.de/api/interpreter"
     assistant_model: str = "claude-opus-5"
     assistant_effort: str = "medium"

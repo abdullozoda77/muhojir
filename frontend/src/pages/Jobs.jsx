@@ -10,8 +10,11 @@ import CityInput from "../components/CityInput.jsx";
 import { JobRow } from "../components/JobCard.jsx";
 import { BlacklistCompany } from "../components/Blacklist.jsx";
 import { Stagger, StaggerItem } from "../components/motion.jsx";
+import { num } from "../format.js";
 import { ActiveFilters, ChipRow, FilterBar, FilterGroup, FilterSheet, OptionGrid, SortSelect, chipClass } from "../components/Filters.jsx";
 import { Button, EmptyState, ErrorBox, PageHeader, Skeleton, Switch } from "../components/ui.jsx";
+
+const SALARIES = ["50000", "80000", "100000", "150000"];
 
 const TOGGLES = [
   ["housing_provided", BedDouble, () => t("Манзил медиҳанд")],
@@ -77,11 +80,12 @@ function AlertButton({ params }) {
     city: params.get("city") || "",
     industry: params.get("industry") || "",
     housing_provided: params.get("housing_provided") === "true",
+    min_salary: params.get("min_salary") ? Number(params.get("min_salary")) : null,
   };
   const query = params.toString();
   useEffect(() => setState("idle"), [query]);
   if (!user) return null;
-  const empty = !filters.search && !filters.city && !filters.industry && !filters.housing_provided;
+  const empty = !filters.search && !filters.city && !filters.industry && !filters.housing_provided && !filters.min_salary;
 
   const save = async () => {
     setState("busy");
@@ -186,12 +190,15 @@ export default function Jobs() {
   const activeIndustry = params.get("industry");
   const ordering = params.get("ordering") || "-created_at";
   const jobs = page.results;
+  const minSalary = params.get("min_salary") || "";
   const active = TOGGLES.filter(([key]) => params.get(key) === "true").map(([key, , label]) => ({ key, label: label(), onRemove: () => update(key, "") }));
+  if (minSalary) active.push({ key: "min_salary", label: t("Маош аз {0} ₽", num(minSalary)), onRemove: () => update("min_salary", "") });
   const resetFilters = () => {
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
         for (const [key] of TOGGLES) next.delete(key);
+        next.delete("min_salary");
         return next;
       },
       { replace: true },
@@ -264,6 +271,13 @@ export default function Jobs() {
       </div>
 
       <FilterSheet open={sheet} onClose={() => setSheet(false)} onReset={resetFilters} count={active.length} total={page.count} loading={loading}>
+        <FilterGroup title={t("Маош дар як моҳ")}>
+          <OptionGrid
+            value={minSalary}
+            onChange={(v) => update("min_salary", v)}
+            options={[["", t("Ҳар гуна")], ...SALARIES.map((v) => [v, t("аз {0} ₽", num(v))])]}
+          />
+        </FilterGroup>
         <FilterGroup title={t("Шароит")}>
           {TOGGLES.map(([key, Icon, label]) => (
             <Switch key={key} checked={params.get(key) === "true"} onChange={(on) => update(key, on ? "true" : "")} icon={Icon} title={label()} />

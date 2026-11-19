@@ -501,6 +501,15 @@ A generic, single database configuration.
 |---|---|---|
 | `TelegramLink` | class · table `telegram_links` | user (one link per user), chat_id (one per chat), username, enabled (the user can pause messages), linked_at. |
 
+### `app/models/push.py`
+
+**What it is for:** Browser push subscriptions (Web Push): one row per browser or phone where the user turned on «Notifications on the phone».
+
+| Name | Kind | What it does |
+|---|---|---|
+| `PushSubscription` | class · table `push_subscriptions` | user, endpoint (the push service address, unique), p256dh and auth (the browser keys), user_agent, created_at. Dead ones are deleted when the push service answers 404/410. |
+
+
 ### `app/models/translations.py`
 
 **What it is for:** Table of document translations: instant AI translations and orders for an official translation.
@@ -1004,6 +1013,18 @@ A generic, single database configuration.
 | `telegram_disconnect` | async function · `DELETE /api/telegram/` | Removes the link and tells the chat. |
 | `telegram_webhook` | async function · `POST /api/telegram/webhook/{secret}/` | Receives the bot's messages from Telegram. |
 
+### `app/routers/push.py`
+
+**What it is for:** /api/push/: turning browser notifications on and off. Only endpoints of the known push services (Google FCM, Mozilla, Apple, Windows) are accepted, so the server never posts to an address a user made up. At most 10 devices per user (the oldest is replaced).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `push_status` | GET / | The public VAPID key for the browser and how many devices the user has. |
+| `push_subscribe` | POST /subscribe/ | Saves the browser subscription (`PushSubscription.toJSON()`); the same endpoint moves to the current user. |
+| `push_unsubscribe` | POST /unsubscribe/ | Deletes the subscription of this browser. |
+| `push_test` | POST /test/ | Sends a test notification to all the user's devices; returns how many got it. |
+
+
 ### `app/routers/translations.py`
 
 **What it is for:** /api/translations/: instant AI translation and orders for an official translation; editors set the price and upload the finished file.
@@ -1043,6 +1064,9 @@ A generic, single database configuration.
 |---|---|---|
 | `alert_filters(alert)` | function | The alert as query parameters of the jobs list (?search=...&city=...). |
 | `notify_alerts(db, since)` | async function | Tells every alert about the jobs that appeared since this moment. Returns how many users were told. |
+
+Every alert notification carries a link to the jobs list with the alert's filters (`/jobs?city=…&min_salary=…`), so tapping it in Telegram or in a push notification opens exactly those jobs.
+
 
 ### `app/services/course.py`
 
@@ -1173,7 +1197,7 @@ A generic, single database configuration.
 
 ### `app/services/notify.py`
 
-**What it is for:** One place that tells a user something: a notification in the app (live in open tabs), plus an email when they allow it. Also sends it to the user's Telegram when it is connected and enabled (app/services/telegram.py).
+**What it is for:** One place that tells a user something: a notification in the app (live in open tabs), plus an email when they allow it. Also sends it to the user's Telegram when it is connected and enabled (app/services/telegram.py). It also sends a push notification to every browser where the user turned them on (app/services/push.py); `notify(..., url=...)` is the page that opens when the notification is tapped (default /notifications) and is added to the Telegram message too.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -1182,6 +1206,19 @@ A generic, single database configuration.
 | `PASSWORD_TITLE` / `PASSWORD_TEXT` | const | «Your password was changed — if it was not you, reset it». |
 | `welcome(db, user)` | async function | Sends the welcome notification (after the email code or the first Google sign-in). |
 | `notify_editors(db, title, message, skip)` | async function | The same notification to every active editor and admin (skip = the person who did it, if they are an editor). |
+
+### `app/services/push.py`
+
+**What it is for:** Web Push without extra libraries: the message is encrypted for the browser (RFC 8291, aes128gcm) and signed with a VAPID key (RFC 8292, ES256 JWT). The VAPID key comes from `VAPID_PRIVATE_KEY` in .env (PEM or base64url), otherwise it is created once in private_media/vapid.pem and kept there — do not delete that file, or every browser has to turn notifications on again.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `private_key()` / `public_key()` | function | The VAPID key pair; the public key (base64url) goes to the browser. |
+| `encrypt(p256dh, auth, payload)` | function | Encrypts the JSON for one browser (ECDH + HKDF + AES-128-GCM). |
+| `vapid_header(endpoint)` | function | `Authorization: vapid t=…, k=…` for the push service of this endpoint. |
+| `send_one(subscription, data)` | async function | Posts one notification; returns the HTTP status (0 on a network error). |
+| `send_to_user(db, user, title, message, url)` | async function | Sends {title, body, url} to all the user's devices, deletes the dead ones; returns how many got it. |
+
 
 ### `app/services/places.py`
 
@@ -1691,6 +1728,16 @@ A generic, single database configuration.
 |---|---|---|
 | `upgrade() / downgrade()` | function | Creates / drops the table and its indexes. |
 
+### `alembic/versions/0029_push.py`
+
+**What it is for:** Table push_subscriptions. Revision ID: 0029 Revises: 0028
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Creates the table. |
+| `downgrade()` | function | Drops it. |
+
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1860,6 +1907,11 @@ A generic, single database configuration.
 
 **What it is for:** Tests of the Telegram bot with a fake Bot API: signed link codes, «not set up», connecting with /start, the secret webhook, notifications sent to Telegram (HTML escaped), turning off, the shared phone number, /stop, disconnecting from the site and a chat that blocked the bot.
 
+### `tests/test_push.py`
+
+**What it is for:** Push notifications: the encrypted message can be decrypted with the browser key and the VAPID token is valid; subscribing, the unknown-host check, the test push and unsubscribing; a job alert «Moscow · construction · from 80 000 ₽» reaches the push with the right job and link, and a device that answered 410 is deleted.
+
+
 ### `tests/test_rates.py`
 
 **What it is for:** Tests of the official rate with fake NBT and CBR files.
@@ -1978,7 +2030,7 @@ A generic, single database configuration.
 
 ### `frontend/public/sw.js`
 
-**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v8. If a page answers with a redirect, the worker passes the redirect on instead of the redirected page (a phone app otherwise shows an empty screen).
+**What it is for:** The service worker: keeps pages and the user's data for offline use (network first for data, cache first for files). Pages (navigations) are always fetched past the browser cache (cache: no-cache), so a new build is picked up at once; VERSION is muhojir-v8. If a page answers with a redirect, the worker passes the redirect on instead of the redirected page (a phone app otherwise shows an empty screen). It also shows push notifications (`push` event) and opens their link when tapped (`notificationclick`), reusing an open tab of the site.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2124,7 +2176,7 @@ A generic, single database configuration.
 
 ### `frontend/src/pwa.js`
 
-**What it is for:** The site as a phone app: the service worker (public/sw.js) and "install on the phone".
+**What it is for:** The site as a phone app: the service worker (public/sw.js) and "install on the phone". `usePush(api)` turns browser notifications on/off (permission → pushManager.subscribe with the server VAPID key → /api/push/subscribe/); `clearUserData()` also unsubscribes the browser on logout and login.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2481,6 +2533,15 @@ A generic, single database configuration.
 | `TelegramHeaderButton` | export function | Telegram icon in the header for everyone (hidden while the bot is not set up): a guest goes to the bot, a user gets a connect link, a connected user opens the bot. |
 | `TelegramLogo` | export function | The Telegram logo as SVG. |
 
+### `frontend/src/components/PushToggle.jsx`
+
+**What it is for:** The «Notifications on the phone» card (profile settings and the job alerts page): a switch that asks the browser for permission and subscribes it, «Test» to send a test notification; explains what to do when the browser does not support it (on iPhone: add the site to the home screen first) or when permission is blocked.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `PushToggle` | export function | The card; uses usePush from pwa.js. |
+
+
 ### `frontend/src/components/SeasonFall.jsx`
 
 **What it is for:** The falling decoration of the current season.
@@ -2789,7 +2850,7 @@ Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «
 
 ### `frontend/src/pages/Jobs.jsx`
 
-**What it is for:** /jobs — job search: text and city search, industries, filters, sorting, job alerts and the blacklist card.
+**What it is for:** /jobs — job search: text and city search, industries, filters, sorting, job alerts and the blacklist card. The filter sheet has «Salary per month» (any, from 50 000 / 80 000 / 100 000 / 150 000 ₽, parameter min_salary, shown as a removable chip), and the alert button saves it too.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2927,7 +2988,7 @@ Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «
 
 ### `frontend/src/pages/SavedJobs.jsx`
 
-**What it is for:** /saved-jobs — saved jobs and the user's job alerts.
+**What it is for:** /saved-jobs — saved jobs and the user's job alerts. Under the alerts there is a «New alert» form (keyword, city, industry, salary from, housing) and «Where alerts come»: the Telegram card and the phone notifications card.
 
 | Name | Kind | What it does |
 |---|---|---|

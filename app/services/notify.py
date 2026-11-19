@@ -4,13 +4,14 @@ from sqlalchemy import or_, select
 
 from app.models import Notification, User
 from app.services.emails import queue_email
+from app.services import push
 from app.services.live import push_new
 from app.services.telegram import send_to_user
 
 logger = logging.getLogger(__name__)
 
 
-async def notify(db, user, title, message, kind="system"):
+async def notify(db, user, title, message, kind="system", url="/notifications"):
     notification = Notification(user_id=user.id, kind=kind, title=title, message=message)
     db.add(notification)
     await db.commit()
@@ -21,9 +22,13 @@ async def notify(db, user, title, message, kind="system"):
         except OSError:
             logger.exception("Email to %s failed", user.email)
     try:
-        await send_to_user(db, user, title, message)
+        await send_to_user(db, user, title, message, "" if url == "/notifications" else url)
     except Exception:
         logger.exception("Telegram to user %s failed", user.id)
+    try:
+        await push.send_to_user(db, user, title, message, url)
+    except Exception:
+        logger.exception("Push to user %s failed", user.id)
     return notification
 
 

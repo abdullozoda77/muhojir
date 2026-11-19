@@ -13,6 +13,7 @@ from app.models.market import (
 from app.models.questions import QUESTION_TOPICS, Answer, AnswerLike, Question
 from app.models.rates import RATE_SOURCES, ExchangeRate
 from app.models.parcels import PARCEL_KINDS, TJ_CITIES, Parcel
+from app.models.push import PushSubscription
 from app.models.places import PLACE_CATEGORIES, Place, PlaceReview
 from app.models.scams import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key, search_keys
 from app.models.support import CheckResult, HelpContact
@@ -26,7 +27,7 @@ __all__ = [
     "ExamQuestion", "law_news_document_types",
     "INDUSTRIES", "SALARY_PAID", "Employer", "Job", "EmployerReview", "SavedJob", "JobAlert", "BlacklistReport",
     "HelpContact", "CheckResult",
-    "TelegramLink",
+    "TelegramLink", "PushSubscription",
     "AIRLINES", "Airport", "FlightWatch",
     "PLACE_CATEGORIES", "Place", "PlaceReview",
     "SHOP_CATEGORIES", "SHOP_STATUSES", "PRODUCT_UNITS", "PROOF_KINDS", "REQUIRED_PROOFS",

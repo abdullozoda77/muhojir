@@ -13,6 +13,7 @@ import { useTheme } from "../theme.js";
 import PhoneApp from "../components/PhoneApp.jsx";
 import { BackLink, BrandBadge, Button, ErrorBox, Field } from "../components/ui.jsx";
 import TelegramConnect from "../components/TelegramConnect.jsx";
+import PushToggle from "../components/PushToggle.jsx";
 import { Reveal, Stagger, StaggerItem } from "../components/motion.jsx";
 import { Heatmap, ShareBars, StatCard, StatTile } from "../components/Stats.jsx";
 import { ago, date, rub } from "../format.js";
@@ -381,6 +382,7 @@ export default function Profile() {
           </div>
           {user.email && <Toggle checked={form.email_reminders} onChange={(v) => set("email_reminders", v)} title={t("Ёдраскунӣ ба почтаи электронӣ")} text={t("Пеш аз тамом шудани мӯҳлати ҳуҷҷатҳо")} />}
           <TelegramConnect />
+          <PushToggle />
         </Section>
 
         <div className="flex flex-col gap-4 lg:col-span-2">

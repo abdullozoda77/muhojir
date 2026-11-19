@@ -48,6 +48,10 @@ export function useAppUpdate() {
 
 export function clearUserData() {
   navigator.serviceWorker?.controller?.postMessage({ type: "clear-user-data" });
+  navigator.serviceWorker?.getRegistration()
+    .then((reg) => reg?.pushManager?.getSubscription())
+    .then((sub) => sub?.unsubscribe())
+    .catch(() => {});
 }
 
 let installEvent = null;
@@ -100,4 +104,69 @@ export function useOnline() {
     };
   }, []);
   return online;
+}
+
+const pushSupported = () =>
+  import.meta.env.PROD && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+function keyBytes(base64) {
+  const text = (base64 + "=".repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
+}
+
+export function usePush(api) {
+  const [state, setState] = useState({ supported: pushSupported(), enabled: false, denied: false, busy: true });
+
+  useEffect(() => {
+    if (!pushSupported()) {
+      setState((s) => ({ ...s, busy: false }));
+      return;
+    }
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setState((s) => ({ ...s, enabled: Boolean(sub), denied: Notification.permission === "denied", busy: false })))
+      .catch(() => setState((s) => ({ ...s, busy: false })));
+  }, []);
+
+  const enable = async () => {
+    setState((s) => ({ ...s, busy: true }));
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setState((s) => ({ ...s, denied: permission === "denied", busy: false }));
+        return false;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const { key } = await api("/push/");
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && keyBytes(key).join() !== new Uint8Array(sub.options.applicationServerKey || []).join()) {
+        await sub.unsubscribe();
+        sub = null;
+      }
+      sub ||= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+      await api("/push/subscribe/", { method: "POST", body: sub.toJSON() });
+      setState((s) => ({ ...s, enabled: true, denied: false, busy: false }));
+      return true;
+    } catch {
+      setState((s) => ({ ...s, busy: false }));
+      return false;
+    }
+  };
+
+  const disable = async () => {
+    setState((s) => ({ ...s, busy: true }));
+    try {
+      const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+      if (sub) {
+        await api("/push/unsubscribe/", { method: "POST", body: { endpoint: sub.endpoint } }).catch(() => {});
+        await sub.unsubscribe();
+      }
+    } finally {
+      setState((s) => ({ ...s, enabled: false, busy: false }));
+    }
+  };
+
+  const test = () => api("/push/test/", { method: "POST" });
+
+  return { ...state, enable, disable, test };
 }
