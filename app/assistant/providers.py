@@ -8,7 +8,8 @@ from app.assistant.tools import TOOLS, run_tool
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_STEPS = 6
-GEMINI_TIMEOUT_MS = 15_000
+GEMINI_TIMEOUT_MS = 12_000
+GEMINI_BUDGET = 30
 RESTING = 300
 _resting: dict[str, float] = {}
 
@@ -52,7 +53,13 @@ class Run:
 async def ask(db, system_text, visitor_note, messages, user=None):
     run = Run(db, user)
     if active_provider() == "gemini":
-        answer = await _ask_gemini(system_text, visitor_note, messages, run)
+        try:
+            answer = await _ask_gemini(system_text, visitor_note, messages, run)
+        except AssistantError as error:
+            if error.code not in ("busy", "unavailable") or not settings.anthropic_api_key:
+                raise
+            logger.warning("AI assistant: Gemini failed (%s), asking Claude", error.code)
+            answer = await _ask_claude(system_text, visitor_note, messages, run)
     else:
         answer = await _ask_claude(system_text, visitor_note, messages, run)
     return {**answer, "navigate": run.navigate}
@@ -67,6 +74,8 @@ def _is_resting(model):
 
 
 async def _ask_gemini(system_text, visitor_note, messages, run):
+    import asyncio
+
     import httpx
     from google import genai
     from google.genai import errors, types
@@ -86,7 +95,7 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
             for tool in TOOLS
         ])],
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-        thinking_config=types.ThinkingConfig(thinking_level="medium"),
+        thinking_config=types.ThinkingConfig(thinking_level="low"),
         max_output_tokens=4096,
     )
     question = [
@@ -95,9 +104,18 @@ async def _ask_gemini(system_text, visitor_note, messages, run):
     ]
 
     models = sorted(settings.gemini_models, key=_is_resting)
+    deadline = time.monotonic() + GEMINI_BUDGET
     for i, model in enumerate(models):
+        left = deadline - time.monotonic()
+        if left < 3:
+            logger.warning("AI assistant: Gemini time budget is over before %s", model)
+            raise AssistantError(*UNAVAILABLE)
         try:
-            return await _gemini_answer(client, model, config, list(question), types, run)
+            return await asyncio.wait_for(_gemini_answer(client, model, config, list(question), types, run), left)
+        except TimeoutError:
+            logger.warning("AI assistant (Gemini %s): no answer within the time budget", model)
+            _rest(model)
+            raise AssistantError(*UNAVAILABLE)
         except errors.APIError as e:
             logger.warning("AI assistant (Gemini %s): %s %s", model, e.code, e.message)
             if e.code in (401, 403) or (e.code == 400 and "API key" in (e.message or "")):

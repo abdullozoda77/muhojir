@@ -961,7 +961,7 @@ A generic, single database configuration.
 
 ### `app/routers/questions.py`
 
-**What it is for:** /api/questions/: list (topic, search in questions and answers, show=unanswered/solved/mine, ordering=new or by last activity), summary (counts by topic, unanswered), ask (logged in, 10 a day), detail with answers (best first, then most liked), answer (30 an hour; the asker gets a notification), like (toggle, not your own), best (asker or editor, toggle; the author of the answer gets a notification), delete (author or editor), hide (PATCH, editors). The author's name is only the first name.
+**What it is for:** /api/questions/: list (topic, search in questions and answers, show=unanswered/solved/mine, ordering=new or by last activity), summary (counts by topic, unanswered), ask (logged in, 10 a day), detail with answers (best first, then most liked), answer (30 an hour; the asker gets a notification), like (toggle, not your own), best (asker or editor, toggle; the author of the answer gets a notification), delete (author or editor), hide (PATCH, editors). The author's name is only the first name. The person who asked cannot answer their own question (400 «You cannot answer your own question.»); the answer notification opens the question.
 
 ### `app/routers/scams.py`
 
@@ -1350,7 +1350,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `app/assistant/providers.py`
 
-**What it is for:** The AI models behind the assistant (the same design as in the Django version, but async). Google Gemini is used when GEMINI_API_KEY is set (it has a free tier), otherwise Claude with ANTHROPIC_API_KEY. Both get the same instructions and can call the same tools (open a page, patent prices, guides, jobs, my documents).
+**What it is for:** The AI models behind the assistant (the same design as in the Django version, but async). Google Gemini is used when GEMINI_API_KEY is set (it has a free tier), otherwise Claude with ANTHROPIC_API_KEY. Both get the same instructions and can call the same tools (open a page, patent prices, guides, jobs, my documents). Gemini thinks at the «low» level (faster answers); all Gemini tries share a 30-second budget with 12 seconds per model, so a slow or overloaded Gemini fails in about half a minute instead of ~50 seconds; when Gemini is busy or unavailable and ANTHROPIC_API_KEY is set, the same question goes to Claude.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2214,7 +2214,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/components/Assistant.jsx`
 
-**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Ошно (Oshno, "friend"). Guests see a «log in» button instead of the chat.
+**What it is for:** The AI assistant chat in the corner of every page (answers about migration, can open site pages). The assistant is called Ошно (Oshno, "friend"). Guests see a «log in» button instead of the chat. After 8 seconds of waiting «Thinking…» changes to «The AI is busy now, please wait a little…».
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2816,7 +2816,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/pages/Questions.jsx` and `QuestionDetail.jsx`
 
-**What it is for:** «Саволу ҷавоб» page (in «Боз»): search, chips Ҳама / Бе ҷавоб / Ҳалшуда / Саволҳои ман and topics, cards with answer count, «Савол додан» side sheet. Detail page: the question, answers with ♥ like, «Беҳтарин» for the asker, hide for editors, delete for the author, and the answer form. Only for logged-in users.
+**What it is for:** «Саволу ҷавоб» page (in «Боз»): search, chips Ҳама / Бе ҷавоб / Ҳалшуда / Саволҳои ман and topics, cards with answer count, «Савол додан» side sheet. Detail page: the question, answers with ♥ like, «Беҳтарин» for the asker, hide for editors, delete for the author, and the answer form. Only for logged-in users. Questions are a compact list in one card (about 66 px per row): a small box with the answer count (green when solved), the title in one line, then topic, city, author and time. The asker does not see the answer form on their own question; while there are no answers they see «Nobody has answered yet — we will tell you».
 
 ### `frontend/src/pages/Housing.jsx`
 

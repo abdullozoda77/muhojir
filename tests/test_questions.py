@@ -16,6 +16,8 @@ async def test_people_ask_answer_like_and_choose_the_best(client, user):
     assert question["mine"] and question["topic_label"] == "Ҳуҷҷатҳо ва патент"
     assert question["id"] in [q["id"] for q in (await client.get("/api/questions/?show=unanswered")).json()["results"]]
 
+    r = await client.post(f"/api/questions/{question['id']}/answers/", headers=asker, json={"body": "Ҷавоби худам ба худам"})
+    assert r.status_code == 400 and r.json()["detail"] == "You cannot answer your own question."
     r = await client.post(f"/api/questions/{question['id']}/answers/", headers=helper, json={"body": "Одатан 10 рӯзи корӣ."})
     assert r.status_code == 201, r.text
     answer = r.json()

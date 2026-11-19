@@ -167,6 +167,8 @@ async def delete_question(question_id: int, db: DB, user: CurrentUser):
 @router.post("/{question_id}/answers/", status_code=201, dependencies=[Depends(throttle("answer"))])
 async def answer_question(question_id: int, data: AnswerIn, db: DB, user: CurrentUser):
     question = await visible_question(db, question_id, None)
+    if question.user_id == user.id:
+        raise ApiError("You cannot answer your own question.", 400)
     answer = Answer(question_id=question.id, user_id=user.id, body=data.body)
     db.add(answer)
     await db.flush()
@@ -174,9 +176,8 @@ async def answer_question(question_id: int, data: AnswerIn, db: DB, user: Curren
     question.active_at = utcnow()
     await db.commit()
     await db.refresh(answer)
-    if question.user_id != user.id:
-        await notify(db, question.user, "Ба саволи шумо ҷавоб доданд",
-                     f"«{question.title}»\n{owner_name(user)}: {answer.body[:300]}")
+    await notify(db, question.user, "Ба саволи шумо ҷавоб доданд",
+                 f"«{question.title}»\n{owner_name(user)}: {answer.body[:300]}", url=f"/questions/{question.id}")
     return answer_json(answer, question, user)
 
 

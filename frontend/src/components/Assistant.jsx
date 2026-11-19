@@ -66,6 +66,14 @@ export default function Assistant() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    setSlow(false);
+    if (!busy) return;
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(timer);
+  }, [busy]);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -185,7 +193,7 @@ export default function Assistant() {
               {busy && (
                 <span className="flex items-center gap-2 self-start text-body-sm text-on-surface-variant">
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {t("Фикр мекунам…")}
+                  {slow ? t("AI ҳоло банд аст, каме интизор шавед…") : t("Фикр мекунам…")}
                 </span>
               )}
               {error && <p role="alert" className="rounded-xl bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}

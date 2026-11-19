@@ -124,3 +124,24 @@ async def test_every_page_and_items_open(client, user):
         assert error
         text, error, _ = await run_tool(db, "latest_news", {})
         assert not error
+
+
+async def test_gemini_failure_falls_back_to_claude(monkeypatch):
+    async def gemini_down(*args):
+        raise providers.AssistantError(*providers.UNAVAILABLE)
+
+    async def claude_ok(system_text, visitor_note, messages, run):
+        return {"reply": "Салом!", "refused": False, "truncated": False}
+
+    monkeypatch.setattr(providers.settings, "gemini_api_key", "g-test")
+    monkeypatch.setattr(providers.settings, "anthropic_api_key", "")
+    monkeypatch.setattr(providers, "_ask_gemini", gemini_down)
+    monkeypatch.setattr(providers, "_ask_claude", claude_ok)
+    try:
+        await providers.ask(None, "", "", [{"role": "user", "content": "salom"}])
+        raise AssertionError("expected an error without a Claude key")
+    except providers.AssistantError as error:
+        assert error.code == "unavailable"
+    monkeypatch.setattr(providers.settings, "anthropic_api_key", "a-test")
+    answer = await providers.ask(None, "", "", [{"role": "user", "content": "salom"}])
+    assert answer["reply"] == "Салом!"
