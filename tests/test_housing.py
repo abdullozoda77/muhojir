@@ -106,7 +106,7 @@ def tg_page(posts):
     return "<html>" + "".join(blocks) + "</html>"
 
 
-async def test_telegram_import_keeps_only_real_offers(client):
+async def test_telegram_import_keeps_only_real_offers(client, user):
     from datetime import timedelta
 
     import httpx
@@ -151,14 +151,16 @@ async def test_telegram_import_keeps_only_real_offers(client):
     assert counts["created"] == 2 and counts["duplicates"] == 1 and counts["skipped"] == 3
     assert again["created"] == 0 and again["known"] == 2
 
-    r = await client.get("/api/housing/?city=Тестоград&source=telegram")
+    guest = await client.get("/api/housing/?city=Тестоград&source=telegram")
+    assert all(h["phone"] == h["whatsapp"] == h["telegram"] == "" for h in guest.json()["results"])
+    r = await client.get("/api/housing/?city=Тестоград&source=telegram", headers=user[0])
     assert r.json()["count"] == 2
     room = next(h for h in r.json()["results"] if h["kind"] == "room")
     assert room["kind"] == "room" and room["price"] == 16000 and room["for_whom"] == "men"
     assert room["registration"] and room["utilities_included"] and room["phone"] == "+79991112233"
     assert room["source_name"] == "@test_flats" and room["source_url"] == "https://t.me/test_flats/1"
     assert len(room["photos"]) == 1 and room["is_mine"] is False
-    r = await client.get("/api/housing/?search=Балтийская")
+    r = await client.get("/api/housing/?search=Балтийская", headers=user[0])
     flat = next(h for h in r.json()["results"] if h["source"] == "telegram")
     assert flat["kind"] == "flat" and flat["rooms"] == 3 and flat["price"] == 75000 and flat["telegram"] == "good_owner"
 

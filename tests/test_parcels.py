@@ -27,6 +27,10 @@ async def test_people_post_trips_and_parcels(client, user):
     assert trip["id"] in ids(await client.get("/api/parcels/?kind=carry&to_city=хуҷанд"))
     assert trip["id"] not in ids(await client.get("/api/parcels/?kind=send"))
     assert (await client.get("/api/parcels/summary/")).json()["kinds"]["send"] >= 1
+    seen = next(p for p in (await client.get("/api/parcels/")).json()["results"] if p["id"] == trip["id"])
+    assert seen["phone"] == seen["whatsapp"] == seen["telegram"] == ""
+    seen = next(p for p in (await client.get("/api/parcels/", headers=editor)).json()["results"] if p["id"] == trip["id"])
+    assert seen["phone"] == "+79991234567"
 
     await set_role(data["user"]["id"], "editor")
     assert (await client.patch(f"/api/parcels/{trip['id']}/", headers=traveller, json={"is_hidden": True})).status_code == 403

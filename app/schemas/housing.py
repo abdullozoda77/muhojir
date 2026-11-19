@@ -70,6 +70,8 @@ def housing_json(h, viewer=None):
         "source": h.source, "source_name": h.source_name, "source_url": h.source_url,
         "created_at": h.created_at, "updated_at": h.updated_at,
     }
+    if viewer is None:
+        data.update(phone="", whatsapp="", telegram="")
     if viewer and (viewer.id == h.owner_id or viewer.is_editor):
         data["reject_reason"] = h.reject_reason
     return data

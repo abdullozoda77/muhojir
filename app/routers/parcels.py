@@ -57,6 +57,8 @@ def parcel_json(p, viewer=None):
         "mine": bool(viewer and viewer.id == p.user_id),
         "can_delete": bool(viewer and (viewer.is_editor or viewer.id == p.user_id)),
     }
+    if viewer is None:
+        data.update(phone="", whatsapp="", telegram="")
     if viewer and viewer.is_editor:
         data["is_hidden"] = p.is_hidden
     return data
