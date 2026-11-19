@@ -458,16 +458,6 @@ A generic, single database configuration.
 | `TJ_CITIES` | const | 20 cities of Tajikistan for the «Ба» field suggestions. |
 | `Parcel` | model | user, kind, from_city (Russia), to_city (Tajikistan), travel_date, weight_kg, price_per_kg (₽), description, phone/whatsapp/telegram, is_hidden (editors). |
 
-### `app/models/money.py`
-
-**What it is for:** Money the user sent home, for the monthly report. Private: only the user sees their rows.
-
-| Name | Kind | What it does |
-|---|---|---|
-| `REMITTANCE_SERVICES` | const | Transfer services: korona, unistream, sber, alif, contact, card, hand (cash / through friends), other. |
-| `Remittance` | class · table `remittances` | user, amount and fee in roubles, service, recipient, sent_at, note, created_at; `service_label` is the service name. |
-
-
 ### `app/models/questions.py`
 
 **What it is for:** Questions and answers between people (/questions): a migrant asks, others who went through it answer.
@@ -971,15 +961,11 @@ A generic, single database configuration.
 
 ### `app/routers/money.py`
 
-**What it is for:** /api/money/: the user's transfers home and the monthly report «how much I sent and how much I paid for the patent». Patent and document payments come from the receipts archive (Payment), so they are not entered twice.
+**What it is for:** /api/money/report/?year=: the monthly report of what the user paid for the patent and documents. It reads the receipts archive (Payment), so nothing is entered twice.
 
 | Name | Kind | What it does |
 |---|---|---|
-| `services` | GET /services/ | The transfer services for the form. |
-| `list_remittances` | GET /remittances/?year= | The user's transfers of that year (this year by default), newest first. |
-| `create_remittance` | POST /remittances/ | Adds a transfer: amount > 0, fee ≥ 0, known service, date not in the future (today in Moscow by default). |
-| `delete_remittance` | DELETE /remittances/{id}/ | Deletes one of the user's own transfers (404 for others). |
-| `report` | GET /report/?year= | 12 months with sent, fees, patent, transfers and payments counts; totals; sums per service (largest first); years that have data. |
+| `report` | GET /report/?year= | 12 months with paid and payments count, total, payments, sums per document (largest first), years that have payments. |
 
 
 ### `app/routers/questions.py`
@@ -1772,6 +1758,16 @@ Every alert notification carries a link to the jobs list with the alert's filter
 | `downgrade()` | function | Drops it. |
 
 
+### `alembic/versions/0031_drop_remittances.py`
+
+**What it is for:** Drops the remittances table again (the «I sent money» part was removed). Revision ID: 0031 Revises: 0030
+
+| Name | Kind | What it does |
+|---|---|---|
+| `upgrade()` | function | Drops the table. |
+| `downgrade()` | function | Creates it again. |
+
+
 ### `tests/conftest.py`
 
 **What it is for:** Every test run gets its own SQLite database, made by the real migrations (so the seeded content is there: document types, guides, 83 regions, news, 100 exam questions). Email is not sent; codes are read from the outbox. With TEST_DATABASE_URL (an empty PostgreSQL database) the same tests run on PostgreSQL.
@@ -1948,7 +1944,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `tests/test_money.py`
 
-**What it is for:** Transfers and the monthly report: validation (amount, future date, unknown service), January totals with a patent payment from the receipts archive, the previous year, per-service sums, and that another user sees and deletes nothing.
+**What it is for:** The monthly report: two payments in January are summed, February is empty, the previous year is separate, sums per document, another user sees nothing, and the removed /remittances/ address answers 404.
 
 
 ### `tests/test_rates.py`
@@ -2989,13 +2985,12 @@ Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «
 
 ### `frontend/src/pages/Report.jsx`
 
-**What it is for:** /report «Monthly report»: year switcher, four tiles (sent home with the monthly average, patent and documents, transfer fees, total), a grouped bar chart month by month (blue = sent home, orange = patent; colors checked for color-blind readers in both themes, legend, round axis steps, a tooltip per month with both sums and the fee), a table of the months with data, sums per service, the list of transfers with delete and the «I sent money» drawer.
+**What it is for:** /report «Monthly report» of patent and document payments: year switcher, three tiles (total, monthly average, number of payments), a bar chart month by month (one series, round axis steps, tooltip with sum and count), a table of months with payments and sums per document.
 
 | Name | Kind | What it does |
 |---|---|---|
 | `MonthChart` | function | The SVG bar chart with hover/tap tooltip. |
 | `niceScale(value)` | function | Round axis steps (1/2/5 × 10ⁿ) and the top value. |
-| `AddTransfer` | function | The form: amount, fee, service, recipient, date, note. |
 | `Report` | export default function | The page. |
 
 
