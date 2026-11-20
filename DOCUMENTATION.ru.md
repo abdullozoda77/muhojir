@@ -2601,7 +2601,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Имя | Вид | Что делает |
 |---|---|---|
-| `season(day)` | экспортируемая функция | "autumn" в сентябре–ноябре, "winter" в декабре–феврале, иначе null. |
+| `devSeason()` | функция | Только в `npm run dev` (import.meta.env.DEV; в продакшен-сборку не попадает): `?season=winter`, `autumn` или `none` в адресе запоминается в localStorage (dev-season) и важнее даты; другое значение (например `?season=auto`) сбрасывает. |
+| `season(day)` | экспортируемая функция | Сезон из dev, если задан, иначе "autumn" в сентябре–ноябре, "winter" в декабре–феврале, иначе null. |
 | `SeasonFall` | экспортируемая функция | Осенью Leaffall, зимой Snowfall, весной и летом ничего; density передаётся дальше. |
 
 ### `frontend/src/components/Shop.jsx`

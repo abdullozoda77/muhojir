@@ -2604,7 +2604,8 @@ cd frontend && npm run dev            # сайт :5175, API :8002
 
 | Ном | Навъ | Чӣ кор мекунад |
 |---|---|---|
-| `season(day)` | функсияи экспортӣ | "autumn" дар сентябр–ноябр, "winter" дар декабр–феврал, вагарна null. |
+| `devSeason()` | функсия | Танҳо дар `npm run dev` (import.meta.env.DEV; дар сохти асосӣ нест): `?season=winter`, `autumn` ё `none` дар суроға дар localStorage (dev-season) нигоҳ дошта мешавад ва аз сана болотар аст; қимати дигар (масалан `?season=auto`) онро тоза мекунад. |
+| `season(day)` | функсияи экспортӣ | Фасли dev агар бошад, вагарна "autumn" дар сентябр–ноябр, "winter" дар декабр–феврал, вагарна null. |
 | `SeasonFall` | функсияи экспортӣ | Тирамоҳ Leaffall, зимистон Snowfall, баҳор ва тобистон ҳеҷ чиз; density гузаронида мешавад. |
 
 ### `frontend/src/components/Shop.jsx`

@@ -2615,7 +2615,8 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 | Name | Kind | What it does |
 |---|---|---|
-| `season(day)` | export function | "autumn" in September–November, "winter" in December–February, otherwise null. |
+| `devSeason()` | function | Only in `npm run dev` (import.meta.env.DEV; cut out of the production build): `?season=winter`, `autumn` or `none` in the address is remembered in localStorage (dev-season) and wins over the date; any other value (e.g. `?season=auto`) clears it. |
+| `season(day)` | export function | The dev season if set, else "autumn" in September–November, "winter" in December–February, otherwise null. |
 | `SeasonFall` | export function | Leaffall in autumn, Snowfall in winter, nothing in spring and summer; density is passed on. |
 
 ### `frontend/src/components/Shop.jsx`
