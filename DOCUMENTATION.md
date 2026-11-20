@@ -2654,8 +2654,11 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 | Name | Kind | What it does |
 |---|---|---|
-| `makeSprite` | function | One snowflake picture (sprite): sharp or soft (out of focus), for light and dark theme. |
-| `Snowfall` | export function | Slow snow: far flakes small and dim, near ones bigger, a few big blurred ones in front; each rocks gently and shimmers. density scales the number of flakes; a resize keeps the flakes that are falling. With "reduce motion" it stands still. |
+| `hexagon(g, r)` | function | Draws a hexagon path. |
+| `crystalDesign()` | function | A random design of a real six-armed ice crystal: arm length and width, 3–5 pairs of side branches at 60° (some with small twigs), a hexagonal plate at the tips or not, the size of the centre plate and 1–2 rings in it. |
+| `spike`, `armShape` | function | A tapered pointed blade; one arm with its branches, twigs and tip plate, and the ridge lines along them. |
+| `makeCrystal(d, dark, soft)` | function | Draws the crystal 6 times around the centre: see-through icy fill with a soft blue glow, bright edges, white ridges and a hexagonal centre plate with rings. Blue-edged for the light theme, white-glowing for the dark one; soft = blurred (out of focus). |
+| `Snowfall` | export function | Slow snow of crystal snowflakes (8 designs, 10–40 px; about 36–120 on a screen): far flakes small and dim, near ones bigger, each turns slowly and tilts as it falls; a few big blurred ones in front; each rocks gently and shimmers. density scales the number of flakes; a resize keeps the flakes that are falling. With "reduce motion" it stands still. |
 
 ### `frontend/src/components/SocialLogin.jsx`
 
