@@ -2470,6 +2470,36 @@ Every alert notification carries a link to the jobs list with the alert's filter
 | `MenuSheet` | function | Phones: every section as big tiles in a sheet from the bottom. While it is open the page behind is dimmed and locked (useScrollLock) and touches do not reach it; Escape closes it. |
 | `Layout` | export function | The whole frame of the site (header, page, footer, assistant). Behind every page a light SeasonFall layer (density 0.35, on the home page 0.6) falls from the top of the screen to the bottom; the page content (z-[1]) is above it, so leaves show only between the cards. |
 
+### `frontend/src/components/Blossomfall.jsx`
+
+**What it is for:** Spring (March–May): apricot and almond blossoms and single petals falling on a canvas.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `TONES`, `LIGHT_TONES` | const | Petal colours: white-pink for the dark theme, pinker for the light one so they show on the cream background. |
+| `petalPath`, `fillPetal` | function | A rounded petal with a small notch, filled from a pink base to a light tip, with an edge and a middle vein. |
+| `makePetal`, `makeBlossom` | function | A single petal sprite; a five-petal blossom with a pink heart and yellow-tipped stamens. |
+| `Blossomfall` | export function | About a fifth are whole blossoms (26–52 px), the rest petals (12–28 px); they sway, spin and flip as they fall, with a gentle wind. density scales the count; with "reduce motion" it stands still. |
+
+### `frontend/src/components/Summerglow.jsx`
+
+**What it is for:** Summer (June–August): fireflies in the dark theme, dandelion seeds in the light theme.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `makeGlow` | function | The yellow-green glow sprite of a firefly. |
+| `makeSeed` | function | A dandelion seed: stem, seed and an umbrella of fine filaments with white tips. |
+| `Summerglow` | export function | Dark theme: fireflies wander slowly, turn and pulse (light up and fade). Light theme: seeds float from left to right with gusts of wind, bobbing and tilting. density scales the count; with "reduce motion" it stands still. |
+
+### `frontend/src/components/Navruz.jsx`
+
+**What it is for:** The «Наврӯз муборак!» greeting card at the top of the home page, only on 20–25 March (isNavruz).
+
+| Name | Kind | What it does |
+|---|---|---|
+| `Sabza` | function | SVG of sabza (green wheat sprouts) in a dish tied with a red ribbon. |
+| `NavruzBanner` | export function | The card: «21 март — Наврӯзи оламафрӯз», «Наврӯз муборак!» and a wish for the family at home; green-pink in light, deep green in dark; nothing on other days. |
+
 ### `frontend/src/components/Leaffall.jsx`
 
 **What it is for:** Autumn leaves slowly falling on a canvas (seasonal decoration of the login and registration page).
@@ -2615,9 +2645,10 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 | Name | Kind | What it does |
 |---|---|---|
-| `devSeason()` | function | Only in `npm run dev` (import.meta.env.DEV; cut out of the production build): `?season=winter`, `autumn` or `none` in the address is remembered in localStorage (dev-season) and wins over the date; any other value (e.g. `?season=auto`) clears it. |
-| `season(day)` | export function | The dev season if set, else "autumn" in September–November, "winter" in December–February, otherwise null. |
-| `SeasonFall` | export function | Leaffall in autumn, Snowfall in winter, nothing in spring and summer; density is passed on. |
+| `devSeason()` | function | Only in `npm run dev` (import.meta.env.DEV; cut out of the production build): `?season=spring`, `navruz`, `summer`, `autumn`, `winter` or `none` in the address is remembered in localStorage (dev-season) and wins over the date; any other value (e.g. `?season=auto`) clears it. |
+| `isNavruz(day)` | export function | True on 20–25 March (or with the dev season navruz). |
+| `season(day)` | export function | The dev season if set (navruz counts as spring), else "spring" in March–May, "summer" in June–August, "autumn" in September–November, "winter" in December–February. |
+| `SeasonFall` | export function | Blossomfall in spring (1.7× more petals on Navruz), Summerglow in summer, Leaffall in autumn, Snowfall in winter; density is passed on. |
 
 ### `frontend/src/components/Shop.jsx`
 
@@ -2859,7 +2890,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner). Among the service tiles two big ones lead to the courses: «Russian course» (/course) and «Driving course» (/driving). The «Кори гурӯҳӣ», «Ҷойи кор» and «Манзил» tiles are big too; the grid fills holes (grid-flow-dense) and on phones the last tile takes the full row when the count is odd.
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner). Among the service tiles two big ones lead to the courses: «Russian course» (/course) and «Driving course» (/driving). The «Кори гурӯҳӣ», «Ҷойи кор» and «Манзил» tiles are big too; the grid fills holes (grid-flow-dense) and on phones the last tile takes the full row when the count is odd. On 20–25 March NavruzBanner is shown first.
 
 | Name | Kind | What it does |
 |---|---|---|

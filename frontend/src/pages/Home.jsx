@@ -11,6 +11,7 @@ import { date, num, todayTitle } from "../format.js";
 import { JobRow } from "../components/JobCard.jsx";
 import RubleRate from "../components/RubleRate.jsx";
 import FeedbackBanner from "../components/Feedback.jsx";
+import NavruzBanner from "../components/Navruz.jsx";
 import { Emblem } from "../components/Pattern.jsx";
 import { STATUS, Skeleton, statusText } from "../components/ui.jsx";
 import { CountUp, EASE, Intro, IntroItem, Reveal, Stagger, StaggerItem, m, startShown } from "../components/motion.jsx";
@@ -440,6 +441,7 @@ export default function Home() {
   if (loading) return <Skeleton className="h-96" />;
   return (
     <div className="flex flex-col gap-14 md:gap-20">
+      <NavruzBanner />
       {user ? <MigrantHome user={user} /> : <GuestHome />}
       <Reveal>
         <RubleRate />

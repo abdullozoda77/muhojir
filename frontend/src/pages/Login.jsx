@@ -128,6 +128,8 @@ function CardLeaves() {
 }
 
 const SKIES = {
+  spring: "from-[#fbe9ef] via-[#f6f1ea] to-[#eaf5e4] dark:from-[#0a0f26] dark:via-[#1b1636] dark:to-[#22182c]",
+  summer: "from-[#e3f1fb] via-[#f4f2e6] to-[#f8eed6] dark:from-[#03091c] dark:via-[#081a30] dark:to-[#0c2a2a]",
   autumn: "from-[#f3e6d4] via-[#f6ecdd] to-[#f1dcc2] dark:from-[#0b0d24] dark:via-[#1a1530] dark:to-[#2b1a22]",
   winter: "from-[#dfe7f3] via-[#eeebe4] to-[#f6f2ea] dark:from-[#030820] dark:via-[#07123a] dark:to-[#0d1d52]",
   none: "from-[#e4edf6] via-[#f2f0ea] to-[#f6f2ea] dark:from-[#050b24] dark:via-[#0a1638] dark:to-[#10204f]",
