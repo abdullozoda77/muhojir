@@ -15,6 +15,7 @@ from app.models import FEEDBACK_STATUSES, Feedback
 from app.models import HOUSING_FOR, HOUSING_KINDS, HOUSING_STATUSES, Housing
 from app.models import ORDER_STATUSES, Translation
 from app.models import PARCEL_KINDS, QUESTION_TOPICS, Answer, Parcel, Question
+from app.models import BRIGADE_ORDER_STATUSES, BRIGADE_TRADES, Brigade, BrigadeMember, BrigadeOrder, BrigadeReview
 from app.models import SCAM_KINDS, SCAM_SCHEMES, SCAM_STATUSES, ScamReport, scam_key
 
 ALL = ("list", "details", "create", "edit", "delete", "export")
@@ -656,6 +657,49 @@ class ParcelAdmin(Base, model=Parcel):
     can_create = False
 
 
+class BrigadeAdmin(Base, model=Brigade):
+    name, name_plural, icon, category = "Гурӯҳи корӣ", "Кори гурӯҳӣ", "fa-solid fa-people-group", "Корбарон"
+    column_list = [Brigade.name, Brigade.trade, Brigade.city, Brigade.size, Brigade.user, Brigade.is_free, Brigade.is_hidden, Brigade.created_at]
+    column_searchable_list = [Brigade.name, Brigade.city, Brigade.description]
+    column_sortable_list = [Brigade.created_at, Brigade.size]
+    column_default_sort = [(Brigade.created_at, True)]
+    column_formatters = {"trade": lambda m, a: m.trade_label}
+    form_columns = [Brigade.is_hidden, Brigade.is_free, Brigade.name, Brigade.trade, Brigade.city, Brigade.size,
+                    Brigade.experience_years, Brigade.price_note, Brigade.description, Brigade.phone, Brigade.whatsapp, Brigade.telegram]
+    form_choices = {"trade": list(BRIGADE_TRADES.items())}
+    can_create = False
+
+
+class BrigadeMemberAdmin(Base, model=BrigadeMember):
+    name, name_plural, icon, category = "Аъзои гурӯҳ", "Аъзоёни гурӯҳ", "fa-solid fa-user-plus", "Корбарон"
+    column_list = [BrigadeMember.brigade, BrigadeMember.user, BrigadeMember.skill, BrigadeMember.status, BrigadeMember.created_at]
+    column_default_sort = [(BrigadeMember.created_at, True)]
+    form_columns = [BrigadeMember.skill, BrigadeMember.status]
+    form_choices = {"status": [("pending", "Интизор"), ("accepted", "Аъзо")]}
+    can_create = False
+
+
+class BrigadeOrderAdmin(Base, model=BrigadeOrder):
+    name, name_plural, icon, category = "Фармоиши гурӯҳ", "Фармоишҳои гурӯҳ", "fa-solid fa-handshake", "Корбарон"
+    column_list = [BrigadeOrder.brigade, BrigadeOrder.user, BrigadeOrder.city, BrigadeOrder.budget, BrigadeOrder.status, BrigadeOrder.created_at]
+    column_searchable_list = [BrigadeOrder.description, BrigadeOrder.city]
+    column_default_sort = [(BrigadeOrder.created_at, True)]
+    column_formatters = {"status": lambda m, a: m.status_label, "description": lambda m, a: m.description[:120]}
+    form_columns = [BrigadeOrder.status, BrigadeOrder.description, BrigadeOrder.city, BrigadeOrder.start_date,
+                    BrigadeOrder.workers, BrigadeOrder.budget, BrigadeOrder.phone]
+    form_choices = {"status": list(BRIGADE_ORDER_STATUSES.items())}
+    can_create = False
+
+
+class BrigadeReviewAdmin(Base, model=BrigadeReview):
+    name, name_plural, icon, category = "Баҳои гурӯҳ", "Баҳоҳои гурӯҳ", "fa-solid fa-star", "Корбарон"
+    column_list = [BrigadeReview.brigade, BrigadeReview.user, BrigadeReview.rating, BrigadeReview.text, BrigadeReview.created_at]
+    column_default_sort = [(BrigadeReview.created_at, True)]
+    column_formatters = {"text": lambda m, a: m.text[:120]}
+    form_columns = [BrigadeReview.rating, BrigadeReview.text]
+    can_create = False
+
+
 VIEWS = [
     UserAdmin, NotificationAdmin, EmailCodeAdmin,
     DocumentTypeAdmin, GuideStepAdmin, RegionAdmin, MigrationCenterAdmin, LawNewsAdmin, ExamQuestionAdmin,
@@ -667,4 +711,5 @@ VIEWS = [
     CertificateAdmin, ExamAttemptAdmin, LessonProgressAdmin,
     ExchangeRateAdmin, FeedbackAdmin, ScamReportAdmin, HousingAdmin, TranslationAdmin,
     QuestionAdmin, AnswerAdmin, ParcelAdmin,
+    BrigadeAdmin, BrigadeMemberAdmin, BrigadeOrderAdmin, BrigadeReviewAdmin,
 ]

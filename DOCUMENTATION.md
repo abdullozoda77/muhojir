@@ -448,6 +448,20 @@ A generic, single database configuration.
 | `ExamAttempt` | class · table `exam_attempts` | One try of a level exam: the questions with their shuffled option order, the answers, right answers count, passed, start, deadline and finish time. A passed attempt opens the next level. |
 | `Certificate` | class · table `certificates` | The one certificate for the whole course, issued after the level 7 exam. code is the public check code, number looks like MJ-RU-2026-00001, percent is the average of the best results of all levels. Editors can revoke it (is_revoked). |
 
+### `app/models/brigades.py`
+
+**What it is for:** «Кори гурӯҳӣ» (work groups, /groups): masters build a work group, other masters ask to join, a customer hires the whole group at once and rates it after the work. In code and in the API the group is called a brigade.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `BRIGADE_TRADES` | const | 13 kinds of work: repair, build, tile, plumbing, electric, welding, roof, facade, paint, cleaning, movers, garden, other. |
+| `BRIGADE_MEMBER_STATUSES` | const | pending (asked to join), accepted (member). |
+| `BRIGADE_ORDER_STATUSES` | const | new, accepted, declined, done. |
+| `Brigade` | model · table `brigades` | The group: user (leader), name, trade, city, size (people in the group, 2–100), experience_years, price_note (free text like «аз 1500 ₽ барои 1 м²»), description, phone/whatsapp/telegram, is_free (takes orders now), is_hidden (editors). |
+| `BrigadeMember` | model · table `brigade_members` | A master on the site who asked to join (skill, status). One row per group and user. |
+| `BrigadeOrder` | model · table `brigade_orders` | A hire request from a customer: description, city, start_date, workers, budget (₽), phone, status. |
+| `BrigadeReview` | model · table `brigade_reviews` | 1–5 stars and a text, one per finished order, only from the customer of that order. |
+
 ### `app/models/parcels.py`
 
 **What it is for:** «Посылка ба Ватан» (/parcels): people going to Tajikistan offer to carry parcels, people with a parcel look for someone going.
@@ -954,6 +968,10 @@ A generic, single database configuration.
 | Name | Kind | What it does |
 |---|---|---|
 | `rates(db)` | async function · `GET /api/rates/` | The latest rate of each source and a 30-day history [{day, nbt, cbr}]. Fetches today's rate first if it is missing. |
+
+### `app/routers/brigades.py`
+
+**What it is for:** /api/brigades/ — the work groups (migration 0032). List (trade, city, free=true, search; mine=true shows the groups the user leads or is a member of; free groups first; every row has rating, reviews, members on the site and jobs done), summary (count per trade, free count; for a logged-in user also incoming_new, outgoing and leads), create (logged in, 5 a day, a contact is required), detail (team: leader, members; pending requests only for the leader and the asker; my_status; last 30 reviews), PATCH (leader edits, editors also hide), delete (leader or editor). Join: POST/DELETE /{id}/join/ (20 a day; the leader gets a notification), the leader accepts or removes with PATCH/DELETE /{id}/members/{member_id}/. Hire: POST /{id}/orders/ (10 a day, not your own group, the date not in the past; the leader gets a notification). Orders: GET /orders/?box=in|out, PATCH /orders/{id}/ by the leader (new → accepted/declined, accepted → done/declined; the customer gets a notification), DELETE by the customer while new, POST /orders/{id}/review/ by the customer once after done. The customer's phone is shown only to the leader and the customer. Guests get empty contacts. Notifications open /groups.
 
 ### `app/routers/parcels.py`
 
@@ -2837,7 +2855,7 @@ Every alert notification carries a link to the jobs list with the alert's filter
 
 ### `frontend/src/pages/Home.jsx`
 
-**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner). Among the service tiles two big ones lead to the courses: «Russian course» (/course) and «Driving course» (/driving).
+**What it is for:** The home page. Guests: the headline, live numbers, every service as a tile, how it works, fresh jobs and law news. Logged in: a greeting with the nearest deadline, the documents, the services. At the end of both: the official rouble to somoni rate (RubleRate) and the feedback block (FeedbackBanner). Among the service tiles two big ones lead to the courses: «Russian course» (/course) and «Driving course» (/driving). The «Кори гурӯҳӣ», «Ҷойи кор» and «Манзил» tiles are big too; the grid fills holes (grid-flow-dense) and on phones the last tile takes the full row when the count is odd.
 
 | Name | Kind | What it does |
 |---|---|---|
@@ -2857,6 +2875,18 @@ Every alert notification carries a link to the jobs list with the alert's filter
 | `QuickActions` | function | The card beside the greeting: «Add document» (opens the form via /documents?add=1, shows the nearest deadline with a status dot), «Check patent» (/checks) and «Rouble rate» (/rate, today's 1 000 ₽ in somoni). The nearest deadline is the first tile in «Documents status». |
 | `MigrantHome` | function | — |
 | `Home` | export function | — |
+
+### `frontend/src/pages/Brigades.jsx` and `BrigadeDetail.jsx`
+
+**What it is for:** /groups — «Кори гурӯҳӣ» (in «Боз» and a big tile on the home page). Two big buttons («Устоед? Гурӯҳ созед», «Гурӯҳ лозим аст?»), tabs Ҳамаи гурӯҳҳо / Гурӯҳҳои ман / Фармоишҳо (red badge with new orders), chips by kind of work, city filter and «only free» switch, cards with kind, free/busy, city, size, experience, price, rating and leader. The «Фармоишҳо» tab has «Ба гурӯҳи ман» (accept, decline, work done; the customer's phone) and «Фармоишҳои ман» (cancel a new order; stars and text after the work is done). /groups/:id: the group with facts, contacts, «Ба кор даъват кардан» (hire form), «Ҳамроҳ шудан» (join with a skill), leave or cancel the request, members with accept/remove for the leader, the free switch, edit, delete, hide for editors, the reviews and tips before work. Only for logged-in users.
+
+| Name | Kind | What it does |
+|---|---|---|
+| `TRADES`, `tradeOf` | const, function | Kinds of work with icons. |
+| `Contacts`, `FreeBadge` | function | Phone/WhatsApp/Telegram buttons; the «free / busy» badge. |
+| `BrigadeForm` | export function | Side sheet to create or edit a group. |
+| `OrderCard`, `Orders` | function | An order with the actions of its side; the two order boxes. |
+| `HireForm`, `JoinForm`, `TeamList` | function | Hire form, join form, members list (BrigadeDetail.jsx). |
 
 ### `frontend/src/pages/Parcels.jsx`
 

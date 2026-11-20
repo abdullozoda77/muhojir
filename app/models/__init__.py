@@ -1,4 +1,7 @@
 from app.models.accounts import EmailCode, Notification, RevokedToken, User
+from app.models.brigades import (
+    BRIGADE_MEMBER_STATUSES, BRIGADE_ORDER_STATUSES, BRIGADE_TRADES, Brigade, BrigadeMember, BrigadeOrder, BrigadeReview,
+)
 from app.models.course import Certificate, CoursePlace, ExamAttempt, LessonProgress
 from app.models.documents import (
     DocumentType, ExamQuestion, GuideStep, LawNews, MigrationCenter, Payment, Region, ReminderLog, UserDocument,
@@ -38,6 +41,8 @@ __all__ = [
     "HOUSING_KINDS", "HOUSING_FOR", "HOUSING_PERIODS", "HOUSING_STATUSES", "Housing", "HousingPhoto",
     "SCAM_KINDS", "SCAM_SCHEMES", "SCAM_STATUSES", "ScamReport", "scam_key", "search_keys",
     "PARCEL_KINDS", "TJ_CITIES", "Parcel",
+    "BRIGADE_TRADES", "BRIGADE_MEMBER_STATUSES", "BRIGADE_ORDER_STATUSES", "Brigade", "BrigadeMember", "BrigadeOrder",
+    "BrigadeReview",
     "QUESTION_TOPICS", "Question", "Answer", "AnswerLike",
     "LANGUAGES", "DOC_TYPES", "TRANSLATION_KINDS", "ORDER_STATUSES", "Translation",
 ]
