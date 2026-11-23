@@ -84,7 +84,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin === self.location.origin) {
-    if (/^\/(admin|static|swagger|redoc)(\/|$)/.test(url.pathname)) return;
+    if (/^\/(admin|static|swagger|redoc|app)(\/|$)/.test(url.pathname)) return;
     if (/^\/[^/]+\.(txt|xml|json)$/.test(url.pathname) && url.pathname !== "/manifest.webmanifest") return;
     if (request.mode === "navigate") {
       event.respondWith(networkFirst(request, "/"));
