@@ -73,6 +73,7 @@ The API pages `/swagger/` and `/redoc/` no longer show long descriptions of endp
 - `frontend/src/` — app core: routing, API, login, languages, helpers — 14 files
 - `frontend/src/components/` — reusable parts of pages — 27 files
 - `frontend/src/pages/` — one file per page of the site — 27 files
+- `mobile/` — the Flutter phone app (Android / iOS), dark theme — 14 files
 
 
 ---
@@ -3215,3 +3216,32 @@ Housing page has a big blue «Ҳамхона мечӯед?» card at the top: «
 | `HistoryItem` | function | One translation: AI or official, status, price and the translator's note, show the text, open my file or the finished translation, cancel, delete. |
 | `Translate` | export function | The page: header, the two tabs and the history. |
 
+## `mobile/` — the Flutter phone app
+
+**What it is for:** the same Muhojir on the phone (Android, iOS; web build for testing). Dark theme only, Tajik UI,
+talks to the live API `https://muhojir.king.tj/api` (another address: `--dart-define=API_URL=...`). First version:
+login, home, jobs, housing, my documents, profile. Flutter 3.50+: Material comes from the `material_ui` package.
+
+```bash
+cd mobile && flutter pub get
+flutter run                       # phone or emulator
+flutter build apk --release       # Android file
+flutter analyze && flutter test
+```
+
+| File | What it does |
+|---|---|
+| `pubspec.yaml` | Name, version and packages: `material_ui`, `http`, `shared_preferences` (tokens), `url_launcher` (calls, links). |
+| `lib/main.dart` | Starts the app: dark status bar, `Session.start()`, shows login or the `Shell` (bottom bar: Home, Jobs, Housing, Documents, Profile; tabs keep their state in an `IndexedStack`). |
+| `lib/theme.dart` | `AppColors` — the site's dark palette (`html.dark` in `frontend/src/index.css`) and `buildTheme()` — Material 3 theme for cards, fields, buttons, chips and the bottom bar. |
+| `lib/api.dart` | `Api` — one HTTP client: JWT in `Authorization`, `Accept-Language: tg`, refreshes the access token once on 401 (one refresh at a time), logs out when refresh fails; `page()` reads the paginated lists; `ApiException` with Tajik text for known server errors; `mediaUrl()` for `/media/...` paths. |
+| `lib/session.dart` | `Session` (ChangeNotifier) — the logged-in user: loads saved tokens and `/auth/profile/` on start, login by phone or email, sign-up by phone, logout (revokes the refresh token). |
+| `lib/format.dart` | Money with spaces (`43 000`), salary range and period, rent price, Tajik dates, «2 соат пеш». |
+| `lib/widgets.dart` | Shared parts: `Spinner`, `ErrorView`, `EmptyView`, `Tag`, `SectionTitle`, `NetImage`, `toast()` and `PagedList` — infinite list with pull-to-refresh that reloads when its filters change. |
+| `lib/screens/login.dart` | Login with phone or email tabs, sign-up by phone (name, phone, password ≥ 8), server errors shown in a red box. |
+| `lib/screens/home.dart` | Greeting, RUB→TJS card (rate for 1000 roubles, change since the day before, sparkline from `/rates/`), quick tiles to the other tabs, the first three documents. |
+| `lib/screens/jobs.dart` | `SearchBox` (waits 450 ms after typing), jobs list with «housing» / «help with documents» filters, `JobCard`, `JobDetailScreen` (employer, rating or blacklist warning, address, description, «apply» opens the original vacancy). |
+| `lib/screens/housing.dart` | Housing list by city and kind, cards with the first photo, `HousingDetailScreen` with a photo slider, features and call / WhatsApp / Telegram / original ad buttons. |
+| `lib/screens/documents.dart` | My documents with a coloured status strip (valid / ending / expired), long press deletes; bottom sheet to add one: type, end date (filled from the type's usual validity), number, reminder days. |
+| `lib/screens/profile.dart` | Avatar or first letter, phone / email / language, link to the site, logout with confirmation. |
+| `test/widget_test.dart` | Tests for `format.dart`. |
