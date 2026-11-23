@@ -15,16 +15,16 @@ class DocumentsScreen extends StatefulWidget {
 class _DocumentsScreenState extends State<DocumentsScreen> {
   var _version = 0;
 
+  void _changed() => setState(() => _version++);
+
   Future<void> _add() async {
     final added = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
       builder: (_) => const _DocumentForm(),
     );
     if (added == true && mounted) {
-      setState(() => _version++);
+      _changed();
       toast(context, 'Ҳуҷҷат илова шуд');
     }
   }
@@ -33,19 +33,22 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.containerLow,
-        title: const Text('Ҳуҷҷатро нест кунем?'),
-        content: Text(doc['document_type_title'] ?? ''),
+        title: const Text('Нест кунем?'),
+        content: Text(doc['document_type_title'] ?? '', style: const TextStyle(color: AppColors.muted)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Не')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Нест кардан')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Нест кардан'),
+          ),
         ],
       ),
     );
     if (yes != true || !mounted) return;
     try {
       await Api.instance.request('DELETE', '/documents/my-documents/${doc['id']}/');
-      if (mounted) setState(() => _version++);
+      if (mounted) _changed();
     } on ApiException catch (e) {
       if (mounted) toast(context, e.message);
     }
@@ -53,26 +56,44 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Ҳуҷҷатҳои ман')),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _add,
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.onPrimary,
-          icon: const Icon(Icons.add),
-          label: const Text('Илова', style: TextStyle(fontWeight: FontWeight.w700)),
-        ),
-        body: PagedList(
-          key: ValueKey(_version),
-          path: '/documents/my-documents/',
-          emptyIcon: Icons.badge_outlined,
-          emptyText: 'Ҳоло ҳуҷҷат нест.\nПатент, бақайдгирӣ ё шиносномаро илова кунед — мо пеш аз тамом шудани мӯҳлат хабар медиҳем.',
-          itemBuilder: (context, doc) => DocumentCard(doc: doc, onLongPress: () => _delete(doc)),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageTitle(
+                'Ҳуҷҷатҳо',
+                trailing: Material(
+                  color: AppColors.text,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _add,
+                    child: const SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(Icons.add_rounded, color: AppColors.background, size: 22),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: PagedList(
+                  key: ValueKey(_version),
+                  path: '/documents/my-documents/',
+                  gap: 8,
+                  emptyIcon: Icons.description_outlined,
+                  emptyText: 'Ҳоло ҳуҷҷат нест.\nПатент ё бақайдгириро илова кунед —\nпеш аз тамом шудани мӯҳлат хабар медиҳем.',
+                  itemBuilder: (context, doc) => DocumentRow(doc: doc, onLongPress: () => _delete(doc)),
+                ),
+              ),
+            ],
+          ),
         ),
       );
 }
 
-class DocumentCard extends StatelessWidget {
-  const DocumentCard({super.key, required this.doc, this.onLongPress});
+class DocumentRow extends StatelessWidget {
+  const DocumentRow({super.key, required this.doc, this.onLongPress});
 
   final Map doc;
   final VoidCallback? onLongPress;
@@ -80,49 +101,44 @@ class DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daysLeft = doc['days_left'] as int? ?? 0;
-    final (color, background, label) = switch (doc['status']) {
-      'expired' => (AppColors.error, AppColors.errorContainer, 'Мӯҳлат гузашт'),
-      'expiring' => (AppColors.warning, AppColors.warningContainer, '$daysLeft рӯз монд'),
-      _ => (AppColors.green, AppColors.greenContainer, '$daysLeft рӯз'),
+    final color = switch (doc['status']) {
+      'expired' => AppColors.danger,
+      'expiring' => AppColors.warning,
+      _ => AppColors.accent,
     };
     final number = (doc['number'] as String?) ?? '';
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onLongPress: onLongPress,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Surface(
+      onLongPress: onLongPress,
+      child: Row(
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(doc['document_type_title'] ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                const SizedBox(height: 3),
+                Meta(['то ${day(doc['expires_at'])}', if (number.isNotEmpty) '№$number']),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(width: 5, color: color),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(doc['document_type_title'] ?? '',
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                            const SizedBox(height: 4),
-                            Text(
-                              'то ${day(doc['expires_at'])}${number.isEmpty ? '' : ' · №$number'}',
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tag(label, color: color, background: background),
-                    ],
-                  ),
-                ),
+              Text(
+                daysLeft < 0 ? '0' : '$daysLeft',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color, height: 1.1),
               ),
+              Text(daysLeft < 0 ? 'гузашт' : 'рӯз', style: const TextStyle(color: AppColors.faint, fontSize: 12)),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -174,7 +190,7 @@ class _DocumentFormState extends State<_DocumentForm> {
 
   Future<void> _save() async {
     if (_type == null || _expires == null) {
-      setState(() => _error = 'Навъи ҳуҷҷат ва санаи тамомшударо интихоб кунед.');
+      setState(() => _error = 'Намуд ва санаро интихоб кунед.');
       return;
     }
     setState(() {
@@ -197,6 +213,11 @@ class _DocumentFormState extends State<_DocumentForm> {
     }
   }
 
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(top: 22, bottom: 10),
+        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+      );
+
   @override
   Widget build(BuildContext context) => Padding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 24),
@@ -205,20 +226,22 @@ class _DocumentFormState extends State<_DocumentForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Ҳуҷҷати нав', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 18),
+              const Text('Ҳуҷҷати нав',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.4)),
+              _label('Намуд'),
               if (_types.isEmpty && _error == null)
-                const Padding(padding: EdgeInsets.all(12), child: Spinner(size: 22))
+                const Padding(padding: EdgeInsets.all(12), child: Spinner(size: 18))
               else
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     for (final type in _types)
-                      ChoiceChip(
-                        label: Text(type['title']),
+                      Pill(
+                        type['title'],
                         selected: _type == type['id'],
-                        onSelected: (_) => setState(() {
+                        background: AppColors.raised,
+                        onTap: () => setState(() {
                           _type = type['id'];
                           final days = type['default_validity_days'] as int?;
                           if (days != null && _expires == null) {
@@ -228,46 +251,51 @@ class _DocumentFormState extends State<_DocumentForm> {
                       ),
                   ],
                 ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.outlineVariant),
+              _label('Мӯҳлат то'),
+              Material(
+                color: AppColors.raised,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: _pickDate,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _expires == null ? 'Санаро интихоб кунед' : day(_expires!.toIso8601String()),
+                            style: TextStyle(color: _expires == null ? AppColors.faint : AppColors.text, fontSize: 15),
+                          ),
+                        ),
+                        const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.faint),
+                      ],
+                    ),
+                  ),
                 ),
-                tileColor: AppColors.containerLow,
-                leading: const Icon(Icons.event_rounded),
-                title: Text(_expires == null ? 'Мӯҳлат то кай?' : 'то ${day(_expires!.toIso8601String())}'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: _pickDate,
               ),
-              const SizedBox(height: 14),
+              _label('Рақам (ихтиёрӣ)'),
               TextField(
                 controller: _number,
-                decoration: const InputDecoration(hintText: 'Рақами ҳуҷҷат (ихтиёрӣ)', prefixIcon: Icon(Icons.tag)),
+                decoration: const InputDecoration(hintText: '№', fillColor: AppColors.raised),
               ),
-              const SizedBox(height: 18),
-              const Text('Пешакӣ хабар диҳем', style: TextStyle(color: AppColors.textMuted)),
-              const SizedBox(height: 8),
+              _label('Пешакӣ хабар диҳем'),
               Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final days in const [30, 14, 7, 3, 1])
-                    ChoiceChip(
-                      label: Text('$days рӯз'),
-                      selected: _remind == days,
-                      onSelected: (_) => setState(() => _remind = days),
-                    ),
+                    Pill('$days рӯз', selected: _remind == days, background: AppColors.raised, onTap: () => setState(() => _remind = days)),
                 ],
               ),
               if (_error != null) ...[
-                const SizedBox(height: 14),
-                Text(_error!, style: const TextStyle(color: AppColors.error)),
+                const SizedBox(height: 16),
+                Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 14)),
               ],
-              const SizedBox(height: 22),
+              const SizedBox(height: 28),
               FilledButton(
                 onPressed: _busy ? null : _save,
-                child: _busy ? const Spinner(size: 22) : const Text('Захира кардан'),
+                child: _busy ? const Spinner(size: 20, color: AppColors.muted) : const Text('Захира кардан'),
               ),
             ],
           ),

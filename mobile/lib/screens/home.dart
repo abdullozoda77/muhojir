@@ -13,10 +13,10 @@ class HomeScreen extends StatefulWidget {
   final void Function(int tab) onOpenTab;
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _rates;
   List<Map<String, dynamic>> _documents = [];
   String? _error;
@@ -25,10 +25,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    reload();
   }
 
-  Future<void> _load() async {
+  Future<void> reload() async {
     setState(() {
       _loading = true;
       _error = null;
@@ -65,52 +65,95 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.green,
-          backgroundColor: AppColors.containerHigh,
-          onRefresh: _load,
+          color: AppColors.text,
+          backgroundColor: AppColors.raised,
+          onRefresh: reload,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_greeting, style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
-                    const SizedBox(height: 4),
-                    Text(
-                      name.isEmpty ? 'Муҳоҷир' : name,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_greeting, style: const TextStyle(color: AppColors.muted, fontSize: 15)),
+                        const SizedBox(height: 2),
+                        Text(
+                          name.isEmpty ? 'Муҳоҷир' : name,
+                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.6),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  GestureDetector(onTap: () => widget.onOpenTab(4), child: const Avatar(size: 44)),
+                ],
               ),
+              const SizedBox(height: 28),
               if (_loading && _rates == null)
                 const SizedBox(height: 300, child: Spinner())
               else if (_error != null && _rates == null)
-                ErrorView(message: _error!, onRetry: _load)
+                ErrorView(message: _error!, onRetry: reload)
               else ...[
                 _RateCard(rates: _rates!),
-                const SectionTitle('Зуд кушоед'),
+                const SizedBox(height: 28),
                 _QuickActions(onOpenTab: widget.onOpenTab),
-                SectionTitle(
-                  'Ҳуҷҷатҳои ман',
-                  action: TextButton(onPressed: () => widget.onOpenTab(3), child: const Text('Ҳама')),
-                ),
+                SectionTitle('Ҳуҷҷатҳо', action: 'Ҳама', onAction: () => widget.onOpenTab(3)),
                 if (_documents.isEmpty)
-                  _AddDocumentHint(onTap: () => widget.onOpenTab(3))
-                else
-                  ..._documents.take(3).map(
-                        (doc) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: DocumentCard(doc: doc),
+                  Surface(
+                    onTap: () => widget.onOpenTab(3),
+                    child: const Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Ҳуҷҷат илова кунед', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                              SizedBox(height: 4),
+                              Text('Пеш аз тамом шудани мӯҳлат хабар медиҳем',
+                                  style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                            ],
+                          ),
                         ),
-                      ),
+                        Icon(Icons.add_rounded, color: AppColors.muted),
+                      ],
+                    ),
+                  )
+                else
+                  for (final doc in _documents.take(3))
+                    Padding(padding: const EdgeInsets.only(bottom: 8), child: DocumentRow(doc: doc)),
               ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class Avatar extends StatelessWidget {
+  const Avatar({super.key, this.size = 44});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Session.instance;
+    final avatar = session.user?['avatar'] as String?;
+    final name = session.name;
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(color: AppColors.raised, shape: BoxShape.circle),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: avatar != null
+          ? NetImage(avatar)
+          : Text(
+              name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+              style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w600),
+            ),
     );
   }
 }
@@ -129,60 +172,50 @@ class _RateCard extends StatelessWidget {
         .map((row) => (row['nbt'] as num?)?.toDouble())
         .whereType<double>()
         .toList();
-    final change = history.length > 1 ? history.last - history[history.length - 2] : 0.0;
+    final change = history.length > 1 ? (history.last - history[history.length - 2]) * 1000 : 0.0;
     final up = change >= 0;
+    final changeColor = change.abs() < 0.005 ? AppColors.muted : (up ? AppColors.accent : AppColors.danger);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A3478), Color(0xFF101B38)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
+    return Surface(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Tag('RUB · TJS', icon: Icons.currency_exchange, color: AppColors.gold, background: Color(0x33DEB86E)),
+              const Text('1 000 ₽', style: TextStyle(color: AppColors.muted, fontSize: 14)),
               const Spacer(),
-              Text(day(nbt?['day']), style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+              Text(day(nbt?['day']), style: const TextStyle(color: AppColors.faint, fontSize: 13)),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
                 value == null ? '—' : (value * 1000).toStringAsFixed(2),
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, height: 1),
+                style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w700, letterSpacing: -1.5, height: 1),
               ),
               const SizedBox(width: 8),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Text('сомонӣ', style: TextStyle(color: AppColors.textMuted, fontSize: 15)),
-              ),
+              const Text('сомонӣ', style: TextStyle(color: AppColors.muted, fontSize: 16)),
               const Spacer(),
               if (history.length > 1)
-                Tag(
-                  '${up ? '+' : ''}${(change * 1000).toStringAsFixed(2)}',
-                  icon: up ? Icons.trending_up : Icons.trending_down,
-                  color: up ? AppColors.green : AppColors.error,
-                  background: up ? AppColors.greenContainer : AppColors.errorContainer,
+                Text(
+                  '${up ? '+' : '−'}${change.abs().toStringAsFixed(2)}',
+                  style: TextStyle(color: changeColor, fontSize: 15, fontWeight: FontWeight.w600),
                 ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text('барои 1000 рубл · қурби Бонки миллӣ',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
           if (history.length > 2) ...[
-            const SizedBox(height: 18),
-            SizedBox(height: 56, child: CustomPaint(size: Size.infinite, painter: _Sparkline(history))),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 44,
+              child: CustomPaint(size: Size.infinite, painter: _Sparkline(history, changeColor)),
+            ),
           ],
+          const SizedBox(height: 10),
+          const Text('Бонки миллии Тоҷикистон', style: TextStyle(color: AppColors.faint, fontSize: 12)),
         ],
       ),
     );
@@ -190,47 +223,40 @@ class _RateCard extends StatelessWidget {
 }
 
 class _Sparkline extends CustomPainter {
-  _Sparkline(this.values);
+  _Sparkline(this.values, this.color);
 
   final List<double> values;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
     final low = values.reduce((a, b) => a < b ? a : b);
     final high = values.reduce((a, b) => a > b ? a : b);
     final span = (high - low).abs() < 1e-9 ? 1.0 : high - low;
-    final path = Path();
-    for (var i = 0; i < values.length; i++) {
-      final x = size.width * i / (values.length - 1);
-      final y = size.height - (values[i] - low) / span * (size.height - 6) - 3;
-      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    Offset point(int i) => Offset(
+          size.width * i / (values.length - 1),
+          size.height - (values[i] - low) / span * (size.height - 8) - 4,
+        );
+    final path = Path()..moveTo(point(0).dx, point(0).dy);
+    for (var i = 1; i < values.length; i++) {
+      final a = point(i - 1);
+      final b = point(i);
+      final mid = (a.dx + b.dx) / 2;
+      path.cubicTo(mid, a.dy, mid, b.dy, b.dx, b.dy);
     }
-    final fill = Path.from(path)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(
-      fill,
-      Paint()
-        ..shader = LinearGradient(
-          colors: [AppColors.green.withValues(alpha: 0.25), AppColors.green.withValues(alpha: 0)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(Offset.zero & size),
-    );
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.green
+        ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round,
     );
+    canvas.drawCircle(point(values.length - 1), 3.5, Paint()..color = color);
   }
 
   @override
-  bool shouldRepaint(_Sparkline old) => old.values != values;
+  bool shouldRepaint(_Sparkline old) => old.values != values || old.color != color;
 }
 
 class _QuickActions extends StatelessWidget {
@@ -240,71 +266,36 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      (Icons.work_outline_rounded, 'Кор', 'Ҷойҳои кори нав', AppColors.primary, 1),
-      (Icons.apartment_rounded, 'Манзил', 'Хона ва ҷойи хоб', AppColors.gold, 2),
-      (Icons.badge_outlined, 'Ҳуҷҷатҳо', 'Мӯҳлатҳо', AppColors.green, 3),
-      (Icons.person_outline_rounded, 'Профил', 'Ҳисоби ман', Color(0xFFC4A7FF), 4),
+    const items = [
+      (Icons.work_outline_rounded, 'Кор', 1),
+      (Icons.home_outlined, 'Манзил', 2),
+      (Icons.description_outlined, 'Ҳуҷҷат', 3),
+      (Icons.person_outline_rounded, 'Профил', 4),
     ];
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.55,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        for (final (icon, title, subtitle, color, tab) in items)
-          Material(
-            color: AppColors.containerLow,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.outlineVariant),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => onOpenTab(tab),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: color, size: 22),
-                    ),
-                    const Spacer(),
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                    Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
-                  ],
-                ),
+        for (final (icon, label, tab) in items)
+          GestureDetector(
+            onTap: () => onOpenTab(tab),
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(
+              width: 72,
+              child: Column(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20)),
+                    child: Icon(icon, color: AppColors.text, size: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(label, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                ],
               ),
             ),
           ),
       ],
     );
   }
-}
-
-class _AddDocumentHint extends StatelessWidget {
-  const _AddDocumentHint({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          leading: const Icon(Icons.add_card_rounded, color: AppColors.green),
-          title: const Text('Патент ё бақайдгириро илова кунед'),
-          subtitle: const Text('Пеш аз тамом шудани мӯҳлат хабар медиҳем',
-              style: TextStyle(color: AppColors.textMuted)),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: onTap,
-        ),
-      );
 }

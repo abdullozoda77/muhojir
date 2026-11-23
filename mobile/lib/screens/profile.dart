@@ -5,6 +5,7 @@ import '../api.dart';
 import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
+import 'home.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -13,11 +14,14 @@ class ProfileScreen extends StatelessWidget {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.containerLow,
         title: const Text('Аз ҳисоб бароем?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Не')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Баромадан')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Баромадан'),
+          ),
         ],
       ),
     );
@@ -28,101 +32,94 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = Session.instance;
     final user = session.user ?? {};
-    final avatar = user['avatar'] as String?;
-    final name = session.name;
+    final city = (user['city'] as String?) ?? '';
+    final language = switch (user['language']) {
+      'ru' => 'Русский',
+      'en' => 'English',
+      _ => 'Тоҷикӣ',
+    };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Профил')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: AppColors.primaryContainer,
-                    backgroundImage: avatar == null ? null : NetworkImage(mediaUrl(avatar)),
-                    child: avatar == null
-                        ? Text(name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white))
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 4),
-                        if (user['city'] != null && '${user['city']}'.isNotEmpty)
-                          Text(user['city'], style: const TextStyle(color: AppColors.textMuted)),
-                        Text('Аз ${day(user['date_joined'])}',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+          children: [
+            const Center(child: Avatar(size: 88)),
+            const SizedBox(height: 16),
+            Text(session.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.4)),
+            const SizedBox(height: 4),
+            Text(
+              [if (city.isNotEmpty) city, 'аз ${day(user['date_joined'])}'].join('  ·  '),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, fontSize: 14),
             ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                if (user['phone'] != null) _Row(Icons.phone_iphone, 'Телефон', user['phone']),
-                if (user['email'] != null) _Row(Icons.alternate_email, 'Почта', user['email']),
-                _Row(Icons.translate_rounded, 'Забон', switch (user['language']) {
-                  'ru' => 'Русский',
-                  'en' => 'English',
-                  _ => 'Тоҷикӣ',
-                }),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-                  title: const Text('Сайти Muhojir'),
-                  subtitle: const Text('Ҳамаи имкониятҳо', style: TextStyle(color: AppColors.textMuted)),
-                  trailing: const Icon(Icons.open_in_new_rounded, size: 20),
-                  onTap: () => launchUrl(Uri.parse(apiBase), mode: LaunchMode.externalApplication),
-                ),
-                const Divider(indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error),
-                  title: const Text('Баромадан', style: TextStyle(color: AppColors.error)),
-                  onTap: () => _logout(context),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Center(
-            child: Text('Muhojir · 1.0.0', style: TextStyle(color: AppColors.outline, fontSize: 12)),
-          ),
-        ],
+            const SizedBox(height: 32),
+            _Group(children: [
+              if (user['phone'] != null) _Row('Телефон', value: user['phone']),
+              if (user['email'] != null) _Row('Почта', value: user['email']),
+              _Row('Забон', value: language),
+            ]),
+            const SizedBox(height: 12),
+            _Group(children: [
+              _Row('Сайти Muhojir',
+                  icon: Icons.north_east_rounded,
+                  onTap: () => launchUrl(Uri.parse(apiBase), mode: LaunchMode.externalApplication)),
+              _Row('Баромадан', color: AppColors.danger, onTap: () => _logout(context)),
+            ]),
+            const SizedBox(height: 32),
+            const Text('Muhojir 1.0', textAlign: TextAlign.center, style: TextStyle(color: AppColors.faint, fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row(this.icon, this.label, this.value);
+class _Group extends StatelessWidget {
+  const _Group({required this.children});
 
-  final IconData icon;
-  final String label;
-  final String value;
+  final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: AppColors.textMuted),
-        title: Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-        subtitle: Text(value, style: const TextStyle(color: AppColors.text, fontSize: 15.5)),
+  Widget build(BuildContext context) => Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const Divider(indent: 18, endIndent: 18),
+              children[i],
+            ],
+          ],
+        ),
+      );
+}
+
+class _Row extends StatelessWidget {
+  const _Row(this.label, {this.value, this.icon, this.onTap, this.color = AppColors.text});
+
+  final String label;
+  final String? value;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+          child: Row(
+            children: [
+              Expanded(child: Text(label, style: TextStyle(fontSize: 15, color: color))),
+              if (value != null) Text(value!, style: const TextStyle(color: AppColors.muted, fontSize: 15)),
+              if (icon != null) Icon(icon, size: 18, color: AppColors.faint),
+            ],
+          ),
+        ),
       );
 }

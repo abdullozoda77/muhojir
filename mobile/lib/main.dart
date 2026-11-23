@@ -16,7 +16,8 @@ void main() {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: AppColors.surface,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: AppColors.background,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
   Session.instance.start();
@@ -37,8 +38,12 @@ class MuhojirApp extends StatelessWidget {
           listenable: Session.instance,
           builder: (context, _) {
             final session = Session.instance;
-            if (!session.ready) return const Scaffold(body: Spinner());
-            return session.loggedIn ? const Shell() : const LoginScreen();
+            final Widget page = !session.ready
+                ? const Scaffold(key: ValueKey('wait'), body: Spinner())
+                : session.loggedIn
+                    ? const Shell(key: ValueKey('shell'))
+                    : const LoginScreen(key: ValueKey('login'));
+            return AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: page);
           },
         ),
       );
@@ -52,32 +57,40 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
+  final _home = GlobalKey<HomeScreenState>();
   var _tab = 0;
 
-  void _open(int tab) => setState(() => _tab = tab);
+  void _open(int tab) {
+    if (tab == 0 && _tab != 0) _home.currentState?.reload();
+    setState(() => _tab = tab);
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         body: IndexedStack(
           index: _tab,
           children: [
-            HomeScreen(onOpenTab: _open),
+            HomeScreen(key: _home, onOpenTab: _open),
             const JobsScreen(),
             const HousingScreen(),
             const DocumentsScreen(),
             const ProfileScreen(),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _tab,
-          onDestinationSelected: _open,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Асосӣ'),
-            NavigationDestination(icon: Icon(Icons.work_outline_rounded), selectedIcon: Icon(Icons.work_rounded), label: 'Кор'),
-            NavigationDestination(icon: Icon(Icons.apartment_outlined), selectedIcon: Icon(Icons.apartment_rounded), label: 'Манзил'),
-            NavigationDestination(icon: Icon(Icons.badge_outlined), selectedIcon: Icon(Icons.badge_rounded), label: 'Ҳуҷҷат'),
-            NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Профил'),
-          ],
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
+          child: NavigationBar(
+            selectedIndex: _tab,
+            onDestinationSelected: _open,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Асосӣ'),
+              NavigationDestination(icon: Icon(Icons.work_outline_rounded), selectedIcon: Icon(Icons.work_rounded), label: 'Кор'),
+              NavigationDestination(icon: Icon(Icons.apartment_outlined), selectedIcon: Icon(Icons.apartment_rounded), label: 'Манзил'),
+              NavigationDestination(icon: Icon(Icons.description_outlined), selectedIcon: Icon(Icons.description_rounded), label: 'Ҳуҷҷат'),
+              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Профил'),
+            ],
+          ),
         ),
       );
 }
