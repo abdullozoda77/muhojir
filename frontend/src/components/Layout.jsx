@@ -170,25 +170,25 @@ export function ThemeToggle() {
 }
 
 const TONES = {
-  "/calculator": "ring-emerald-500/30 text-emerald-600 dark:text-emerald-400",
-  "/guides": "ring-sky-500/30 text-sky-600 dark:text-sky-400",
-  "/checks": "ring-violet-500/30 text-violet-600 dark:text-violet-400",
-  "/translate": "ring-pink-500/30 text-pink-600 dark:text-pink-400",
-  "/course": "ring-blue-500/30 text-blue-600 dark:text-blue-400",
-  "/driving": "ring-cyan-500/30 text-cyan-600 dark:text-cyan-400",
-  "/exam": "ring-amber-500/30 text-amber-600 dark:text-amber-400",
-  "/help": "ring-rose-500/30 text-rose-600 dark:text-rose-400",
-  "/questions": "ring-sky-500/30 text-sky-600 dark:text-sky-400",
-  "/groups": "ring-orange-500/30 text-orange-600 dark:text-orange-400",
-  "/parcels": "ring-yellow-500/30 text-yellow-700 dark:text-yellow-400",
-  "/scams": "ring-red-500/30 text-red-600 dark:text-red-400",
-  "/saved-jobs": "ring-indigo-500/30 text-indigo-600 dark:text-indigo-400",
-  "/payments": "ring-teal-500/30 text-teal-600 dark:text-teal-400",
-  "/report": "ring-violet-500/30 text-violet-600 dark:text-violet-400",
-  "/rate": "ring-lime-500/30 text-lime-700 dark:text-lime-400",
-  "/news": "ring-orange-500/30 text-orange-600 dark:text-orange-400",
-  "/prayer": "ring-emerald-500/30 text-emerald-600 dark:text-emerald-400",
-  "/feedback": "ring-fuchsia-500/30 text-fuchsia-600 dark:text-fuchsia-400",
+  "/calculator": "bg-emerald-500/10 ring-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+  "/guides": "bg-sky-500/10 ring-sky-500/20 text-sky-600 dark:text-sky-400",
+  "/checks": "bg-violet-500/10 ring-violet-500/20 text-violet-600 dark:text-violet-400",
+  "/translate": "bg-pink-500/10 ring-pink-500/20 text-pink-600 dark:text-pink-400",
+  "/course": "bg-blue-500/10 ring-blue-500/20 text-blue-600 dark:text-blue-400",
+  "/driving": "bg-cyan-500/10 ring-cyan-500/20 text-cyan-600 dark:text-cyan-400",
+  "/exam": "bg-amber-500/10 ring-amber-500/20 text-amber-600 dark:text-amber-400",
+  "/help": "bg-rose-500/10 ring-rose-500/20 text-rose-600 dark:text-rose-400",
+  "/questions": "bg-sky-500/10 ring-sky-500/20 text-sky-600 dark:text-sky-400",
+  "/groups": "bg-orange-500/10 ring-orange-500/20 text-orange-600 dark:text-orange-400",
+  "/parcels": "bg-yellow-500/10 ring-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  "/scams": "bg-red-500/10 ring-red-500/20 text-red-600 dark:text-red-400",
+  "/saved-jobs": "bg-indigo-500/10 ring-indigo-500/20 text-indigo-600 dark:text-indigo-400",
+  "/payments": "bg-teal-500/10 ring-teal-500/20 text-teal-600 dark:text-teal-400",
+  "/report": "bg-violet-500/10 ring-violet-500/20 text-violet-600 dark:text-violet-400",
+  "/rate": "bg-lime-500/10 ring-lime-500/20 text-lime-700 dark:text-lime-400",
+  "/news": "bg-orange-500/10 ring-orange-500/20 text-orange-600 dark:text-orange-400",
+  "/prayer": "bg-emerald-500/10 ring-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+  "/feedback": "bg-fuchsia-500/10 ring-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400",
 };
 
 function AppsMenu({ items, counts, user }) {
@@ -251,7 +251,7 @@ function AppsMenu({ items, counts, user }) {
               <div className="grid grid-cols-4 gap-1">
                 {list.map((i) => (
                   <NavLink key={i.to} to={i.to} role="menuitem" className={({ isActive }) => `group relative flex min-h-[84px] flex-col items-center justify-start gap-1.5 rounded-xl px-1.5 pb-1.5 pt-3 text-center transition-colors ${isActive ? "bg-surface-container-high" : "hover:bg-surface-container-low"}`}>
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-transparent ring-1 ring-inset transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "ring-primary/30 text-primary"}`}>
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[i.to] || "bg-primary/10 ring-primary/20 text-primary"}`}>
                       <i.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
                     </span>
                     <span className="line-clamp-2 text-[12px] leading-tight text-on-surface">{i.short || i.label}</span>
